@@ -1,0 +1,66 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+  <div class="bg-surface rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden animate-in">
+    <div class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-text-primary">Ajustar imagen</h3>
+        <button
+          type="button"
+          (click)="onCancel()"
+          class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-background transition-colors"
+          aria-label="Cerrar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="relative aspect-square rounded-xl overflow-hidden bg-background border border-border">
+        <canvas
+          #canvas
+          class="w-full h-full cursor-move"
+          (mousedown)="startDrag($event)"
+          (mousemove)="onDrag($event)"
+          (mouseup)="endDrag()"
+          (mouseleave)="endDrag()"
+          (touchstart)="startDragTouch($event)"
+          (touchmove)="onDragTouch($event)"
+          (touchend)="endDrag()"
+        ></canvas>
+      </div>
+
+      <div class="mt-4 space-y-2">
+        <label class="block text-sm font-medium text-text-primary">Zoom</label>
+        <input
+          type="range"
+          [min]="1"
+          [max]="3"
+          [step]="0.01"
+          [value]="scale()"
+          (input)="onZoom($event)"
+          class="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
+        />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 px-6 py-4 bg-background border-t border-border">
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary
+               bg-surface border border-border rounded-xl hover:bg-background transition-colors"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        (click)="onCrop()"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl
+               hover:opacity-90 transition-opacity"
+      >
+        Aplicar
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div class="min-h-screen bg-background flex">
+  <section class="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden h-screen sticky top-0">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(37,99,235,0.08),transparent_60%)]"></div>
+    <div class="relative z-10 flex flex-col justify-between p-12 w-full">
+      <header class="flex items-center gap-3">
+        <img src="assets/images/icono.png" alt="Clínica Online" class="w-10 h-10 rounded-full object-cover" />
+        <div>
+          <p class="text-lg font-bold text-text-primary leading-tight">Clínica Online</p>
+          <p class="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">Health SaaS</p>
+        </div>
+      </header>
+
+      <div class="max-w-lg">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+          <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Plataforma médica integral
+        </div>
+        <h1 class="text-4xl xl:text-5xl font-bold text-text-primary leading-tight mb-4">
+          La gestión clínica de tu equipo, <span class="text-primary">unificada y simple.</span>
+        </h1>
+        <p class="text-lg text-text-secondary leading-relaxed">
+          Turnos, historias clínicas, disponibilidad y estadísticas — todo en un solo lugar, con la experiencia de un producto SaaS moderno.
+        </p>
+      </div>
+
+      <footer class="flex items-center gap-8 text-sm text-text-secondary">
+        <div>
+          <span class="block text-2xl font-bold text-text-primary">1.2k+</span>
+          Pacientes
+        </div>
+        <div>
+          <span class="block text-2xl font-bold text-text-primary">89</span>
+          Especialistas
+        </div>
+        <div>
+          <span class="block text-2xl font-bold text-text-primary">4.8<span class="text-primary">&#9733;</span></span>
+          Satisfacción
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <section class="w-full lg:w-1/2 xl:w-[45%] min-h-screen overflow-y-auto p-6 sm:p-10">
+    <div class="flex items-center justify-center min-h-[calc(100vh-5rem)]">
+      <router-outlet />
+    </div>
+  </section>
+</div>

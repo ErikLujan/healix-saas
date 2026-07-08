@@ -1,0 +1,214 @@
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-text-primary">Usuarios</h1>
+      <p class="text-sm text-text-secondary mt-1">Aprobar especialistas, gestionar accesos y roles.</p>
+    </div>
+    <button
+      type="button"
+      (click)="openModal()"
+      class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none w-full sm:w-auto"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo Administrador
+    </button>
+  </div>
+
+  <div class="flex flex-col sm:flex-row gap-3">
+    <div class="relative flex-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Buscar usuario..."
+        aria-label="Buscar usuarios por nombre o email"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchChange($event)"
+        class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border bg-surface
+               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+               transition-all duration-200 placeholder:text-text-secondary"
+      />
+    </div>
+    <select
+      [ngModel]="selectedRole()"
+      (ngModelChange)="onRoleChange($event)"
+      aria-label="Filtrar por rol"
+      class="px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
+             focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+             transition-all duration-200 text-text-primary cursor-pointer w-full sm:w-auto"
+    >
+      @for (option of roleOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="bg-surface rounded-2xl border border-border overflow-hidden isolation-isolate">
+    <div class="w-full overflow-x-auto block">
+      <table class="w-full text-sm min-w-[640px]">
+        <thead>
+          <tr class="border-b border-border">
+            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Usuario</th>
+            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Rol</th>
+            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">Correo</th>
+            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden lg:table-cell">Ingreso</th>
+            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of filteredUsers(); track user.id) {
+            <tr
+              @fadeSlideRow
+              class="border-b border-border/50 last:border-b-0 hover:bg-primary/[0.02] transition-colors duration-150"
+            >
+              <td class="px-3 py-3 md:px-6 md:py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    @if (user.avatar_url) {
+                      <img [src]="user.avatar_url" [alt]="user.full_name" class="w-9 h-9 rounded-full object-cover" />
+                    } @else {
+                      <span class="text-xs font-bold text-primary">{{ getInitials(user.full_name) }}</span>
+                    }
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-medium text-text-primary truncate">{{ user.full_name }}</p>
+                    <p class="text-xs text-text-secondary md:hidden truncate">{{ user.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-3 py-3 md:px-6 md:py-4">
+                <span [class]="getRoleBadgeClass(user.role)">{{ user.role | titlecase }}</span>
+              </td>
+              <td class="px-3 py-3 md:px-6 md:py-4 text-text-secondary hidden md:table-cell">{{ user.email }}</td>
+              <td class="px-3 py-3 md:px-6 md:py-4 text-text-secondary hidden lg:table-cell">{{ formatDate(user.created_at) }}</td>
+              <td class="px-3 py-3 md:px-6 md:py-4">
+                @if (user.role === 'especialista' && user.especialistas) {
+                  @if (user.especialistas.is_approved) {
+                    <span @statusBadge class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Activo
+                    </span>
+                  } @else {
+                    <div @statusBadge class="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        Pendiente
+                      </span>
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          (click)="onApprove(user.id)"
+                          [disabled]="loadingApprovalId() === user.id"
+                          class="px-3 py-1 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                        >
+                          @if (loadingApprovalId() === user.id) {
+                            <svg class="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                          } @else {
+                            Aprobar
+                          }
+                        </button>
+                        <button
+                          type="button"
+                          (click)="onReject(user.id)"
+                          [disabled]="loadingApprovalId() === user.id"
+                          class="px-3 py-1 text-xs font-semibold text-text-secondary border border-border rounded-lg hover:bg-danger/5 hover:text-danger hover:border-danger/30 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        >
+                          Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  }
+                } @else if (user.role === 'administrador') {
+                  <span @statusBadge class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                    Acceso Total
+                  </span>
+                } @else if (user.role === 'paciente' || (user.role === 'especialista' && user.especialistas?.is_approved)) {
+                  <span @statusBadge class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Activo
+                  </span>
+                } @else {
+                  <span @statusBadge class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    ---
+                  </span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-3 py-12 md:px-6 text-center">
+                @if (isLoading()) {
+                  <div class="flex items-center justify-center gap-2 text-text-secondary">
+                    <svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Cargando usuarios...
+                  </div>
+                } @else {
+                  <p class="text-text-secondary">No se encontraron usuarios</p>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  @if (totalFilteredCount() > 0) {
+    <div class="border-t border-neutral-200 pt-4">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+        <p class="text-sm text-text-secondary">
+          Mostrando usuarios del {{ paginationRange().start }} al {{ paginationRange().end }} de un total de {{ paginationRange().total }}
+        </p>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="goToPreviousPage()"
+            [disabled]="currentPage() === 1"
+            aria-label="Ir a la página anterior"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-surface text-text-secondary
+                   hover:bg-primary/5 hover:text-primary hover:border-primary/20
+                   disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+                   transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            (click)="goToNextPage()"
+            [disabled]="currentPage() === totalPages()"
+            aria-label="Ir a la página siguiente"
+            class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-surface text-text-secondary
+                   hover:bg-primary/5 hover:text-primary hover:border-primary/20
+                   disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+                   transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+@if (showModal()) {
+  <app-admin-users-modal
+    @modalBackdrop
+    (closed)="closeModal()"
+    (created)="onUserCreated()"
+  />
+}

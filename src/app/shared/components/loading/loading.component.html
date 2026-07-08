@@ -1,0 +1,11 @@
+<div class="flex items-center justify-center" [class]="containerClass()">
+  <div class="relative">
+    <div
+      class="w-10 h-10 rounded-full border-4 border-border animate-spin"
+      style="border-top-color: var(--color-primary)"
+    ></div>
+    @if (message()) {
+      <p class="mt-3 text-sm text-text-secondary text-center">{{ message() }}</p>
+    }
+  </div>
+</div>

@@ -1,0 +1,135 @@
+<div @fadeIn class="min-h-screen bg-background">
+  <header class="bg-surface border-b border-border sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/>
+          </svg>
+        </div>
+        <span class="text-sm font-semibold text-text-primary">Clínica Online</span>
+      </div>
+      <a routerLink="/" class="text-sm text-text-secondary hover:text-text-primary transition-colors">
+        Volver al inicio
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-12">
+    <h1 class="text-3xl font-bold text-text-primary mb-2">Política de Privacidad</h1>
+    <p class="text-sm text-text-secondary mb-8">Última actualización: 1 de julio de 2026</p>
+
+    <div class="prose prose-slate max-w-none space-y-8">
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">1. Información que Recopilamos</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Recopilamos información que usted nos proporciona directamente al registrarse y utilizar el Servicio:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li><strong>Datos de cuenta:</strong> nombre, apellido, correo electrónico, contraseña (almacenada de forma encriptada).</li>
+          <li><strong>Datos personales adicionales:</strong> DNI, edad, obra social (para pacientes).</li>
+          <li><strong>Datos profesionales:</strong> matrícula, especialidades médicas (para especialistas).</li>
+          <li><strong>Fotografías de perfil:</strong> imágenes subidas voluntariamente por el usuario.</li>
+          <li><strong>Datos de uso:</strong> información sobre cómo utiliza la plataforma.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">2. Uso de la Información</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Utilizamos la información recopilada para los siguientes fines:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li>Proporcionar y mejorar el Servicio.</li>
+          <li>Gestionar cuentas de usuario y autenticación.</li>
+          <li>Facilitar la gestión de turnos y historias clínicas.</li>
+          <li>Generar estadísticas e informes administrativos.</li>
+          <li>Notificar sobre actualizaciones del Servicio.</li>
+          <li>Cumplir con obligaciones legales.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">3. Protección de Datos Clínicos</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Los datos de historias clínicas y consultas médicas son tratados con especial protección. Estos datos:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li>Son accesibles únicamente por profesionales autorizados.</li>
+          <li>Se almacenan de forma segura con cifrado en reposo.</li>
+          <li>No son compartidos con terceros sin consentimiento expreso.</li>
+          <li>Se conservan conforme a las normativas aplicables.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">4. Almacenamiento y Seguridad</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Implementamos medidas técnicas y organizativas para proteger su información:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li>Cifrado de datos en tránsito (HTTPS/TLS).</li>
+          <li>Cifrado de datos en reposo.</li>
+          <li>Control de acceso basado en roles (RLS).</li>
+          <li>Monitoreo de accesos y auditoría.</li>
+          <li>Infraestructura gestionada por Supabase con certificaciones de seguridad.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">5. Compartir Información</h2>
+        <p class="text-text-secondary leading-relaxed">
+          No vendemos ni compartimos su información personal con terceros, excepto en los siguientes casos:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li>Con su consentimiento expreso.</li>
+          <li>Cuando sea requerido por ley o autoridad competente.</li>
+          <li>Con proveedores de servicios que nos ayudan a operar la plataforma (bajo acuerdos de confidencialidad).</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">6. Sus Derechos</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Usted tiene derecho a:
+        </p>
+        <ul class="list-disc list-inside text-text-secondary mt-2 space-y-1">
+          <li>Acceder a sus datos personales.</li>
+          <li>Solicitar la rectificación de datos inexactos.</li>
+          <li>Solicitar la eliminación de su cuenta y datos asociados.</li>
+          <li>Oponerse al tratamiento de sus datos.</li>
+          <li>Solicitar la portabilidad de sus datos.</li>
+          <li>Retirar su consentimiento en cualquier momento.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">7. Cookies y Tecnologías Similares</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Utilizamos cookies y tecnologías similares para mantener la sesión del usuario, recordar preferencias y mejorar la experiencia de uso. Puede configurar su navegador para rechazar cookies, aunque esto podría afectar la funcionalidad del Servicio.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">8. Retención de Datos</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Conservamos su información personal mientras su cuenta esté activa o según sea necesario para proporcionar el Servicio. Los datos clínicos se conservan conforme a las normativas legales aplicables, incluso después del cierre de la cuenta.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">9. Cambios en esta Política</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Nos reservamos el derecho de actualizar esta Política de Privacidad. Los cambios serán publicados en esta página con la fecha de última actualización. Le recomendamos revisar esta política periódicamente.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-text-primary mb-3">10. Contacto</h2>
+        <p class="text-text-secondary leading-relaxed">
+          Para consultas sobre esta Política de Privacidad o para ejercer sus derechos, puede comunicarse a través de los canales oficiales de la plataforma.
+        </p>
+      </section>
+    </div>
+  </main>
+</div>

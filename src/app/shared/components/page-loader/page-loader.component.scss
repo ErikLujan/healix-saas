@@ -1,0 +1,85 @@
+:host {
+  display: block;
+}
+
+.page-loader-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(248, 250, 252, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.page-loader-shimmer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(37, 99, 235, 0.03) 0%, transparent 50%);
+  animation: shimmerShift 3s ease-in-out infinite alternate;
+}
+
+.page-loader-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
+.page-loader-ring {
+  width: 100%;
+  height: 100%;
+  animation: premiumSpin 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+}
+
+.page-loader-arc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #2563eb;
+  border-right-color: rgba(37, 99, 235, 0.3);
+}
+
+.page-loader-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  animation: dotPulse 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+}
+
+@keyframes premiumSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmerShift {
+  0% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

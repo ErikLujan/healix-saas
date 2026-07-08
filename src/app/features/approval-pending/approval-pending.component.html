@@ -1,0 +1,28 @@
+<div @fadeIn class="min-h-screen bg-background flex items-center justify-center p-6">
+  <div @slideUp class="max-w-md w-full text-center">
+    <div class="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h1 class="text-2xl font-bold text-text-primary mb-3">Cuenta pendiente de aprobación</h1>
+    <p class="text-text-secondary leading-relaxed mb-6">
+      Tu cuenta fue creada correctamente. Un administrador debe aprobar tu acceso antes de que puedas utilizar el sistema.
+    </p>
+    <p class="text-sm text-text-secondary mb-8">
+      Te notificaremos por correo electrónico cuando tu cuenta sea habilitada.
+    </p>
+    <a
+      (click)="signOutAndReturn()"
+      class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:opacity-80 transition-opacity cursor-pointer"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Volver al inicio de sesión
+    </a>
+  </div>
+</div>
