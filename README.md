@@ -67,11 +67,384 @@ Un trigger de PostgreSQL (`handle_new_user_sync`) se ejecuta de forma sincronica
 | Tabla | Campos | Proposito |
 |-------|--------|-----------|
 | `profiles` | id, email, full_name, avatar_url, role | Perfil base comun a todos los roles |
-| `pacientes` | id, dni, edad, obra_social | Atributos exclusivos del paciente |
+| `pacientes` | id, dni, edad, obra_social, avatar_url_frontal, avatar_url_secundario | Atributos exclusivos del paciente |
 | `especialistas` | id, dni, edad, is_approved | Atributos del especialista + control de aprobacion |
 | `administradores` | id, dni, edad | Atributos del administrador |
 
-La subida de imagenes de perfil se gestiona mediante Supabase Storage con la ruta `user-profiles/{UUID}/avatar.png`.
+La subida de imagenes de perfil se gestiona mediante Supabase Storage con la ruta `avatars/{UUID}/avatar.{ext}`.
+
+---
+
+## Arquitectura de Gestion de Citas y Ciclo de Vida de Turnos
+
+### Evolucion Modular
+
+El modulo de turnos (`features/appointments/`) se organiza en dos dominios claramente separados:
+
+```
+features/appointments/
+├── dashboard/                -- Gestion y auditoria de turnos
+│   ├── pages/dashboard-page/ -- Contenedor smart (filtros, busqueda, paginacion)
+│   ├── components/turno-card/-- Tarjeta presentacional por turno
+│   └── dialogs/              -- Modales de cancelacion, rechazo, resena, calificacion
+├── request/                  -- Asistente de solicitud para pacientes
+│   ├── pages/request-page/   -- Contenedor del wizard
+│   ├── services/             -- WizardTurnoService (estado reactivo del wizard)
+│   └── components/           -- 5 pasos: especialidad, especialista, fecha, hora, confirmacion
+└── appointments.routes.ts    -- Enrutamiento lazy-loaded
+```
+
+Los servicios core (`TurnosService`, `DisponibilidadService`) residen en `core/services/` y son consumidos por ambos dominios sin duplicacion de logica.
+
+### Ciclo de Vida del Turno
+
+El estado de un turno esta definido por el ENUM `turno_estado` en PostgreSQL, representado en TypeScript como:
+
+```typescript
+type TurnoEstado = 'pendiente' | 'confirmado' | 'rechazado' | 'cancelado' | 'finalizado';
+```
+
+#### Transiciones de Estado por Rol
+
+| Estado Actual | Accion | Rol Autorizado | Estado Resultante | Campo Obligatorio |
+|--------------|--------|----------------|-------------------|-------------------|
+| `pendiente` | confirmar | especialista | `confirmado` | — |
+| `pendiente` | rechazar | especialista | `rechazado` | `comentario_cancelacion_rechazo` |
+| `pendiente` | cancelar | paciente | `cancelado` | `comentario_cancelacion_rechazo` |
+| `confirmado` | finalizar | especialista | `finalizado` | `resena_diagnostico` |
+| `confirmado` | cancelar | paciente o especialista | `cancelado` | `comentario_cancelacion_rechazo` |
+
+Los estados `rechazado`, `cancelado` y `finalizado` son **terminales**: no permiten transiciones posteriores. Todos liberan el bloque horario ocupado, permitiendo que otros pacientes lo reserven.
+
+### Diagrama de Transiciones
+
+```
+                    ┌──────────────┐
+                    │  Pendiente   │  ← Estado inicial al crear
+                    └──────┬───────┘
+                           │
+            ┌──────────────┼──────────────┐
+            ▼              ▼              ▼
+     ┌────────────┐  ┌──────────┐  ┌────────────┐
+     │ Confirmado │  │Rechazado │  │ Cancelado  │
+     └─────┬──────┘  └──────────┘  └────────────┘
+           │                         (terminal)
+           ▼
+     ┌────────────┐
+     │ Finalizado │  (terminal)
+     └────────────┘
+```
+
+---
+
+## Ingenieria de Algoritmos y Optimizacion Reactiva
+
+### Algoritmo de Generacion de Slots (Bloques de 30 Minutos)
+
+El servicio `DisponibilidadService.generarSlotsDeAtencion()` fragmenta intervalos horarios continuos en bloques fijos e inmutables:
+
+```
+Entrada:  hora_inicio = "08:00", hora_fin = "12:00"
+Salida:   ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30"]
+```
+
+**Algoritmo:**
+
+1. Convertir ambas horas a minutos desde medianoche (entero).
+2. Mientras el minuto actual sea menor que el minuto final:
+   - Formatear el minuto como `"HH:mm"` y agregarlo al array.
+   - Sumar `DURACION_SLOT_MINUTOS` (30) al acumulador.
+3. Retornar el array congelado via `Object.freeze()`.
+
+### Restricciones Horarias de la Clinica
+
+| Dia | Rango Permitido |
+|-----|----------------|
+| Lunes a Viernes | 08:00 - 19:00 |
+| Sabado | 08:00 - 14:00 |
+| Domingo | No configurable (prohibido) |
+
+Estas restricciones estan definidas en `RESTRICCIONES_HORARIAS` y se validan tanto en la interfaz (edicion de disponibilidad) como en el servicio antes de persistir.
+
+### Integridad Temporal: Columna Unificada `fecha_hora`
+
+Toda la persistencia temporal del sistema opera sobre la columna `fecha_hora` (TIMESTAMPTZ) de la tabla `turnos`. Las busquedas diarias se resuelven mediante operadores de rango PostgREST:
+
+```typescript
+// Buscar turnos de un dia especifico
+.gte('fecha_hora', '2026-07-01T00:00:00')
+.lte('fecha_hora', '2026-07-01T23:59:59')
+```
+
+Este enfoque unificado elimino las consultas por columnas duplicadas (`fecha` + `hora`) que generaban inconsistencias temporales.
+
+### Filtrado Multidimensional In-Memory
+
+El `DashboardPageComponent` implementa un buscador que filtra turnos por especialidad, especialista, paciente y estado sin realizar consultas a la red:
+
+```typescript
+readonly turnosFiltrados = computed(() => {
+  let turnos = this._turnos();
+  const query = this.searchQuery().toLowerCase().trim();
+  const estado = this.filtroEstado();
+
+  if (estado) {
+    turnos = turnos.filter(t => t.estado === estado);
+  }
+
+  if (!query) return turnos;
+
+  return turnos.filter(t => {
+    const especialidad = t.especialidad?.name?.toLowerCase() ?? '';
+    const especialista = t.especialista?.full_name?.toLowerCase() ?? '';
+    const paciente = t.paciente?.full_name?.toLowerCase() ?? '';
+    return especialidad.includes(query)
+      || especialista.includes(query)
+      || paciente.includes(query);
+  });
+});
+```
+
+**Por que no se consulta Supabase en cada tecla:**
+
+- **Latencia:** Cada consulta PostgREST implica round-trip de red (50-200ms).
+- **Carga innecesaria:** Los turnos ya estan cargados en memoria al acceder al dashboard.
+- **Experiencia:** El filtrado instantaneo (< 1ms) produce una interfaz mucho mas fluida.
+- **Economia:** Se evitan llamadas a la API que consumen cuota de Supabase.
+
+---
+
+## Componentes Standalone Compartidos de Alta Densidad
+
+### Componente de Paginacion Reactiva (`PaginationComponent`)
+
+Componente generico de paginacion reutilizable en `shared/components/pagination/`. Opera enteramente en memoria sobre colecciones ya cargadas.
+
+**Contrato del componente:**
+
+```typescript
+@Component({ selector: 'app-pagination', standalone: true })
+export class PaginationComponent {
+  readonly currentPage = input<number>(1);
+  readonly totalItems = input<number>(0);
+  readonly pageSize = input<number>(4);
+  readonly pageChange = output<number>();
+
+  readonly totalPages = computed(() => Math.ceil(this.totalItems() / this.pageSize()));
+  readonly pageNumbers = computed(() => { /* array de 1..N */ });
+  readonly isFirstPage = computed(() => this.currentPage() <= 1);
+  readonly isLastPage = computed(() => this.currentPage() >= this.totalPages());
+}
+```
+
+**Integracion en el dashboard de turnos:** Maximo 4 tarjetas por pagina. La signal `currentPage` se resetea automaticamente al cambiar filtros o busqueda.
+
+```typescript
+readonly turnosPaginados = computed(() => {
+  const inicio = (this.currentPage() - 1) * PAGE_SIZE;
+  const fin = inicio + PAGE_SIZE;
+  return this.turnosFiltrados().slice(inicio, fin);
+});
+```
+
+**Integracion en el panel de administracion:** Tabla de usuarios con 5 registros por pagina, reutilizando el mismo componente compartido.
+
+### Componente Captcha Avanzado (`CaptchaComponent`)
+
+Componente nativo de validacion humana en `shared/components/captcha/`, sin dependencias externas.
+
+| Modo | Generacion | Validacion |
+|------|-----------|------------|
+| **Matematico** | Suma de dos operandos (1-20) | Comparacion numerica |
+| **Alfanumerico** | 6 caracteres de `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (sin grafias ambiguas: I, O, 0, 1) | Comparacion case-insensitive |
+
+**Distorsion visual (modo alfanumerico):** Rotacion aleatoria (-8 a +8 grados), desplazamiento X/Y irregular, tamano de fuente variable (18-26px) y lineas de interferencia CSS via pseudo-elementos.
+
+**Accesibilidad:** `role="group"` con `aria-label` descriptivo, `role="alert"` en mensajes de error, navegacion completa via teclado.
+
+### Componente de Carga de Archivos (`FileUploadComponent`)
+
+Componente de arrastre y seleccion de imagenes en `shared/components/file-upload/`. Soporta drag-and-drop, validacion de tipo (PNG, JPG) y limite de tamano (5MB). Emite el `File` seleccionado para que el componente consumidor gestione la subida a Supabase Storage.
+
+---
+
+## Modulo "Mi Perfil" y Manejo de Imagenes
+
+### Estructura Multiperfil
+
+La pagina de perfil (`features/profile/pages/profile-page/`) es accesible desde el dropdown interactivo del Header y se carga bajo la ruta `/profile`.
+
+El componente detecta el rol del usuario y carga los datos extendidos desde la tabla hija correspondiente:
+
+```typescript
+private get tablaRol(): string {
+  const rol = this.rol();
+  if (rol === 'paciente') return 'pacientes';
+  if (rol === 'especialista') return 'especialistas';
+  return 'administradores';
+}
+```
+
+### Pestanas por Rol
+
+| Pestana | Visibilidad | Contenido |
+|---------|-------------|-----------|
+| Informacion Personal | Todos los roles | Datos del perfil, avatar, DNI, edad |
+| Mis Horarios | Solo especialista | Formulario de disponibilidad reutilizado del modulo `availability/` |
+
+### Pipeline de Subida de Avatares
+
+1. El usuario selecciona una imagen via `FileUploadComponent`.
+2. Se genera un `previewUrl` local para retroalimentacion inmediata.
+3. Al confirmar, se sube a Supabase Storage en `avatars/{userId}/avatar.{ext}` con `upsert: true`.
+4. Se obtiene la URL publica definitiva via `getPublicUrl()`.
+5. Se actualiza la columna `avatar_url` en `public.profiles`.
+6. Se actualiza el `userProfileSignal` en `AuthService` para reflejar el cambio en el Header en caliente.
+
+### Reutilizacion de Interfaz (DRY)
+
+La pestana "Mis Horarios" inyecta directamente los componentes `AvailabilityFormComponent` y `SlotsPreviewComponent` del modulo `specialist/availability/`, evitando duplicacion de codigo. El componente carga la disponibilidad existente y la adapta al formato de configuracion del formulario.
+
+---
+
+## Bitacora Tecnica de Hotfixes de Integridad Relacional
+
+### 1. Bug de Registro de Especialistas: `.insert()` → `.update()`
+
+**Problema:** Al registrar un especialista, el componente intentaba insertar en `public.especialistas` con `.insert()`. Sin embargo, el trigger `handle_new_user_sync` de Supabase ya crea la fila automaticamente al ejecutar `signUp()`, provocando un error de duplicidad de clave primaria.
+
+**Solucion:** Cambiar `.insert({ id, dni, edad })` por `.update({ dni, edad }).eq('id', userId)`. La fila ya existe; solo se actualizan los campos faltantes.
+
+```typescript
+// Antes (rompia):
+await this.supabase.supabase
+  .from('especialistas')
+  .insert({ id: userId, dni, edad: Number(edad) });
+
+// Despues (funciona):
+await this.supabase.supabase
+  .from('especialistas')
+  .update({ dni, edad: Number(edad) })
+  .eq('id', userId);
+```
+
+### 2. Bug de Sincronizacion JWT post-signUp
+
+**Problema:** Despues de `signUp()`, si la confirmacion de email esta habilitada, la sesion es `null` y RLS bloquea las escrituras en tablas secundarias con error 403.
+
+**Solucion:** Verificar `getSession()` imperativamente despues del registro. Si la sesion es `null`, informar al usuario que verifique su correo y redirigir al login. Si existe sesion, esperar 300ms para que el JWT se propague antes de las inserciones en `especialista_especialidad`.
+
+### 3. Bug de Nombre de Tabla: `disponibilidad` → `disponibilidad_especialista`
+
+**Problema:** El servicio y los componentes del wizard apuntaban a `.from('disponibilidad')`, pero la tabla fisica se llama `disponibilidad_especialista`, generando errores 404.
+
+**Solucion:** Reemplazar todas las ocurrencias del string `'disponibilidad'` por `'disponibilidad_especialista'` en el servicio, los componentes de pasos del wizard y la key en `database.types.ts`.
+
+### 4. Bug de Join Roto en Especialidades
+
+**Problema:** La consulta `.select('especialidad_id, specialties(id, name)')` no retornaba datos porque las relaciones foraneas estan vacias en el esquema de tipos de Supabase.
+
+**Solucion:** Reemplazar el join por dos consultas secuenciales: primero obtener los IDs de `especialista_especialidad`, despues consultar `specialties` con `.in('id', ids)`.
+
+### 5. Bug de Falsa Consulta en Recarga de Pagina (406)
+
+**Problema:** `onAuthStateChange` disparaba `loadUserProfile()` con el evento `INITIAL_SESSION` en recargas de pagina, usando tokens potencialmente obsoletos.
+
+**Solucion:** Ignorar el evento `INITIAL_SESSION` y solo cargar el perfil en eventos `SIGNED_IN` o `TOKEN_REFRESHED`.
+
+### 6. Bug de Logica de Rechazo: `'cancelado'` en vez de `'rechazado'`
+
+**Problema:** Ambas acciones (cancelar y rechazar) abrian el mismo dialogo de comentario cuyo handler unico invocaba `cancelarTurno()`. El rechazo guardaba `'cancelado'` en la base de datos.
+
+**Solucion:** Introducir signal `accionPendiente` (`'cancelar' | 'rechazar'`). El handler unico consulta la signal y despacha al metodo de servicio correspondiente (`cancelarTurno` o `rechazarTurno`).
+
+---
+
+## Modelo Relacional
+
+### Diagrama de Entidades
+
+```
+profiles (1) ──────── (1) pacientes
+    │                       │
+    │                       │ turnos.paciente_id
+    │                       ▼
+    │                   turnos
+    │                       │
+    │                       │ turnos.especialista_id
+    │                       ▼
+    └─────────────── (1) especialistas
+                        │           │
+                        │           │ especialista_especialidad (M:N)
+                        │           ▼
+                        │       specialties
+                        │
+                        │ disponibilidad_especialista
+                        ▼
+                  disponibilidad_especialista
+```
+
+### Tablas Principales
+
+| Tabla | Responsabilidad |
+|-------|----------------|
+| `profiles` | Datos base de autenticacion (id, email, nombre, avatar, rol) |
+| `pacientes` | Extension de perfil: DNI, edad, obra social, fotos |
+| `especialistas` | Extension de perfil: DNI, edad, estado de aprobacion |
+| `administradores` | Extension de perfil: DNI, edad |
+| `specialties` | Catalogo de especialidades medicas |
+| `especialista_especialidad` | Relacion M:N entre especialistas y especialidades |
+| `disponibilidad_especialista` | Bloques horarios configurados por el medico |
+| `turnos` | Registros de citas medicas con ciclo de vida |
+
+### Principios del Modelo
+
+- **Normalizacion:** Los nombres de especialidades se almacenan una sola vez en `specialties`.
+- **Claves foraneas:** Todas las relaciones usan UUID como clave.
+- **Sin duplicacion:** La informacion de un especialista no se repite en cada turno.
+- **Historia:** Los turnos finalizados permanecen para estadisticas y auditoria.
+
+---
+
+## Angular Signals en la Arquitectura
+
+### Patron de Signals en Servicios
+
+Todos los servicios core exponen estado reactivo mediante el patron de signal privada + lectura publica:
+
+```typescript
+private readonly _turnos = signal<TurnoConRelaciones[]>([]);
+readonly turnos = this._turnos.asReadonly();
+```
+
+Esto garantiza inmutabilidad: los componentes solo pueden leer el estado, nunca mutarlo directamente.
+
+### `computed()` para Derivaciones
+
+Las senales derivadas recalculan automaticamente cuando cambian sus dependencias:
+
+```typescript
+readonly turnosPaginados = computed(() => {
+  const inicio = (this.currentPage() - 1) * PAGE_SIZE;
+  const fin = inicio + PAGE_SIZE;
+  return this.turnosFiltrados().slice(inicio, fin);
+});
+```
+
+Esto elimina la necesidad de metodos manuales de filtrado y sincronizacion.
+
+### `asReadonly()` como Barrera de Encapsulamiento
+
+Todos los signals expuestos por servicios usan `asReadonly()` para evitar que los componentes consumidores muten el estado interno. Solo el servicio propietario puede modificar sus signals.
+
+### Inmutabilidad
+
+Toda modificacion de estado sigue un enfoque inmutable:
+
+- **Arrays:** Se reemplazan completamente con `.set()` o `.update()` usando spread operator.
+- **Objetos:** Se clonan con spread antes de modificar.
+- **Signals:** Se actualizan mediante `.set(nuevoValor)` o `.update(prev => ...)`.
+- **Colecciones:** Se usan `.map()`, `.filter()`, `.reduce()` en lugar de `.push()`, `.splice()`.
 
 ---
 
@@ -79,23 +452,34 @@ La subida de imagenes de perfil se gestiona mediante Supabase Storage con la rut
 
 ### Angular Functional Guards
 
-El sistema implementa guards funcionales asincronos que validan el estado de sesion y el rol del usuario antes de resolver la ruta:
+El sistema implementa guards funcionales asincronos:
 
-- **authGuard**: Verifica la existencia de sesion activa. Redirige a `/login` si no hay sesion.
-- **roleGuard**: Valida que el rol del usuario coincida con la ruta solicitada. Bloquea especialistas no aprobados redirigiendo a `/approval-pending`.
+- **authGuard**: Verifica la existencia de sesion activa. Redirige a `/auth` si no hay sesion.
+- **roleGuard**: Valida que el rol del usuario coincida con la ruta solicitada.
+- **specialistApprovalGuard**: Bloquea especialistas no aprobados redirigiendo a `/approval-pending`.
 - **sessionReady**: Promesa que se resuelve en el `finally` del metodo `initializeSession()`, garantizando que los guards no evaluen estado incompleto tras recarga de pagina.
 
 ### Row Level Security (RLS)
 
-Supabase aplica politicas RLS a nivel de base de datos que restringen las operaciones segun el rol del usuario autenticado:
+Supabase aplica politicas RLS a nivel de base de datos:
 
 - Los pacientes solo pueden leer/escriturar sus propios registros.
-- Los especialistas solo acceden a pacientes asignados.
+- Los especialistas solo acceden a turnos asignados.
 - Los administradores tienen acceso completo a la tabla `profiles` y pueden gestionar usuarios.
+
+### Distribucion de Validacion
+
+| Nivel | Responsabilidad |
+|-------|----------------|
+| **Frontend** | UX: ofrecer solo acciones validas, deshabilitar botones, mostrar errores |
+| **Backend (RLS)** | Seguridad: denegar operaciones no autorizadas |
+| **Backend (DB)** | Integridad: claves foraneas, constraints, uniques |
+
+Ambos niveles trabajan de forma complementaria. El Frontend mejora la experiencia; el Backend garantiza la integridad.
 
 ### Aislamiento de Sesion en Creacion de Usuarios
 
-El panel de administracion utiliza un cliente Supabase aislado (`tempClient`) con `persistSession: false` para crear usuarios sin afectar la sesion del administrador activo. Los metadatos de extension (dni, edad) se persisten mediante `.update()` sobre la tabla correspondiente, evitando conflictos de clave duplicada con el trigger automatico.
+El panel de administracion utiliza un cliente Supabase aislado (`tempClient`) con `persistSession: false` para crear usuarios sin afectar la sesion del administrador activo. Los metadatos de extension (dni, edad) se persisten mediante `.update()` sobre la tabla correspondiente.
 
 ---
 
@@ -138,16 +522,100 @@ sequenceDiagram
 
 ---
 
+## Diagrama del Flujo de Solicitud de Turnos
+
+```mermaid
+sequenceDiagram
+    participant P as Paciente
+    participant W as Wizard (Frontend)
+    participant S as TurnosService
+    participant D as DisponibilidadService
+    participant DB as Supabase
+
+    P->>W: Paso 1: Selecciona especialidad
+    W->>DB: SELECT specialties (activas)
+    DB-->>W: Lista de especialidades
+
+    P->>W: Paso 2: Selecciona especialista
+    W->>DB: SELECT especialista_especialidad + profiles
+    DB-->>W: Especialistas disponibles
+
+    P->>W: Paso 3: Selecciona fecha (prox. 15 dias)
+    W->>DB: SELECT turnos (existentes)
+    W->>D: Calcular slots ocupados por fecha
+    D-->>W: Dias con disponibilidad
+
+    P->>W: Paso 4: Selecciona hora
+    W->>D: generarSlotsDeAtencion(inicio, fin)
+    D-->>W: Array de slots de 30 min
+
+    P->>W: Paso 5: Confirma resumen
+    W->>S: verificarDisponibilidad(esp, fecha, hora)
+    S->>DB: SELECT turnos (verificacion final)
+    DB-->>S: Sin conflicto
+    W->>S: crearTurnoPendiente(payload)
+    S->>DB: INSERT INTO turnos
+    DB-->>S: Turno creado
+```
+
+---
+
+## Organizacion del Codigo
+
+```
+src/app/
+├── core/                          # Servicios, modelos, guards, animaciones
+│   ├── models/                    # Interfaces de dominio y database.types.ts
+│   ├── services/                  # AuthService, TurnosService, DisponibilidadService, etc.
+│   ├── guards/                    # roleGuard, specialistApprovalGuard
+│   └── animations/                # Animaciones de ruta
+│
+├── shared/                        # Componentes reutilizables
+│   └── components/
+│       ├── pagination/            # Paginacion reactiva generica
+│       ├── captcha/               # Validacion humana (2 modos)
+│       ├── file-upload/           # Arrastre y seleccion de imagenes
+│       ├── image-cropper/         # Recorte de imagenes
+│       ├── page-loader/           # Indicador de carga de pagina
+│       └── loading/               # Spinner generico
+│
+├── layouts/                       # Layouts de navegacion
+│   ├── dashboard-layout/          # Sidebar + navbar para area autenticada
+│   └── auth-layout/               # Layout para login/registro
+│
+├── features/                      # Modulos funcionales
+│   ├── authentication/            # Login y registro (3 perfiles)
+│   ├── appointments/              # Turnos: dashboard + wizard de solicitud
+│   │   ├── dashboard/             # Gestion de turnos (Mis Turnos)
+│   │   └── request/               # Solicitud de turno (5 pasos)
+│   ├── specialist/                # Area del medico
+│   │   └── availability/          # Configuracion de disponibilidad
+│   ├── profile/                   # Mi Perfil (multiperfil)
+│   ├── patients/                  # Area del paciente
+│   ├── specialists/               # Gestion de especialistas (admin)
+│   ├── administration/            # Panel de administracion de usuarios
+│   ├── statistics/                # Estadisticas y reportes
+│   ├── medical-history/           # Historia clinica
+│   ├── dashboard/                 # Panel principal
+│   ├── landing/                   # Pagina de inicio publica
+│   ├── approval-pending/          # Pendiente de aprobacion
+│   └── legal/                     # Terminos y politicas
+│
+└── app.routes.ts                  # Enrutamiento principal
+```
+
+---
+
 ## Estado del Roadmap
 
 | Sprint | Nombre | Estado | Componentes |
 |--------|--------|--------|-------------|
 | Sprint 0 | Configuracion de Entorno | Completado | Angular 19, Tailwind CSS v4, Supabase SDK, Path Aliases, Estructura de carpetas |
-| Sprint 1 | Autenticacion y Sistema Multiperfil | Completado | Landing, Login, Register (3 perfiles), Guards, Dashboard Layout, Admin Users Panel, Paginacion reactiva, Toasts semanticos, Realtime |
-| Sprint 2 | Turnos y Citas Medicas | Planificado | Reservacion de turnos, calendario, notificaciones |
+| Sprint 1 | Autenticacion y Sistema Multiperfil | Completado | Landing, Login, Register (3 perfiles), Guards, Dashboard Layout, Admin Users Panel, Toasts semanticos, Realtime |
+| Sprint 2 | Gestion de Turnos y Agenda | Completado | Disponibilidad, Wizard de solicitud (5 pasos), Dashboard de turnos, Tarjetas semanticas, Paginacion reactiva, Captcha nativo, Mi Perfil, Calificacion, Resena medica |
 | Sprint 3 | Historia Clinica | Planificado | Registro medico, signos vitales, adjuntos |
 | Sprint 4 | Estadisticas y Reportes | Planificado | Dashboard administrativo, graficos, exportacion |
-| Sprint 5 | Optimizacion y Despliegue | Planificado | Performance, testing e2e, CI/CD, despliegue Vercel |
+| Sprint 5 | Optimizacion y Despliegue | Planificado | Performance, testing e2e, CI/CD, despliegue |
 
 ---
 

@@ -83,6 +83,16 @@ export const routes: Routes = [
         title: 'Clínica Online | Especialistas',
       },
       {
+        path: 'availability',
+        loadComponent: () =>
+          import('@features/specialist/availability/pages/availability-page/availability-page.component').then(
+            (m) => m.AvailabilityPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['especialista'], animation: 'dashboard' },
+        title: 'Clínica Online | Disponibilidad',
+      },
+      {
         path: 'appointments',
         loadChildren: () =>
           import('@features/appointments/appointments.routes'),
@@ -109,6 +119,15 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['administrador'], animation: 'dashboard' },
         title: 'Clínica Online | Estadísticas',
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('@features/profile/pages/profile-page/profile-page.component').then(
+            (m) => m.ProfilePageComponent,
+          ),
+        title: 'Clínica Online | Mi Perfil',
+        data: { animation: 'dashboard' },
       },
     ],
   },

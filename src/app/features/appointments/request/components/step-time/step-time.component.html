@@ -1,0 +1,27 @@
+<div class="space-y-6">
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span class="ml-3 text-text-secondary">Cargando horarios disponibles...</span>
+    </div>
+  } @else {
+    <p class="text-text-secondary text-sm">Elegí el horario que mejor se adapte a vos. <span class="font-medium text-text-primary">{{ totalDisponibles() }} turnos disponibles</span></p>
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+      @for (bloque of bloques(); track bloque.hora) {
+        <button type="button" (click)="bloque.disponible && seleccionar(bloque.hora)" [disabled]="!bloque.disponible"
+          class="relative px-3 py-3 rounded-lg border-2 text-center font-medium text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          [ngClass]="{'border-primary bg-primary text-white': seleccionada() === bloque.hora, 'border-border text-text-primary hover:border-primary hover:bg-primary/5 cursor-pointer': seleccionada() !== bloque.hora && bloque.disponible, 'border-border/50 text-text-secondary/40 bg-text-secondary/5 cursor-not-allowed': !bloque.disponible}">
+          {{ bloque.hora }}
+          @if (!bloque.disponible && seleccionada() !== bloque.hora) {
+            <span class="absolute inset-0 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-text-secondary/30" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></span>
+          }
+        </button>
+      } @empty {
+        <div class="col-span-full text-center py-12">
+          <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-text-secondary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <p class="mt-3 text-text-secondary">No hay horarios disponibles para esta fecha.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

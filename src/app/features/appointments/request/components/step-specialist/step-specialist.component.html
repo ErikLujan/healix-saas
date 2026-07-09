@@ -1,0 +1,36 @@
+<div class="space-y-6">
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span class="ml-3 text-text-secondary">Cargando especialistas...</span>
+    </div>
+  } @else {
+    <p class="text-text-secondary text-sm">Elegí el profesional para tu consulta.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      @for (esp of especialistas(); track esp.id) {
+        <button type="button" (click)="seleccionar(esp)"
+          class="group relative flex items-start gap-4 p-5 rounded-xl border-2 transition-all duration-200 text-left hover:border-primary hover:shadow-md hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          [ngClass]="{'border-primary bg-primary/5': seleccionado()?.id === esp.id, 'border-border': seleccionado()?.id !== esp.id}">
+          @if (esp.avatar_url) {
+            <img [src]="esp.avatar_url" [alt]="esp.full_name" class="h-14 w-14 rounded-full object-cover flex-shrink-0" />
+          } @else {
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-lg flex-shrink-0">{{ esp.full_name.charAt(0) }}</div>
+          }
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-text-primary group-hover:text-primary transition-colors truncate">{{ esp.full_name }}</p>
+            <div class="mt-1 flex flex-wrap gap-1.5">
+              @for (espInfo of esp.especialidades; track espInfo.id) {
+                <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{{ espInfo.name }}</span>
+              }
+            </div>
+          </div>
+          @if (seleccionado()?.id === esp.id) {
+            <div class="flex-shrink-0 mt-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg></div>
+          }
+        </button>
+      } @empty {
+        <div class="col-span-full text-center py-12"><p class="text-text-secondary">No hay especialistas disponibles para esta especialidad.</p></div>
+      }
+    </div>
+  }
+</div>

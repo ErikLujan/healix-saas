@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminUsersService, AdminUser } from '../../services/admin-users.service';
 import { AdminUsersModalComponent } from '../admin-users-modal/admin-users-modal.component';
+import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge, slideDown } from '../../animations/admin-animations';
 
 /**
@@ -16,7 +17,7 @@ import { modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminUsersModalComponent],
+  imports: [CommonModule, FormsModule, AdminUsersModalComponent, PaginationComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
   animations: [modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge, slideDown],
@@ -32,7 +33,9 @@ export class AdminUsersComponent implements OnInit {
   readonly loadingApprovalId = signal<string | null>(null);
 
   readonly currentPage = signal(1);
-  readonly itemsPerPage = signal(5);
+
+  /** Cantidad de registros visibles por pagina en la tabla. */
+  private readonly ITEMS_PER_PAGE = 5;
 
   readonly roleOptions = [
     { value: 'all', label: 'Todos los roles' },
@@ -78,26 +81,15 @@ export class AdminUsersComponent implements OnInit {
       result = result.filter(u => u.role === role);
     }
 
-    const start = (this.currentPage() - 1) * this.itemsPerPage();
-    const end = start + this.itemsPerPage();
+    const start = (this.currentPage() - 1) * this.ITEMS_PER_PAGE;
+    const end = start + this.ITEMS_PER_PAGE;
     return result.slice(start, end);
   });
 
   /** Cantidad total de paginas disponibles segun el total filtrado. */
   readonly totalPages = computed(() =>
-    Math.ceil(this.totalFilteredCount() / this.itemsPerPage()),
+    Math.ceil(this.totalFilteredCount() / this.ITEMS_PER_PAGE),
   );
-
-  /** Rango de indices visibles para el contador de paginacion. */
-  readonly paginationRange = computed(() => {
-    const total = this.totalFilteredCount();
-    if (total === 0) {
-      return { start: 0, end: 0, total: 0 };
-    }
-    const start = (this.currentPage() - 1) * this.itemsPerPage() + 1;
-    const end = Math.min(this.currentPage() * this.itemsPerPage(), total);
-    return { start, end, total };
-  });
 
   /** Cantidad de especialistas con is_approved en false. */
   readonly pendingCount = computed(() =>
@@ -128,16 +120,9 @@ export class AdminUsersComponent implements OnInit {
     this.currentPage.set(1);
   }
 
-  goToPreviousPage(): void {
-    if (this.currentPage() > 1) {
-      this.currentPage.update(p => p - 1);
-    }
-  }
-
-  goToNextPage(): void {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update(p => p + 1);
-    }
+  /** Maneja el cambio de pagina desde el componente de paginacion. */
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
   }
 
   /**

@@ -69,6 +69,11 @@ export class AuthService {
    * Restaura la sesion desde el Storage local de Supabase y configura
    * el listener de cambios de autenticacion. Resuelve sessionReady
    * independientemente del resultado para desbloquear los Guards.
+   *
+   * Se ignora el evento INITIAL_SESSION para evitar consultas
+   * fantasma con tokens potencialmente obsoletos en recargas de pagina.
+   * Solo se carga el perfil cuando el evento es SIGNED_IN o
+   * TOKEN_REFRESHED con una sesion activa confirmada.
    */
   private async initializeSession(): Promise<void> {
     try {
@@ -79,7 +84,12 @@ export class AuthService {
         await this.loadUserProfile(session.user.id);
       }
 
-      this.supabase.supabase.auth.onAuthStateChange(async (_event, session) => {
+      this.supabase.supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'INITIAL_SESSION') {
+          this.isLoadingSignal.set(false);
+          return;
+        }
+
         if (session?.user) {
           this.currentUserSignal.set(session.user);
           await this.loadUserProfile(session.user.id);
@@ -90,6 +100,8 @@ export class AuthService {
         this.isLoadingSignal.set(false);
       });
     } catch {
+      this.currentUserSignal.set(null);
+      this.userProfileSignal.set(null);
       this.isLoadingSignal.set(false);
     } finally {
       this.isLoadingSignal.set(false);
@@ -219,15 +231,15 @@ export class AuthService {
    */
   private mapAuthError(errorMessage: string): string {
     const errorMap: Record<string, string> = {
-      'Invalid login credentials': 'Correo o contrasena incorrectos',
-      'User not found': 'No existe una cuenta con este correo electronico',
-      'Email not confirmed': 'Por favor confirma tu correo electronico antes de iniciar sesion',
+      'Correo o contraseña incorrectos': 'Correo o contraseña incorrectos',
+      'User not found': 'No existe una cuenta con este correo electrónico',
+      'Email not confirmed': 'Por favor confirma tu correo electrónico antes de iniciar sesión',
       'Too many requests': 'Demasiados intentos. Intenta nuevamente en unos minutos',
-      'Password should be at least 6 caracteres': 'La contrasena debe tener al menos 6 caracteres',
-      'User already registered': 'Ya existe una cuenta registrada con este correo electronico',
+      'Password should be at least 6 caracteres': 'La contraseña debe tener al menos 6 caracteres',
+      'User already registered': 'Ya existe una cuenta registrada con este correo electrónico',
       'Signup is disabled': 'El registro se encuentra temporalmente deshabilitado',
     };
 
-    return errorMap[errorMessage] || 'Ocurrio un error inesperado. Intenta nuevamente';
+    return errorMap[errorMessage] || 'Ocurrió un error inesperado. Intenta nuevamente';
   }
 }

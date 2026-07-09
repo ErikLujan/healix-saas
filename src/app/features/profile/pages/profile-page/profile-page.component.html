@@ -1,0 +1,183 @@
+<div class="max-w-4xl mx-auto space-y-6">
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-16">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span class="ml-3 text-text-secondary">Cargando perfil...</span>
+    </div>
+  } @else {
+    @if (perfil(); as profile) {
+      <div>
+        <h1 class="text-2xl font-bold text-text-primary">Mi Perfil</h1>
+        <p class="mt-1 text-sm text-text-secondary">Gestioná tu información personal y configuración.</p>
+      </div>
+
+      <div class="flex gap-2 border-b border-border pb-0">
+        <button
+          type="button"
+          (click)="seleccionarTab('informacion')"
+          class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
+          [ngClass]="tabActiva() === 'informacion' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+        >
+          Información Personal
+        </button>
+        @if (rol() === 'especialista') {
+          <button
+            type="button"
+            (click)="seleccionarTab('horarios')"
+            class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
+            [ngClass]="tabActiva() === 'horarios' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+          >
+            Mis Horarios
+          </button>
+        }
+      </div>
+
+      @if (tabActiva() === 'informacion') {
+        <div class="space-y-6">
+          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row items-center gap-6">
+              <div class="relative">
+                <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-border">
+                  @if (getAvatarUrl(); as avatarUrl) {
+                    <img [src]="avatarUrl" [alt]="profile.full_name" class="w-24 h-24 rounded-full object-cover" />
+                  } @else {
+                    <span class="text-2xl font-bold text-primary">{{ getInitials(profile.full_name) }}</span>
+                  }
+                </div>
+                @if (isUploadingAvatar()) {
+                  <div class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                  </div>
+                }
+              </div>
+
+              <div class="flex-1 text-center sm:text-left">
+                <h2 class="text-xl font-bold text-text-primary">{{ profile.full_name }}</h2>
+                <p class="text-sm text-text-secondary">{{ profile.email }}</p>
+                <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs font-semibold
+                  {{ profile.role === 'administrador' ? 'bg-violet-100 text-violet-700' :
+                     profile.role === 'especialista' ? 'bg-blue-100 text-blue-700' :
+                     'bg-emerald-100 text-emerald-700' }}">
+                  {{ profile.role | titlecase }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+            <h3 class="text-lg font-semibold text-text-primary mb-4">Foto de Perfil</h3>
+            <div class="max-w-md">
+              <app-file-upload
+                label="Avatar"
+                [previewUrl]="avatarPreview()"
+                (fileSelected)="onAvatarSeleccionado($event)"
+              />
+              @if (tieneAvatarPendiente()) {
+                <div class="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    (click)="subirAvatar()"
+                    [disabled]="isUploadingAvatar()"
+                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (isUploadingAvatar()) {
+                      <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Subiendo...
+                    } @else {
+                      Guardar foto
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    (click)="cancelarAvatar()"
+                    [disabled]="isUploadingAvatar()"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+            <h3 class="text-lg font-semibold text-text-primary mb-4">Datos Personales</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="p-4 rounded-xl bg-background border border-border/50">
+                <p class="text-xs font-medium text-text-secondary mb-1">Nombre Completo</p>
+                <p class="text-sm font-semibold text-text-primary">{{ profile.full_name }}</p>
+              </div>
+              <div class="p-4 rounded-xl bg-background border border-border/50">
+                <p class="text-xs font-medium text-text-secondary mb-1">Correo Electrónico</p>
+                <p class="text-sm font-semibold text-text-primary">{{ profile.email }}</p>
+              </div>
+              <div class="p-4 rounded-xl bg-background border border-border/50">
+                <p class="text-xs font-medium text-text-secondary mb-1">Rol</p>
+                <p class="text-sm font-semibold text-text-primary capitalize">{{ profile.role }}</p>
+              </div>
+              @if (datosRol(); as datos) {
+                <div class="p-4 rounded-xl bg-background border border-border/50">
+                  <p class="text-xs font-medium text-text-secondary mb-1">DNI</p>
+                  <p class="text-sm font-semibold text-text-primary">{{ datos.dni }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-background border border-border/50">
+                  <p class="text-xs font-medium text-text-secondary mb-1">Edad</p>
+                  <p class="text-sm font-semibold text-text-primary">{{ datos.edad }} años</p>
+                </div>
+                @if (datos.obra_social) {
+                  <div class="p-4 rounded-xl bg-background border border-border/50">
+                    <p class="text-xs font-medium text-text-secondary mb-1">Obra Social</p>
+                    <p class="text-sm font-semibold text-text-primary">{{ datos.obra_social }}</p>
+                  </div>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (tabActiva() === 'horarios' && rol() === 'especialista') {
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
+              <div class="bg-surface rounded-2xl border border-border p-6">
+                <h3 class="text-lg font-semibold text-text-primary mb-1">Configurar Horarios</h3>
+                <p class="text-sm text-text-secondary mb-4">
+                  Definí los días y horarios en los que atendés.
+                </p>
+                <app-availability-form
+                  [configuracion]="configuracion()"
+                  [especialidades]="especialidades()"
+                  [diasDisponibles]="diasDisponibles"
+                  (configuracionChange)="onConfiguracionCambiada($event)"
+                />
+                <div class="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    (click)="guardarDisponibilidad()"
+                    [disabled]="isGuardando() || disponibilidadService.isLoading()"
+                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    @if (isGuardando() || disponibilidadService.isLoading()) {
+                      <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Guardando...
+                    } @else {
+                      Guardar horarios
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="lg:col-span-1">
+              <app-slots-preview
+                [configuracion]="configuracion()"
+                [especialidades]="especialidades()"
+                [diasDisponibles]="diasDisponibles"
+              />
+            </div>
+          </div>
+        </div>
+      }
+    }
+  }
+</div>
