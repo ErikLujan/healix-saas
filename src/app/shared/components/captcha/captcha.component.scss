@@ -1,3 +1,72 @@
 :host {
   display: block;
 }
+
+.captcha-challenge {
+  min-height: 48px;
+}
+
+.captcha-interference {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    width: 120%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-border) 20%,
+      var(--color-text-secondary) 50%,
+      var(--color-border) 80%,
+      transparent 100%
+    );
+    opacity: 0.35;
+    transform: rotate(-2deg);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 30%;
+    left: -5%;
+    width: 110%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-border) 30%,
+      var(--color-text-secondary) 60%,
+      var(--color-border) 90%,
+      transparent 100%
+    );
+    opacity: 0.25;
+    transform: rotate(1.5deg);
+  }
+}
+
+.captcha-alpha-char {
+  font-family: 'Courier New', Courier, monospace;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+  will-change: transform;
+}
+
+.captcha-input {
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+}

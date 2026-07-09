@@ -1,0 +1,55 @@
+@if (totalPages() > 1) {
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+    <p class="text-sm text-text-secondary">
+      Mostrando del {{ paginationRange().start }} al {{ paginationRange().end }} de {{ paginationRange().total }}
+    </p>
+
+    <div class="flex items-center gap-1.5">
+      <button
+        type="button"
+        (click)="goToPreviousPage()"
+        [disabled]="isFirstPage()"
+        aria-label="Ir a la página anterior"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-surface text-text-secondary
+               hover:bg-primary/5 hover:text-primary hover:border-primary/20
+               disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+               transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+
+      @for (page of pageNumbers(); track page) {
+        <button
+          type="button"
+          (click)="goToPage(page)"
+          [attr.aria-label]="'Ir a la página ' + page"
+          [attr.aria-current]="page === currentPage() ? 'page' : null"
+          class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium transition-all duration-200
+                 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          [ngClass]="page === currentPage()
+            ? 'bg-primary text-white shadow-sm'
+            : 'border border-border bg-surface text-text-secondary hover:bg-primary/5 hover:text-primary hover:border-primary/20'"
+        >
+          {{ page }}
+        </button>
+      }
+
+      <button
+        type="button"
+        (click)="goToNextPage()"
+        [disabled]="isLastPage()"
+        aria-label="Ir a la página siguiente"
+        class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-surface text-text-secondary
+               hover:bg-primary/5 hover:text-primary hover:border-primary/20
+               disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+               transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+}

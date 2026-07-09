@@ -30,8 +30,16 @@ export class DashboardLayoutComponent {
 
     const role = this.userRole();
 
+    if (role === 'paciente') {
+      links.push({ path: '/appointments/request', label: 'Solicitar turno', icon: 'calendar-plus' });
+    }
+
     if (role === 'administrador' || role === 'especialista') {
       links.push({ path: '/patients', label: 'Pacientes', icon: 'users' });
+    }
+
+    if (role === 'especialista') {
+      links.push({ path: '/availability', label: 'Disponibilidad', icon: 'clock' });
     }
 
     if (role === 'administrador') {

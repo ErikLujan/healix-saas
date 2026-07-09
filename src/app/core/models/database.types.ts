@@ -139,6 +139,81 @@ export interface Database {
         };
         Relationships: [];
       };
+      disponibilidad_especialista: {
+        Row: {
+          id: string;
+          especialista_id: string;
+          especialidad_id: string;
+          dia_semana: number;
+          hora_inicio: string;
+          hora_fin: string;
+        };
+        Insert: {
+          id?: string;
+          especialista_id: string;
+          especialidad_id: string;
+          dia_semana: number;
+          hora_inicio: string;
+          hora_fin: string;
+        };
+        Update: {
+          id?: string;
+          especialista_id?: string;
+          especialidad_id?: string;
+          dia_semana?: number;
+          hora_inicio?: string;
+          hora_fin?: string;
+        };
+        Relationships: [];
+      };
+      turnos: {
+        Row: {
+          id: string;
+          paciente_id: string;
+          especialista_id: string;
+          especialidad_id: string;
+          fecha_hora: string;
+          estado: TurnoEstado;
+          comentario_cancelacion_rechazo: string | null;
+          resena_diagnostico: string | null;
+          calificacion_comentario: string | null;
+          calificacion_estrellas: number | null;
+          encuesta_satisfaccion: Record<string, unknown> | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          paciente_id: string;
+          especialista_id: string;
+          especialidad_id: string;
+          fecha_hora: string;
+          estado?: TurnoEstado;
+          comentario_cancelacion_rechazo?: string | null;
+          resena_diagnostico?: string | null;
+          calificacion_comentario?: string | null;
+          calificacion_estrellas?: number | null;
+          encuesta_satisfaccion?: Record<string, unknown> | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          paciente_id?: string;
+          especialista_id?: string;
+          especialidad_id?: string;
+          fecha_hora?: string;
+          estado?: TurnoEstado;
+          comentario_cancelacion_rechazo?: string | null;
+          resena_diagnostico?: string | null;
+          calificacion_comentario?: string | null;
+          calificacion_estrellas?: number | null;
+          encuesta_satisfaccion?: Record<string, unknown> | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

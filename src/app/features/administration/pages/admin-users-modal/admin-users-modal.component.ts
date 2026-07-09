@@ -98,7 +98,7 @@ export class AdminUsersModalComponent {
       await this.adminUsersService.createAdmin(email, password, fullName, dni, Number(edad), this.croppedDataUrl());
       this.created.emit();
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Ocurrio un error inesperado.';
+      const message = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
       toast.error('No se pudo crear el usuario', { description: message });
     } finally {
       this.isSubmitting.set(false);

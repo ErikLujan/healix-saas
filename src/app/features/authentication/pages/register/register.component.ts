@@ -199,8 +199,8 @@ export class RegisterComponent {
 
     if (this.form.get('firstName')?.invalid) missing.push('El nombre');
     if (this.form.get('lastName')?.invalid) missing.push('El apellido');
-    if (this.form.get('email')?.invalid) missing.push('El correo electronico');
-    if (this.form.get('password')?.invalid) missing.push('La contrasena');
+    if (this.form.get('email')?.invalid) missing.push('El correo electrónico');
+    if (this.form.get('password')?.invalid) missing.push('La contraseña');
 
     if (this.showPatientFields) {
       if (this.form.get('dni')?.invalid) missing.push('El DNI');
@@ -217,8 +217,8 @@ export class RegisterComponent {
       if (this.selectedSpecialtyIds().length === 0) missing.push('Al menos una especialidad');
     }
 
-    if (!this.captchaSolved()) missing.push('La verificacion del captcha');
-    if (this.form.get('acceptTerms')?.invalid) missing.push('Los terminos y la politica de privacidad');
+    if (!this.captchaSolved()) missing.push('La verificación del captcha');
+    if (this.form.get('acceptTerms')?.invalid) missing.push('Los términos y la política de privacidad');
 
     if (missing.length > 0) {
       toast.error(`Faltan completar: ${missing.join(', ')}`);
@@ -282,14 +282,43 @@ export class RegisterComponent {
           .update({ avatar_url: avatarUrl })
           .eq('id', userId);
 
-        const specialtyPairs = this.selectedSpecialtyIds().map(specialtyId =>
-          this.supabase.supabase.from('especialista_especialidad').insert({
-            especialista_id: userId,
-            especialidad_id: specialtyId,
-          }),
+        const { error: especialistaError } = await this.supabase.supabase
+          .from('especialistas')
+          .update({ dni, edad: Number(edad) })
+          .eq('id', userId);
+
+        if (especialistaError) {
+          console.error('[Register] especialista update error:', especialistaError.message);
+          toast.error('Error al guardar los datos del especialista. Intenta nuevamente.');
+          return;
+        }
+
+        const { data: { session } } = await this.supabase.supabase.auth.getSession();
+
+        if (!session) {
+          toast.success('Cuenta creada exitosamente. Verifica tu correo electrónico para activar tu perfil médico y confirmar tus especialidades.');
+          this.router.navigate(['/auth']);
+          return;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const specialtyResults = await Promise.all(
+          this.selectedSpecialtyIds().map(specialtyId =>
+            this.supabase.supabase.from('especialista_especialidad').insert({
+              especialista_id: userId,
+              especialidad_id: specialtyId,
+            }),
+          ),
         );
 
-        await Promise.all(specialtyPairs);
+        const specialtyErrors = specialtyResults.filter(r => r.error);
+        if (specialtyErrors.length > 0) {
+          console.error('[Register] specialty link errors:', specialtyErrors.map(r => r.error!.message));
+          toast.error('Error al vincular las especialidades. Intenta nuevamente.');
+          return;
+        }
+
         console.log('[Register] specialties linked:', this.selectedSpecialtyIds().length);
       }
 
@@ -297,7 +326,7 @@ export class RegisterComponent {
       this.router.navigate(['/auth']);
     } catch (err) {
       console.error('[Register] unexpected error:', err);
-      toast.error('Ocurrio un error inesperado. Intenta nuevamente');
+      toast.error('Ocurrió un error inesperado. Intenta nuevamente');
     } finally {
       this.isSubmitting.set(false);
     }

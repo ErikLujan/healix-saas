@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
   standalone: true,
   template: `
     <div>
-      <h1 class="text-2xl font-bold text-text-primary">Administracion</h1>
+      <h1 class="text-2xl font-bold text-text-primary">Administración</h1>
     </div>
   `,
 })

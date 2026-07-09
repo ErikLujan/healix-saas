@@ -52,7 +52,7 @@ export class LoginComponent {
     },
     {
       label: 'Esp. No Habilitado',
-      email: 'esp.pendiente@clinica.com',
+      email: 'ricardotapia67@gmail.com',
       password: 'Especialista123!',
     },
   ];
@@ -82,8 +82,8 @@ export class LoginComponent {
 
     if (this.form.invalid) {
       const missing: string[] = [];
-      if (this.form.get('email')?.invalid) missing.push('El correo electronico');
-      if (this.form.get('password')?.invalid) missing.push('La contrasena');
+      if (this.form.get('email')?.invalid) missing.push('El correo electrónico');
+      if (this.form.get('password')?.invalid) missing.push('La contraseña');
       toast.error(`Faltan completar: ${missing.join(', ')}`);
       this.form.markAllAsTouched();
       return;
@@ -95,7 +95,7 @@ export class LoginComponent {
     const { error } = await this.authService.signIn(email, password);
 
     if (!error) {
-      toast.success('Inicio de sesion exitoso');
+      toast.success('Inicio de sesión exitoso');
       this.router.navigate(['/dashboard']);
     }
 

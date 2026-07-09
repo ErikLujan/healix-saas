@@ -1,0 +1,150 @@
+<div class="space-y-3">
+  @for (dia of diasDisponibles(); track dia.id) {
+    @let config = configuracion()[dia.id];
+    @let restriccion = getRestriccion(dia.id);
+    @let expandido = expandedDay() === dia.id;
+
+    <div class="bg-surface rounded-2xl border border-border overflow-hidden transition-all duration-200">
+      <div class="flex items-center gap-3 px-4 py-3 sm:px-6">
+        <button
+          type="button"
+          (click)="toggleDia(dia.id)"
+          [attr.aria-label]="config.habilitado ? 'Deshabilitar ' + dia.nombre : 'Habilitar ' + dia.nombre"
+          class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent
+                 transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+          [class]="config.habilitado ? 'bg-primary' : 'bg-border'"
+        >
+          <span
+            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
+            [class]="config.habilitado ? 'translate-x-5' : 'translate-x-0'"
+          ></span>
+        </button>
+
+        <div class="flex-1 min-w-0">
+          <span class="text-sm font-semibold" [class]="config.habilitado ? 'text-text-primary' : 'text-text-secondary'">
+            {{ dia.nombre }}
+          </span>
+          @if (restriccion) {
+            <span class="text-xs text-text-secondary ml-2 hidden sm:inline">
+              ({{ restriccion.inicio }} - {{ restriccion.fin }})
+            </span>
+          }
+        </div>
+
+        @if (config.habilitado) {
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-text-secondary">
+              {{ config.bloques.length }} {{ config.bloques.length === 1 ? 'bloque' : 'bloques' }}
+            </span>
+            <button
+              type="button"
+              (click)="toggleExpand(dia.id)"
+              class="p-1.5 rounded-lg hover:bg-primary/5 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+              [attr.aria-expanded]="expandido"
+              [attr.aria-label]="(expandido ? 'Ocultar' : 'Mostrar') + ' configuración de ' + dia.nombre"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-text-secondary transition-transform duration-200" [class]="expandido ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (config.habilitado && expandido) {
+        <div class="px-4 pb-4 sm:px-6 border-t border-border/50 pt-4 space-y-3">
+          @for (bloque of config.bloques; track $index; let i = $index) {
+            @let error = validarBloque(bloque, dia.id);
+
+            <div class="flex flex-col sm:flex-row gap-3 p-3 rounded-xl bg-background border"
+                 [class]="error ? 'border-danger/30' : 'border-border/50'">
+              <div class="flex-1 min-w-0">
+                <label class="block text-xs font-medium text-text-secondary mb-1">Especialidad</label>
+                <select
+                  [ngModel]="bloque.especialidad_id"
+                  (ngModelChange)="onBloqueChange(dia.id, i, 'especialidad_id', $event)"
+                  aria-label="Especialidad para el bloque horario"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface
+                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                         transition-all duration-200 text-text-primary cursor-pointer"
+                >
+                  @for (esp of especialidades(); track esp.id) {
+                    <option [value]="esp.id">{{ esp.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="flex gap-3 flex-1 min-w-0">
+                <div class="flex-1">
+                  <label class="block text-xs font-medium text-text-secondary mb-1">Inicio</label>
+                  <input
+                    type="time"
+                    [ngModel]="bloque.hora_inicio"
+                    (ngModelChange)="onBloqueChange(dia.id, i, 'hora_inicio', $event)"
+                    [attr.min]="restriccion?.inicio"
+                    [attr.max]="restriccion?.fin"
+                    aria-label="Hora de inicio"
+                    class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                           transition-all duration-200 text-text-primary"
+                  />
+                </div>
+                <div class="flex-1">
+                  <label class="block text-xs font-medium text-text-secondary mb-1">Fin</label>
+                  <input
+                    type="time"
+                    [ngModel]="bloque.hora_fin"
+                    (ngModelChange)="onBloqueChange(dia.id, i, 'hora_fin', $event)"
+                    [attr.min]="restriccion?.inicio"
+                    [attr.max]="restriccion?.fin"
+                    aria-label="Hora de fin"
+                    class="w-full px-3 py-2 text-sm rounded-lg border border-border bg-surface
+                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                           transition-all duration-200 text-text-primary"
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-end">
+                <button
+                  type="button"
+                  (click)="eliminarBloque(dia.id, i)"
+                  [disabled]="config.bloques.length <= 1"
+                  aria-label="Eliminar bloque horario"
+                  class="p-2 rounded-lg text-text-secondary hover:text-danger hover:bg-danger/5
+                         transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none
+                         disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            @if (error) {
+              <p class="text-xs text-danger flex items-center gap-1.5 pl-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {{ error }}
+              </p>
+            }
+          }
+
+          <button
+            type="button"
+            (click)="agregarBloque(dia.id)"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80
+                   transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none mt-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Agregar bloque
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
