@@ -9,7 +9,7 @@ const routes: Routes = [
       ),
   },
   {
-    path: 'users',
+    path: 'usuarios',
     loadComponent: () =>
       import('./pages/admin-users/admin-users.component').then(
         (m) => m.AdminUsersComponent,

@@ -16,7 +16,7 @@ export const roleGuard: CanActivateFn = async (route) => {
   const allowedRoles = route.data?.['roles'] as UserRole[] | undefined;
 
   if (!authService.isAuthenticated()) {
-    router.navigate(['/auth']);
+    router.navigate(['/autenticacion']);
     return false;
   }
 
@@ -37,7 +37,7 @@ export const roleGuard: CanActivateFn = async (route) => {
 /**
  * Guard funcional exclusivo para especialistas. Verifica que la cuenta
  * haya sido aprobada por un administrador antes de permitir el acceso
- * a rutas del dashboard. Destruye la sesión y redirige a approval-pending
+ * a rutas del dashboard. Destruye la sesión y redirige a aprobacion-pendiente
  * si el especialista no está habilitado.
  */
 export const specialistApprovalGuard: CanActivateFn = async () => {
@@ -47,7 +47,7 @@ export const specialistApprovalGuard: CanActivateFn = async () => {
   await authService.sessionReady;
 
   if (!authService.isAuthenticated()) {
-    router.navigate(['/auth']);
+    router.navigate(['/autenticacion']);
     return false;
   }
 
@@ -58,7 +58,7 @@ export const specialistApprovalGuard: CanActivateFn = async () => {
   const isApproved = await authService.getSpecialistApprovalStatus();
 
   if (isApproved === false) {
-    router.navigate(['/approval-pending']);
+    router.navigate(['/aprobacion-pendiente']);
     return false;
   }
 

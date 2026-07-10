@@ -96,7 +96,7 @@ export class LoginComponent {
 
     if (!error) {
       toast.success('Inicio de sesión exitoso');
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/panel-principal']);
     }
 
     this.isSubmitting.set(false);

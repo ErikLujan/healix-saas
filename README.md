@@ -79,7 +79,7 @@ La subida de imagenes de perfil se gestiona mediante Supabase Storage con la rut
 
 ### Evolucion Modular
 
-El modulo de turnos (`features/appointments/`) se organiza en dos dominios claramente separados:
+El modulo de turnos (`features/appointments/`) se organiza en dos dominios claramente separados, accesibles desde la ruta `/turnos`:
 
 ```
 features/appointments/
@@ -272,7 +272,7 @@ Componente de arrastre y seleccion de imagenes en `shared/components/file-upload
 
 ### Estructura Multiperfil
 
-La pagina de perfil (`features/profile/pages/profile-page/`) es accesible desde el dropdown interactivo del Header y se carga bajo la ruta `/profile`.
+La pagina de perfil (`features/profile/pages/profile-page/`) es accesible desde el dropdown interactivo del Header y se carga bajo la ruta `/perfil`.
 
 El componente detecta el rol del usuario y carga los datos extendidos desde la tabla hija correspondiente:
 
@@ -454,9 +454,9 @@ Toda modificacion de estado sigue un enfoque inmutable:
 
 El sistema implementa guards funcionales asincronos:
 
-- **authGuard**: Verifica la existencia de sesion activa. Redirige a `/auth` si no hay sesion.
+- **authGuard**: Verifica la existencia de sesion activa. Redirige a `/autenticacion` si no hay sesion.
 - **roleGuard**: Valida que el rol del usuario coincida con la ruta solicitada.
-- **specialistApprovalGuard**: Bloquea especialistas no aprobados redirigiendo a `/approval-pending`.
+- **specialistApprovalGuard**: Bloquea especialistas no aprobados redirigiendo a `/aprobacion-pendiente`.
 - **sessionReady**: Promesa que se resuelve en el `finally` del metodo `initializeSession()`, garantizando que los guards no evaluen estado incompleto tras recarga de pagina.
 
 ### Row Level Security (RLS)
@@ -560,6 +560,199 @@ sequenceDiagram
 
 ---
 
+## Modulo de Historias Clinicas
+
+### Modelo de Datos Fisico
+
+La tabla `public.historias_clinicas` almacena el registro clinico generado durante cada atencion medica finalizada. Cada fila corresponde estrictamente a un turno finalizado (cardinalidad 1:1).
+
+| Columna | Tipo | Descripcion |
+|---------|------|-------------|
+| `id` | UUID | Identificador unico del registro |
+| `turno_id` | UUID (FK) | Referencia al turno finalizado (unicidad estricta) |
+| `paciente_id` | UUID (FK) | Referencia al paciente atendido |
+| `especialista_id` | UUID (FK) | Referencia al especialista que realizo la atencion |
+| `altura` | NUMERIC | Altura del paciente en centimetros |
+| `peso` | NUMERIC | Peso del paciente en kilogramos |
+| `temperatura` | NUMERIC | Temperatura corporal en grados Celsius |
+| `presion_arterial` | TEXT | Presion arterial (ej: "120/80") |
+| `datos_dinamicos` | JSONB | Array de pares clave-valor para informacion adicional |
+| `created_at` | TIMESTAMPTZ | Fecha y hora de creacion del registro |
+
+### Integracion con el Ciclo de Vida del Turno
+
+La historia clinica se genera durante la finalizacion de una consulta. El flujo operativo es:
+
+1. El especialista completa el formulario de atencion en el dialogo de finalizacion.
+2. Se inserta el registro en `historias_clinicas` con los signos vitales y datos dinamicos.
+3. Un trigger de PostgreSQL (`trigger_sync_medical_history`) actualiza automaticamente el estado del turno a `finalizado`.
+4. La reseña diagnostica se persiste en la tabla `turnos.resena_diagnostico` (no en historias_clinicas).
+
+Este enfoque garantiza que la insercion exitosa de la historia clinica consolide el alta medica en una unica operacion transaccional.
+
+### Acceso por Roles
+
+| Rol | Acceso |
+|-----|--------|
+| Paciente | Visualiza exclusivamente su propio historial clinico |
+| Especialista | Visualiza historiales de pacientes que ha atendido |
+| Administrador | Acceso completo para auditoria |
+
+### Proteccion RLS
+
+Las politicas de Row Level Security en Supabase garantizan que:
+
+- Los pacientes solo pueden consultar historias clinicas donde `paciente_id` coincide con su UUID autenticado.
+- Los especialistas solo acceden a historias clinicas donde `especialista_id` coincide con su UUID.
+- Los administradores poseen acceso completo para funciones de auditoria.
+
+---
+
+## Modelo de Datos Dinamico (JSONB)
+
+### Enfoque Hibrido: Datos Fijos + Datos Dinamicos
+
+La medicina es una disciplina donde cada especialidad puede requerir informacion clinica diferente. Para abordar esta realidad sin sacrificar la integridad del esquema, la plataforma implementa un modelo hibrido:
+
+**Datos fijos:** Los signos vitales obligatorios (altura, peso, temperatura, presion arterial) se almacenan como columnas tipadas en la tabla. Esto permite consultas SQL directas y agregaciones estadisticas.
+
+**Datos dinamicos:** La columna JSONB `datos_dinamicos` almacena pares clave-valor para informacion especifica de cada consulta. Ejemplos:
+
+```json
+[
+  { "clave": "colesterol", "valor": "200 mg/dl" },
+  { "clave": "frecuencia cardiaca", "valor": "72 bpm" },
+  { "clave": "saturacion de oxigeno", "valor": "98%" }
+}
+```
+
+### Ventajas Arquitectonicas
+
+- **Flexibilidad:** Cada especialidad puede registrar indicadores clinicos sin modificar el esquema de la base de datos.
+- **Escalabilidad:** Nuevos tipos de datos clinicos se incorporan como datos, no como codigo.
+- **Consistencia:** Los campos obligatorios permanecen estructurados y validados.
+- **Limite operativo:** Maximo 3 datos dinamicos por historia clinica (validado en el servicio y en la interfaz).
+
+### Procesamiento en el Frontend
+
+Los componentes recorren dinamicamente el array JSONB para construir la interfaz:
+
+```typescript
+@for (dato of record.datos_dinamicos; track dato.clave) {
+  <div class="flex items-center justify-between">
+    <span>{{ dato.clave }}</span>
+    <span>{{ dato.valor }}</span>
+  </div>
+}
+```
+
+Este enfoque permite incorporar nuevos indicadores clinicos sin modificar el codigo existente.
+
+---
+
+## Filtrado Global Avanzado
+
+### Optimizacion Reactiva con Angular Signals
+
+El `DashboardPageComponent` implementa un sistema de filtrado avanzado que opera sobre historias clinicas enriquecidas con datos de turnos, pacientes y especialistas:
+
+```typescript
+readonly turnosFiltrados = computed(() => {
+  let turnos = this._turnos();
+  const query = this.searchQuery().toLowerCase().trim();
+  const estado = this.filtroEstado();
+
+  if (estado) {
+    turnos = turnos.filter(t => t.estado === estado);
+  }
+
+  if (!query) return turnos;
+
+  return turnos.filter(t => {
+    const especialidad = t.especialidad?.name?.toLowerCase() ?? '';
+    const especialista = t.especialista?.full_name?.toLowerCase() ?? '';
+    const paciente = t.paciente?.full_name?.toLowerCase() ?? '';
+    return especialidad.includes(query)
+      || especialista.includes(query)
+      || paciente.includes(query);
+  });
+});
+```
+
+El filtrado se extiende a los campos de la historia clinica (altura, peso, temperatura, presion) y a los datos dinamicos JSONB, permitiendo busquedas cruzadas sin consultas adicionales a la base de datos.
+
+---
+
+## Modulos de Exportacion Local
+
+### PdfExportService
+
+Servicio de exportacion de historias clinicas a formato PDF utilizando jsPDF. Caracteristicas:
+
+- **Logo institucional:** Carga asincrona de `assets/images/icono.png` via fetch y conversion a base64.
+- **Membrete:** Nombre de la clinica, titulo del informe, fecha y hora de emision formateada.
+- **Datos del titular:** Nombre completo, DNI, email y edad del paciente.
+- **Cuerpo de consultas:** Recorrido cronologico con especialista, especialidad, resena clinica, signos vitales y datos dinamicos JSONB.
+- **Generacion asincrona:** El servicio retorna una Promise para soportar carga de logo antes de generar el documento.
+
+### ExcelExportService
+
+Servicio de exportacion a formato Excel (XLSX) utilizando la libreria SheetJS. Funcionalidades:
+
+- **Exportacion de historial clinico:** Grilla tabular con todas las columnas clinicas del paciente.
+- **Exportacion de usuarios (admin):** Grilla de auditoria con datos de usuario para el panel administrativo.
+- **Formato profesional:** Anchos de columna auto-ajustados, encabezados en negrita.
+
+---
+
+## Arquitectura de Navegacion y Lazy Loading
+
+### Estrategia de Carga Diferida
+
+La totalidad de las paginas principales utilizan carga diferida (Lazy Loading). Angular genera archivos JavaScript independientes (chunks) que se descargan unicamente cuando el usuario navega hacia la ruta correspondiente.
+
+### Rutas Localizadas en Espanol
+
+Todas las URLs visibles en el navegador estan localizadas al idioma espanol:
+
+| Ruta | Descripcion |
+|------|-------------|
+| `/` | Pagina de inicio publica |
+| `/autenticacion` | Layout de autenticacion (login/registro) |
+| `/autenticacion/registro` | Formulario de registro |
+| `/aprobacion-pendiente` | Pendiente de aprobacion (especialistas) |
+| `/terminos` | Terminos y condiciones |
+| `/privacidad` | Politica de privacidad |
+| `/panel-principal` | Panel principal del dashboard |
+| `/turnos` | Gestion de turnos |
+| `/turnos/solicitar` | Solicitud de turno (pacientes) |
+| `/pacientes` | Listado de pacientes |
+| `/especialistas` | Gestion de especialistas (admin) |
+| `/disponibilidad` | Configuracion de disponibilidad (especialista) |
+| `/historial-clinico` | Historial clinico (paciente) |
+| `/administracion` | Panel de administracion |
+| `/administracion/usuarios` | Gestion de usuarios (admin) |
+| `/estadisticas` | Estadisticas y reportes |
+| `/perfil` | Mi perfil (todos los roles) |
+
+### Code Splitting
+
+Angular divide automaticamente el codigo durante la compilacion:
+
+- **Bundle inicial:** Framework core, polyfills, estilos y bootstrap de la aplicacion.
+- **Chunks lazy:** Cada feature genera su propio chunk independiente que se descarga bajo demanda.
+- **Chunks compartidos:** Dependencias de terceros compartidas entre multiples features se optimizan automaticamente.
+
+### Beneficios de la Arquitectura
+
+- **Menor tiempo de carga inicial:** Solo se descarga el codigo estrictamente necesario para la primera pantalla.
+- **Mejor escalabilidad:** Nuevas features no incrementan el peso del bundle inicial.
+- **Independencia entre dominios:** Cada feature puede evolucionar sin afectar a las demas.
+- **Mantenimiento simplificado:** Los cambios se localizan en un solo modulo funcional.
+- **Crecimiento controlado:** El proyecto puede incorporar funcionalidades sin degradar el rendimiento.
+
+---
+
 ## Organizacion del Codigo
 
 ```
@@ -590,12 +783,16 @@ src/app/
 │   │   └── request/               # Solicitud de turno (5 pasos)
 │   ├── specialist/                # Area del medico
 │   │   └── availability/          # Configuracion de disponibilidad
-│   ├── profile/                   # Mi Perfil (multiperfil)
+│   ├── profile/                   # Mi Perfil (multiperfil) + historial clinico
 │   ├── patients/                  # Area del paciente
 │   ├── specialists/               # Gestion de especialistas (admin)
 │   ├── administration/            # Panel de administracion de usuarios
 │   ├── statistics/                # Estadisticas y reportes
 │   ├── medical-history/           # Historia clinica
+│   │   ├── components/            # MedicalHistoryListComponent (presentacional)
+│   │   ├── pages/medical-record/  # Vista del paciente
+│   │   ├── services/              # MedicalRecordsService, PdfExportService, ExcelExportService
+│   │   └── models/                # MedicalRecord, MedicalRecordConRelaciones
 │   ├── dashboard/                 # Panel principal
 │   ├── landing/                   # Pagina de inicio publica
 │   ├── approval-pending/          # Pendiente de aprobacion
@@ -613,7 +810,7 @@ src/app/
 | Sprint 0 | Configuracion de Entorno | Completado | Angular 19, Tailwind CSS v4, Supabase SDK, Path Aliases, Estructura de carpetas |
 | Sprint 1 | Autenticacion y Sistema Multiperfil | Completado | Landing, Login, Register (3 perfiles), Guards, Dashboard Layout, Admin Users Panel, Toasts semanticos, Realtime |
 | Sprint 2 | Gestion de Turnos y Agenda | Completado | Disponibilidad, Wizard de solicitud (5 pasos), Dashboard de turnos, Tarjetas semanticas, Paginacion reactiva, Captcha nativo, Mi Perfil, Calificacion, Resena medica |
-| Sprint 3 | Historia Clinica | Planificado | Registro medico, signos vitales, adjuntos |
+| Sprint 3 | Historia Clinica y Optimizacion | Completado | Historia clinica, datos dinamicos JSONB, filtrado avanzado, exportacion PDF/Excel, Lazy Loading, rutas localizadas en espanol, animaciones de transicion |
 | Sprint 4 | Estadisticas y Reportes | Planificado | Dashboard administrativo, graficos, exportacion |
 | Sprint 5 | Optimizacion y Despliegue | Planificado | Performance, testing e2e, CI/CD, despliegue |
 

@@ -10,7 +10,7 @@ const routes: Routes = [
     title: 'Clínica Online | Mis turnos',
   },
   {
-    path: 'request',
+    path: 'solicitar',
     loadComponent: () =>
       import('./request/pages/request-page/request-page.component').then(
         (m) => m.RequestPageComponent,

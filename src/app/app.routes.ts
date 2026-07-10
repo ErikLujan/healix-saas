@@ -13,7 +13,7 @@ export const routes: Routes = [
     data: { animation: 'landing' },
   },
   {
-    path: 'auth',
+    path: 'autenticacion',
     loadComponent: () =>
       import('@layouts/auth-layout/auth-layout.component').then(
         (m) => m.AuthLayoutComponent,
@@ -28,7 +28,7 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'approval-pending',
+    path: 'aprobacion-pendiente',
     loadComponent: () =>
       import('@features/approval-pending/approval-pending.component').then(
         (m) => m.ApprovalPendingComponent,
@@ -37,7 +37,7 @@ export const routes: Routes = [
     data: { animation: 'approval' },
   },
   {
-    path: 'terms',
+    path: 'terminos',
     loadComponent: () =>
       import('@features/legal/terms-and-conditions/terms-and-conditions.component').then(
         (m) => m.TermsComponent,
@@ -46,7 +46,7 @@ export const routes: Routes = [
     data: { animation: 'legal' },
   },
   {
-    path: 'privacy',
+    path: 'privacidad',
     loadComponent: () =>
       import('@features/legal/privacy-policy/privacy-policy.component').then(
         (m) => m.PrivacyComponent,
@@ -64,48 +64,45 @@ export const routes: Routes = [
     data: { animation: 'dashboard' },
     children: [
       {
-        path: 'dashboard',
+        path: 'panel-principal',
         loadChildren: () => import('@features/dashboard/dashboard.routes'),
         title: 'Clínica Online | Panel principal',
       },
       {
-        path: 'patients',
+        path: 'pacientes',
         loadChildren: () => import('@features/patients/patients.routes'),
         canActivate: [roleGuard],
         data: { roles: ['administrador', 'especialista'], animation: 'dashboard' },
         title: 'Clínica Online | Pacientes',
       },
       {
-        path: 'specialists',
+        path: 'especialistas',
         loadChildren: () => import('@features/specialists/specialists.routes'),
         canActivate: [roleGuard],
         data: { roles: ['administrador'], animation: 'dashboard' },
         title: 'Clínica Online | Especialistas',
       },
       {
-        path: 'availability',
-        loadComponent: () =>
-          import('@features/specialist/availability/pages/availability-page/availability-page.component').then(
-            (m) => m.AvailabilityPageComponent,
-          ),
+        path: 'disponibilidad',
+        loadChildren: () =>
+          import('@features/specialist/availability/availability.routes'),
         canActivate: [roleGuard],
-        data: { roles: ['especialista'], animation: 'dashboard' },
-        title: 'Clínica Online | Disponibilidad',
+        data: { roles: ['especialista'] },
       },
       {
-        path: 'appointments',
+        path: 'turnos',
         loadChildren: () =>
           import('@features/appointments/appointments.routes'),
         title: 'Clínica Online | Turnos',
       },
       {
-        path: 'medical-history',
+        path: 'historial-clinico',
         loadChildren: () =>
           import('@features/medical-history/medical-history.routes'),
         title: 'Clínica Online | Historial clínico',
       },
       {
-        path: 'administration',
+        path: 'administracion',
         loadChildren: () =>
           import('@features/administration/administration.routes'),
         canActivate: [roleGuard],
@@ -113,7 +110,7 @@ export const routes: Routes = [
         title: 'Clínica Online | Administración',
       },
       {
-        path: 'statistics',
+        path: 'estadisticas',
         loadChildren: () =>
           import('@features/statistics/statistics.routes'),
         canActivate: [roleGuard],
@@ -121,13 +118,9 @@ export const routes: Routes = [
         title: 'Clínica Online | Estadísticas',
       },
       {
-        path: 'profile',
-        loadComponent: () =>
-          import('@features/profile/pages/profile-page/profile-page.component').then(
-            (m) => m.ProfilePageComponent,
-          ),
-        title: 'Clínica Online | Mi Perfil',
-        data: { animation: 'dashboard' },
+        path: 'perfil',
+        loadChildren: () =>
+          import('@features/profile/profile.routes'),
       },
     ],
   },

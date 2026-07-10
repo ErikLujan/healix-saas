@@ -58,7 +58,7 @@ export class StepConfirmComponent {
       });
 
       this.wizard.reiniciar();
-      this.router.navigate(['/appointments']);
+      this.router.navigate(['/turnos']);
     } catch {
       this.isCreando.set(false);
     }

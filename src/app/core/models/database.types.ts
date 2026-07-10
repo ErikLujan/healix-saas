@@ -214,6 +214,48 @@ export interface Database {
         };
         Relationships: [];
       };
+      historias_clinicas: {
+        Row: {
+          id: string;
+          turno_id: string;
+          paciente_id: string;
+          especialista_id: string;
+          altura: number;
+          peso: number;
+          temperatura: number;
+          presion_arterial: string;
+          datos_dinamicos: { clave: string; valor: string }[];
+          resena: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          turno_id: string;
+          paciente_id: string;
+          especialista_id: string;
+          altura: number;
+          peso: number;
+          temperatura: number;
+          presion_arterial: string;
+          datos_dinamicos: { clave: string; valor: string }[];
+          resena?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          turno_id?: string;
+          paciente_id?: string;
+          especialista_id?: string;
+          altura?: number;
+          peso?: number;
+          temperatura?: number;
+          presion_arterial?: string;
+          datos_dinamicos?: { clave: string; valor: string }[];
+          resena?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -297,7 +297,7 @@ export class RegisterComponent {
 
         if (!session) {
           toast.success('Cuenta creada exitosamente. Verifica tu correo electrónico para activar tu perfil médico y confirmar tus especialidades.');
-          this.router.navigate(['/auth']);
+          this.router.navigate(['/autenticacion']);
           return;
         }
 
@@ -323,7 +323,7 @@ export class RegisterComponent {
       }
 
       toast.success('Cuenta creada exitosamente');
-      this.router.navigate(['/auth']);
+      this.router.navigate(['/autenticacion']);
     } catch (err) {
       console.error('[Register] unexpected error:', err);
       toast.error('Ocurrió un error inesperado. Intenta nuevamente');

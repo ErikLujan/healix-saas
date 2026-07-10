@@ -24,29 +24,29 @@ export class DashboardLayoutComponent {
 
   readonly navLinks = computed(() => {
     const links: { path: string; label: string; icon: string }[] = [
-      { path: '/dashboard', label: 'Panel principal', icon: 'grid' },
-      { path: '/appointments', label: 'Turnos', icon: 'calendar' },
+      { path: '/panel-principal', label: 'Panel principal', icon: 'grid' },
+      { path: '/turnos', label: 'Turnos', icon: 'calendar' },
     ];
 
     const role = this.userRole();
 
     if (role === 'paciente') {
-      links.push({ path: '/appointments/request', label: 'Solicitar turno', icon: 'calendar-plus' });
+      links.push({ path: '/turnos/solicitar', label: 'Solicitar turno', icon: 'calendar-plus' });
     }
 
     if (role === 'administrador' || role === 'especialista') {
-      links.push({ path: '/patients', label: 'Pacientes', icon: 'users' });
+      links.push({ path: '/pacientes', label: 'Pacientes', icon: 'users' });
     }
 
     if (role === 'especialista') {
-      links.push({ path: '/availability', label: 'Disponibilidad', icon: 'clock' });
+      links.push({ path: '/disponibilidad', label: 'Disponibilidad', icon: 'clock' });
     }
 
     if (role === 'administrador') {
       links.push(
-        { path: '/specialists', label: 'Especialistas', icon: 'stethoscope' },
-        { path: '/administration/users', label: 'Usuarios', icon: 'user-cog' },
-        { path: '/statistics', label: 'Estadísticas', icon: 'bar-chart' },
+        { path: '/especialistas', label: 'Especialistas', icon: 'stethoscope' },
+        { path: '/administracion/usuarios', label: 'Usuarios', icon: 'user-cog' },
+        { path: '/estadisticas', label: 'Estadísticas', icon: 'bar-chart' },
       );
     }
 
