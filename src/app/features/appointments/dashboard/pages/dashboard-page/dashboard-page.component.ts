@@ -2,15 +2,18 @@ import { Component, inject, OnInit, signal, computed, ViewChild } from '@angular
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 import { AuthService, UserRole } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
 import { TurnoCardComponent } from '../../components/turno-card/turno-card.component';
 import { ComentarioDialogComponent } from '../../dialogs/comentario-dialog.component';
-import { ResenaMedicaDialogComponent } from '../../dialogs/resena-medica-dialog.component';
 import { ResenaModalComponent } from '../../dialogs/resena-modal.component';
 import { CalificarAtencionDialogComponent } from '../../dialogs/calificar-atencion-dialog.component';
+import { FinishAppointmentDialogComponent } from '../../../finish/dialogs/finish-appointment.dialog';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
+import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 
 /** Etiquetas legibles para los tabs de filtrado por estado. */
 const ETIQUETAS_ESTADO: Record<string, string> = {
@@ -43,9 +46,9 @@ const PAGE_SIZE = 4;
     RouterLink,
     TurnoCardComponent,
     ComentarioDialogComponent,
-    ResenaMedicaDialogComponent,
     ResenaModalComponent,
     CalificarAtencionDialogComponent,
+    FinishAppointmentDialogComponent,
     PaginationComponent,
   ],
   templateUrl: './dashboard-page.component.html',
@@ -53,18 +56,15 @@ const PAGE_SIZE = 4;
 export class DashboardPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly turnosService = inject(TurnosService);
+  private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly dialogComentario = signal<ComentarioDialogComponent | null>(null);
-  readonly dialogResena = signal<ResenaMedicaDialogComponent | null>(null);
   readonly modalResena = signal<ResenaModalComponent | null>(null);
   readonly dialogCalificar = signal<CalificarAtencionDialogComponent | null>(null);
+  readonly dialogFinalizar = signal<FinishAppointmentDialogComponent | null>(null);
 
   @ViewChild('dialogComentario') set setDialogComentario(ref: ComentarioDialogComponent | undefined) {
     if (ref) this.dialogComentario.set(ref);
-  }
-
-  @ViewChild('dialogResena') set setDialogResena(ref: ResenaMedicaDialogComponent | undefined) {
-    if (ref) this.dialogResena.set(ref);
   }
 
   @ViewChild('modalResena') set setModalResena(ref: ResenaModalComponent | undefined) {
@@ -75,10 +75,17 @@ export class DashboardPageComponent implements OnInit {
     if (ref) this.dialogCalificar.set(ref);
   }
 
+  @ViewChild('dialogFinalizar') set setDialogFinalizar(ref: FinishAppointmentDialogComponent | undefined) {
+    if (ref) this.dialogFinalizar.set(ref);
+  }
+
   /** Turnos crudos cargados desde Supabase. */
   private readonly _turnos = signal<TurnoConRelaciones[]>([]);
 
-  /** Termino de busqueda global del usuario. */
+  /** Historias clínicas asociadas a los turnos (para búsqueda en datos clínicos). */
+  private readonly _historiasClinicas = signal<Map<string, MedicalRecordConRelaciones>>(new Map());
+
+  /** Término de búsqueda global del usuario. */
   readonly searchQuery = signal('');
 
   /** Filtro activo por estado (null = todos). */
@@ -90,11 +97,11 @@ export class DashboardPageComponent implements OnInit {
   /** Perfil del usuario autenticado. */
   readonly perfil = this.authService.userProfile;
 
-  /** Indica si esta cargando los turnos iniciales. */
+  /** Indica si está cargando los turnos iniciales. */
   readonly isLoading = signal(true);
 
   /** Turno seleccionado para alguna operacion. */
-  private turnoSeleccionado = signal<TurnoConRelaciones | null>(null);
+  readonly turnoSeleccionado = signal<TurnoConRelaciones | null>(null);
 
   /** Tipo de accion pendiente en el dialogo de comentario ('cancelar' | 'rechazar'). */
   private accionPendiente = signal<'cancelar' | 'rechazar'>('cancelar');
@@ -120,6 +127,7 @@ export class DashboardPageComponent implements OnInit {
     let turnos = this._turnos();
     const query = this.searchQuery().toLowerCase().trim();
     const estado = this.filtroEstado();
+    const historiasMap = this._historiasClinicas();
 
     if (estado) {
       turnos = turnos.filter(t => t.estado === estado);
@@ -132,11 +140,43 @@ export class DashboardPageComponent implements OnInit {
       const especialista = t.especialista?.full_name?.toLowerCase() ?? '';
       const paciente = t.paciente?.full_name?.toLowerCase() ?? '';
       const estadoTurno = t.estado.toLowerCase();
+      const resena = t.resena_diagnostico?.toLowerCase() ?? '';
+      const comentarioCancelacion = t.comentario_cancelacion_rechazo?.toLowerCase() ?? '';
 
-      return especialidad.includes(query)
+      const coincideBasico = especialidad.includes(query)
         || especialista.includes(query)
         || paciente.includes(query)
-        || estadoTurno.includes(query);
+        || estadoTurno.includes(query)
+        || resena.includes(query)
+        || comentarioCancelacion.includes(query);
+
+      if (coincideBasico) return true;
+
+      const historia = historiasMap.get(t.id);
+      if (!historia) return false;
+
+      const altura = String(historia.altura);
+      const peso = String(historia.peso);
+      const temperatura = String(historia.temperatura);
+      const presion = historia.presion_arterial.toLowerCase();
+      const resenaHistoria = historia.turno?.resena_diagnostico?.toLowerCase() ?? '';
+
+      const coincideFijo = altura.includes(query)
+        || peso.includes(query)
+        || temperatura.includes(query)
+        || presion.includes(query)
+        || resenaHistoria.includes(query);
+
+      if (coincideFijo) return true;
+
+      if (historia.datos_dinamicos && historia.datos_dinamicos.length > 0) {
+        const coincideDinamico = historia.datos_dinamicos.some(
+          d => d.clave.toLowerCase().includes(query) || d.valor.toLowerCase().includes(query),
+        );
+        if (coincideDinamico) return true;
+      }
+
+      return false;
     });
   });
 
@@ -200,7 +240,51 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._turnos.set(turnos as TurnoConRelaciones[]);
+    await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
     this.isLoading.set(false);
+  }
+
+  /**
+   * Carga las historias clínicas asociadas a los turnos para habilitar
+   * la búsqueda en datos clínicos fijos y dinámicos.
+   *
+   * @param turnos Lista de turnos cargados.
+   * @param rol Rol del usuario autenticado.
+   * @param perfilId ID del perfil del usuario.
+   */
+  private async cargarHistoriasClinicas(
+    turnos: readonly TurnoConRelaciones[],
+    rol: UserRole,
+    perfilId: string,
+  ): Promise<void> {
+    const historiasMap = new Map<string, MedicalRecordConRelaciones>();
+
+    const loadHistory = (observable$: Observable<readonly MedicalRecordConRelaciones[]>) =>
+      new Promise<void>((resolve) => {
+        observable$.subscribe({
+          next: (records) => {
+            for (const record of records) {
+              historiasMap.set(record.turno_id, record);
+            }
+            resolve();
+          },
+          error: () => resolve(),
+        });
+      });
+
+    switch (rol) {
+      case 'paciente':
+        await loadHistory(this.medicalRecordsService.getHistoryByPatientId(perfilId));
+        break;
+      case 'especialista':
+        await loadHistory(this.medicalRecordsService.getHistoryBySpecialistId(perfilId));
+        break;
+      case 'administrador':
+        await loadHistory(this.medicalRecordsService.getAllRecords());
+        break;
+    }
+
+    this._historiasClinicas.set(historiasMap);
   }
 
   /** Actualiza el termino de busqueda y resetea la paginacion. */
@@ -242,10 +326,10 @@ export class DashboardPageComponent implements OnInit {
     });
   }
 
-  /** Abre el dialogo de resena medica para finalizar un turno. */
+  /** Abre el dialogo de alta medica para finalizar un turno. */
   abrirDialogoFinalizar(turno: TurnoConRelaciones): void {
     this.turnoSeleccionado.set(turno);
-    this.dialogResena()?.abrir();
+    this.dialogFinalizar()?.abrir();
   }
 
   /** Confirma la cancelacion o rechazo de un turno segun la accion pendiente. */
@@ -265,12 +349,8 @@ export class DashboardPageComponent implements OnInit {
     this.turnoSeleccionado.set(null);
   }
 
-  /** Confirma la finalizacion de un turno con resena medica. */
-  async confirmarFinalizar(resena: string): Promise<void> {
-    const turno = this.turnoSeleccionado();
-    if (!turno) return;
-
-    await this.turnosService.finalizarTurno(turno.id, resena);
+  /** Callback tras finalizacion exitosa desde el dialogo de alta medica. */
+  async onFinalizacionCompleta(): Promise<void> {
     await this.recargarTurnos();
     this.turnoSeleccionado.set(null);
   }
@@ -306,8 +386,8 @@ export class DashboardPageComponent implements OnInit {
   abrirEncuesta(turno: TurnoConRelaciones): void {
     this.turnoSeleccionado.set(turno);
     this.dialogComentario()?.abrir({
-      titulo: 'Encuesta de Satisfaccion',
-      placeholder: 'Encuesta de Satisfaccion de la Clinica - Proximamente disponible',
+      titulo: 'Encuesta de Satisfacción',
+      placeholder: 'Encuesta de Satisfacción de la Clínica - Próximamente disponible',
       textoConfirmar: 'Cerrar',
     });
   }
@@ -335,5 +415,6 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._turnos.set(turnos as TurnoConRelaciones[]);
+    await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
   }
 }

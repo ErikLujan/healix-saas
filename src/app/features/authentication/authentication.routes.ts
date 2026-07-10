@@ -8,7 +8,7 @@ const routes: Routes = [
     title: 'Clínica Online | Iniciar sesión',
   },
   {
-    path: 'register',
+    path: 'registro',
     loadComponent: () =>
       import('./pages/register/register.component').then(
         (m) => m.RegisterComponent,

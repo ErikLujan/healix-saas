@@ -1,9 +1,9 @@
 /**
- * Modelos de dominio para el modulo de disponibilidad y agenda medica.
+ * Modelos de dominio para el módulo de disponibilidad y agenda médica.
  *
  * Define las interfaces que representan los registros de la tabla
  * `public.disponibilidad_especialista` y los tipos auxiliares
- * utilizados por el algoritmo de generacion de bloques horarios.
+ * utilizados por el algoritmo de generación de bloques horarios.
  */
 
 /**
@@ -13,10 +13,10 @@
  * determinada en un dia de la semana dentro de un rango horario especifico.
  *
  * Restricciones de negocio:
- * - dia_semana: 0 (domingo) esta prohibido por politica de la clinica.
+ * - dia_semana: 0 (domingo) está prohibido por política de la clínica.
  * - hora_fin debe ser estrictamente mayor que hora_inicio.
- * - Lunes a Viernes: rango valido 08:00 - 19:00.
- * - Sabados: rango valido 08:00 - 14:00.
+ * - Lunes a Viernes: rango válido 08:00 - 19:00.
+ * - Sábados: rango válido 08:00 - 14:00.
  */
 export interface DisponibilidadEspecialista {
   readonly id: string;
@@ -28,8 +28,8 @@ export interface DisponibilidadEspecialista {
 }
 
 /**
- * Tipo auxiliar para el payload de insercion de disponibilidad.
- * Omite el campo `id` ya que es generado automaticamente por la base de datos.
+ * Tipo auxiliar para el payload de inserción de disponibilidad.
+ * Omite el campo `id` ya que es generado automáticamente por la base de datos.
  */
 export type DisponibilidadEspecialistaInsert = Omit<DisponibilidadEspecialista, 'id'>;
 
@@ -39,18 +39,18 @@ export type DisponibilidadEspecialistaInsert = Omit<DisponibilidadEspecialista, 
  * 0 = Domingo (prohibido por regla de negocio)
  * 1 = Lunes
  * 2 = Martes
- * 3 = Miercoles
+ * 3 = Miércoles
  * 4 = Jueves
  * 5 = Viernes
- * 6 = Sabado
+ * 6 = Sábado
  */
 export type DiaSemana = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
- * Constantes que definen los limites horarios permitidos por la clinica.
+ * Constantes que definen los límites horarios permitidos por la clínica.
  *
  * Lunes a Viernes: 08:00 - 19:00
- * Sabados: 08:00 - 14:00
+ * Sábados: 08:00 - 14:00
  * Domingos: no configurable
  */
 export const RESTRICCIONES_HORARIAS: Readonly<Record<number, { readonly inicio: string; readonly fin: string }>> = {
@@ -62,7 +62,7 @@ export const RESTRICCIONES_HORARIAS: Readonly<Record<number, { readonly inicio: 
   6: { inicio: '08:00', fin: '14:00' },
 } as const;
 
-/** Duracion fija en minutos de cada bloque de atencion generado. */
+/** Duración fija en minutos de cada bloque de atención generado. */
 export const DURACION_SLOT_MINUTOS = 30;
 
 /** Nombre legible de cada dia de la semana para la interfaz. */
@@ -70,17 +70,17 @@ export const NOMBRES_DIAS: ReadonlyArray<string> = [
   'Domingo',
   'Lunes',
   'Martes',
-  'Miercoles',
+  'Miércoles',
   'Jueves',
   'Viernes',
-  'Sabado',
+  'Sábado',
 ] as const;
 
 /**
- * Representa un bloque horario generado dinamicamente a partir
+ * Representa un bloque horario generado dinámicamente a partir
  * de la disponibilidad configurada por el especialista.
  *
- * No es una entidad persistente. Es un modelo de presentacion
+ * No es una entidad persistente. Es un modelo de presentación
  * utilizado por la grilla de agenda y por el wizard de reserva
  * de turnos del paciente.
  *
@@ -95,9 +95,9 @@ export interface TimeSlot {
 }
 
 /**
- * Configuracion temporal que el especialista define para un dia
- * especifico de la semana. Utilizado como estado intermedio
- * durante la edicion de la agenda antes de persistir en Supabase.
+ * Configuración temporal que el especialista define para un día
+ * específico de la semana. Utilizado como estado intermedio
+ * durante la edición de la agenda antes de persistir en Supabase.
  */
 export interface ConfiguracionDia {
   readonly habilitado: boolean;
@@ -105,7 +105,7 @@ export interface ConfiguracionDia {
 }
 
 /**
- * Un bloque horario individual dentro de la configuracion semanal.
+ * Un bloque horario individual dentro de la configuración semanal.
  * Representa un intervalo de inicio-fin asociado a una especialidad.
  */
 export interface BloqueHorario {
@@ -115,7 +115,7 @@ export interface BloqueHorario {
 }
 
 /**
- * Estado completo de la configuracion semanal del especialista.
- * Clave: dia de la semana (1-6). Valor: configuracion del dia.
+ * Estado completo de la configuración semanal del especialista.
+ * Clave: día de la semana (1-6). Valor: configuración del día.
  */
 export type AgendaSemanal = Readonly<Record<number, ConfiguracionDia>>;

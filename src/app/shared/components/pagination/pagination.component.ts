@@ -2,11 +2,11 @@ import { Component, input, output, computed } from '@angular/core';
 import { NgClass } from '@angular/common';
 
 /**
- * Componente generico de paginacion reactiva.
+ * Componente genérico de paginación reactiva.
  *
- * Calcula internamente el total de paginas y los numeros visibles
+ * Calcula internamente el total de páginas y los números visibles
  * a partir de los inputs proporcionados. Emite un evento cada vez
- * que el usuario selecciona una pagina diferente.
+ * que el usuario selecciona una página diferente.
  *
  * Utiliza Angular Signals y computed() para mantener la reactividad
  * sin ciclo de vida manual. Optimizado para ser reutilizado en
@@ -19,19 +19,19 @@ import { NgClass } from '@angular/common';
   templateUrl: './pagination.component.html',
 })
 export class PaginationComponent {
-  /** Pagina activa actual (1-indexed). */
+  /** Página activa actual (1-indexed). */
   readonly currentPage = input<number>(1);
 
-  /** Cantidad total de elementos en la coleccion filtrada. */
+  /** Cantidad total de elementos en la colección filtrada. */
   readonly totalItems = input<number>(0);
 
-  /** Tamano de segmento por pagina. */
+  /** Tamaño de segmento por página. */
   readonly pageSize = input<number>(4);
 
-  /** Emite el nuevo numero de pagina al hacer clic. */
+  /** Emite el nuevo número de página al hacer clic. */
   readonly pageChange = output<number>();
 
-  /** Total de paginas disponibles. */
+  /** Total de páginas disponibles. */
   readonly totalPages = computed(() => {
     const total = this.totalItems();
     const size = this.pageSize();
@@ -39,7 +39,7 @@ export class PaginationComponent {
     return Math.ceil(total / size);
   });
 
-  /** Array de numeros de pagina para renderizar los botones. */
+  /** Array de números de página para renderizar los botones. */
   readonly pageNumbers = computed(() => {
     const total = this.totalPages();
     const pages: number[] = [];
@@ -49,7 +49,7 @@ export class PaginationComponent {
     return pages;
   });
 
-  /** Rango de indices visibles para el contador informativo. */
+  /** Rango de índices visibles para el contador informativo. */
   readonly paginationRange = computed(() => {
     const total = this.totalItems();
     if (total === 0) return { start: 0, end: 0, total: 0 };
@@ -61,27 +61,27 @@ export class PaginationComponent {
     return { start, end, total };
   });
 
-  /** Indica si el boton Anterior debe estar deshabilitado. */
+  /** Indica si el botón Anterior debe estar deshabilitado. */
   readonly isFirstPage = computed(() => this.currentPage() <= 1);
 
-  /** Indica si el boton Siguiente debe estar deshabilitado. */
+  /** Indica si el botón Siguiente debe estar deshabilitado. */
   readonly isLastPage = computed(() => this.currentPage() >= this.totalPages());
 
-  /** Navega a la pagina anterior. */
+  /** Navega a la página anterior. */
   goToPreviousPage(): void {
     if (!this.isFirstPage()) {
       this.pageChange.emit(this.currentPage() - 1);
     }
   }
 
-  /** Navega a la pagina siguiente. */
+  /** Navega a la página siguiente. */
   goToNextPage(): void {
     if (!this.isLastPage()) {
       this.pageChange.emit(this.currentPage() + 1);
     }
   }
 
-  /** Navega a una pagina especifica por numero. */
+  /** Navega a una página específica por número. */
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages() && page !== this.currentPage()) {
       this.pageChange.emit(page);

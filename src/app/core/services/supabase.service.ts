@@ -4,11 +4,11 @@ import { environment } from '@env/environment';
 import { Database } from '../models/database.types';
 
 /**
- * Cliente singleton de Supabase para toda la aplicacion.
+ * Cliente singleton de Supabase para toda la aplicación.
  *
- * Centraliza la creacion del cliente SDK utilizando las credenciales
+ * Centraliza la creación del cliente SDK utilizando las credenciales
  * del environment y el tipado estricto del modelo Database.
- * Todos los servicios dependen de esta instancia unica.
+ * Todos los servicios dependen de esta instancia única.
  */
 @Injectable({
   providedIn: 'root',

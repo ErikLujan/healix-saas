@@ -10,14 +10,14 @@ import {
 } from '../models/disponibilidad.model';
 
 /**
- * Servicio centralizado para la gestion de disponibilidad medica.
+ * Servicio centralizado para la gestión de disponibilidad médica.
  *
  * Administra el ciclo de vida completo de la disponibilidad de los
- * especialistas: carga, validacion, persistencia y generacion de
+ * especialistas: carga, validación, persistencia y generación de
  * bloques horarios reactivos mediante Angular Signals.
  *
  * Todas las operaciones de escritura validan las restricciones
- * horarias de la clinica antes de interactuar con Supabase.
+ * horarias de la clínica antes de interactuar con Supabase.
  * Los errores se comunican mediante el sistema global de notificaciones.
  */
 @Injectable({
@@ -32,12 +32,12 @@ export class DisponibilidadService {
   /** Lista inmutable de disponibilidades cargadas para el especialista actual. */
   readonly disponibilidades = this._disponibilidades.asReadonly();
 
-  /** Indica si una operacion de carga o persistencia esta en curso. */
+  /** Indica si una operación de carga o persistencia está en curso. */
   readonly isLoading = this._isLoading.asReadonly();
 
   /**
    * Consulta todas las disponibilidades registradas para un especialista
-   * especifico y actualiza reactivamente la signal interna.
+   * específico y actualiza reactivamente la signal interna.
    *
    * @param especialistaId UUID del especialista cuya agenda se desea cargar.
    */
@@ -75,23 +75,23 @@ export class DisponibilidadService {
   }
 
   /**
-   * Valida y persiste la configuracion semanal completa de un especialista.
+   * Valida y persiste la configuración semanal completa de un especialista.
    *
    * Ejecuta todas las reglas de negocio antes de tocar la base de datos:
    *
    * 1. No se permiten registros con dia_semana igual a 0 (domingo).
    * 2. Lunes a Viernes: hora_inicio >= 08:00 y hora_fin <= 19:00.
-   * 3. Sabados: hora_inicio >= 08:00 y hora_fin <= 14:00.
+   * 3. Sábados: hora_inicio >= 08:00 y hora_fin <= 14:00.
    * 4. hora_fin debe ser estrictamente mayor que hora_inicio.
    * 5. Cada registro debe poseer una especialidad asociada.
    *
-   * La persistencia se realiza como operacion atomica: primero se
+   * La persistencia se realiza como operación atómica: primero se
    * eliminan los registros existentes del especialista y luego se
-   * insertan los nuevos. Si cualquiera falla, la operacion se aborta.
+   * insertan los nuevos. Si cualquiera falla, la operación se aborta.
    *
    * @param especialistaId UUID del especialista propietario de la agenda.
    * @param disponibilidades Lista completa de registros a persistir.
-   * @throws Error si alguna validacion falla o Supabase devuelve error.
+   * @throws Error si alguna validación falla o Supabase devuelve error.
    */
   async guardarDisponibilidadSemanal(
     especialistaId: string,
@@ -143,15 +143,15 @@ export class DisponibilidadService {
   }
 
   /**
-   * Funcion algoritmica pura que fragmenta un rango horario en bloques
+   * Función algoritmica pura que fragmenta un rango horario en bloques
    * fijos de 30 minutos.
    *
    * Ejemplo:
    * - entrada: ("08:00", "10:00")
    * - salida:  ["08:00", "08:30", "09:00", "09:30"]
    *
-   * La funcion no incluye la hora de fin como slot porque representa
-   * el cierre del ultimo bloque, no un inicio de atencion.
+   * La función no incluye la hora de fin como slot porque representa
+   * el cierre del último bloque, no un inicio de atención.
    *
    * @param horaInicio Cadena en formato "HH:mm" o "HH:mm:ss".
    * @param horaFin Cadena en formato "HH:mm" o "HH:mm:ss".
@@ -206,7 +206,7 @@ export class DisponibilidadService {
    * Ejecuta el conjunto completo de validaciones de negocio sobre
    * un array de disponibilidades antes de permitir su persistencia.
    *
-   * Lanza una excepcion con un mensaje descriptivo si cualquiera
+   * Lanza una excepción con un mensaje descriptivo si cualquiera
    * de las reglas es violada.
    *
    * @param disponibilidades Registros a validar.
@@ -214,7 +214,7 @@ export class DisponibilidadService {
   private validarDisponibilidades(disponibilidades: DisponibilidadEspecialistaInsert[]): void {
     for (const registro of disponibilidades) {
       if (registro.dia_semana === 0) {
-        throw new Error('Los domingos no pueden configurarse como dia de atencion.');
+        throw new Error('Los domingos no pueden configurarse como día de atención.');
       }
 
       if (!registro.especialidad_id) {
@@ -223,20 +223,20 @@ export class DisponibilidadService {
 
       const restriccion = RESTRICCIONES_HORARIAS[registro.dia_semana];
       if (!restriccion) {
-        throw new Error(`Dia de la semana no valido: ${registro.dia_semana}.`);
+        throw new Error(`Día de la semana no válido: ${registro.dia_semana}.`);
       }
 
       if (registro.hora_inicio < restriccion.inicio || registro.hora_inicio >= restriccion.fin) {
         throw new Error(
-          `La hora de inicio ${registro.hora_inicio} esta fuera del rango permitido `
-          + `(${restriccion.inicio} - ${restriccion.fin}) para el dia ${registro.dia_semana}.`,
+          `La hora de inicio ${registro.hora_inicio} está fuera del rango permitido `
+          + `(${restriccion.inicio} - ${restriccion.fin}) para el día ${registro.dia_semana}.`,
         );
       }
 
       if (registro.hora_fin > restriccion.fin || registro.hora_fin <= restriccion.inicio) {
         throw new Error(
-          `La hora de fin ${registro.hora_fin} esta fuera del rango permitido `
-          + `(${restriccion.inicio} - ${restriccion.fin}) para el dia ${registro.dia_semana}.`,
+          `La hora de fin ${registro.hora_fin} está fuera del rango permitido `
+          + `(${restriccion.inicio} - ${restriccion.fin}) para el día ${registro.dia_semana}.`,
         );
       }
 

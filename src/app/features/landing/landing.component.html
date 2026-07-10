@@ -16,10 +16,10 @@
     </nav>
 
     <div class="flex items-center gap-3">
-      <a routerLink="/auth" class="hidden sm:inline-flex text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-4 py-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-xl">
+      <a routerLink="/autenticacion" class="hidden sm:inline-flex text-sm font-medium text-text-secondary hover:text-text-primary transition-colors px-4 py-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-xl">
         Ingresar
       </a>
-      <a routerLink="/auth/register" class="hidden sm:inline-flex text-sm font-medium text-white bg-primary hover:opacity-90 transition-opacity px-5 py-2.5 rounded-xl items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+      <a routerLink="/autenticacion/registro" class="hidden sm:inline-flex text-sm font-medium text-white bg-primary hover:opacity-90 transition-opacity px-5 py-2.5 rounded-xl items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
         Crear cuenta
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -80,10 +80,10 @@
     </nav>
 
     <div class="pt-4 border-t border-border space-y-2">
-      <a routerLink="/auth" (click)="closeMobileMenu()" class="flex items-center justify-center w-full text-sm font-medium text-text-secondary hover:text-text-primary border border-border px-4 py-2.5 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+      <a routerLink="/autenticacion" (click)="closeMobileMenu()" class="flex items-center justify-center w-full text-sm font-medium text-text-secondary hover:text-text-primary border border-border px-4 py-2.5 rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
         Ingresar
       </a>
-      <a routerLink="/auth/register" (click)="closeMobileMenu()" class="flex items-center justify-center w-full text-sm font-medium text-white bg-primary hover:opacity-90 transition-opacity px-4 py-2.5 rounded-xl gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
+      <a routerLink="/autenticacion/registro" (click)="closeMobileMenu()" class="flex items-center justify-center w-full text-sm font-medium text-white bg-primary hover:opacity-90 transition-opacity px-4 py-2.5 rounded-xl gap-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">
         Crear cuenta
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -111,14 +111,14 @@
             Plataforma integral para pacientes, especialistas y administradores. Reserva turnos, gestiona historias clínicas y visualiza métricas con la misma sencillez de las mejores herramientas SaaS.
           </p>
           <div class="flex flex-wrap gap-4">
-            <a routerLink="/auth" class="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
+            <a routerLink="/autenticacion" class="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
               Ver dashboard demo
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/>
                 <polyline points="12 5 19 12 12 19"/>
               </svg>
             </a>
-            <a routerLink="/auth/register" class="bg-surface text-text-primary border border-border px-6 py-3 rounded-xl font-semibold hover:bg-background transition-colors">
+            <a routerLink="/autenticacion/registro" class="bg-surface text-text-primary border border-border px-6 py-3 rounded-xl font-semibold hover:bg-background transition-colors">
               Crear cuenta
             </a>
           </div>
@@ -259,7 +259,7 @@
       <p class="text-lg text-text-secondary mb-8 max-w-xl mx-auto">
         Unite a la plataforma que están usando los mejores profesionales de la salud.
       </p>
-      <a routerLink="/auth/register" class="inline-flex items-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl font-semibold hover:opacity-90 transition-opacity">
+      <a routerLink="/autenticacion/registro" class="inline-flex items-center gap-2 bg-primary text-white px-8 py-3.5 rounded-xl font-semibold hover:opacity-90 transition-opacity">
         Crear cuenta gratis
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="12" x2="19" y2="12"/>
@@ -276,8 +276,8 @@
         <span class="text-sm text-text-secondary">&copy; 2026 Clínica Online</span>
       </div>
       <div class="flex items-center gap-6 text-sm text-text-secondary">
-        <a routerLink="/terms" class="hover:text-text-primary transition-colors">Términos</a>
-        <a routerLink="/privacy" class="hover:text-text-primary transition-colors">Privacidad</a>
+        <a routerLink="/terminos" class="hover:text-text-primary transition-colors">Términos</a>
+        <a routerLink="/privacidad" class="hover:text-text-primary transition-colors">Privacidad</a>
         <a href="#" class="hover:text-text-primary transition-colors">Contacto</a>
       </div>
     </div>

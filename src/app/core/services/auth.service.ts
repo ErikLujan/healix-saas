@@ -5,12 +5,12 @@ import { SupabaseService } from './supabase.service';
 import { toast } from 'ngx-sonner';
 import { Database } from '../models/database.types';
 
-/** Tipos de rol disponibles en el sistema clinico. */
+/** Tipos de rol disponibles en el sistema clínico. */
 export type UserRole = 'paciente' | 'especialista' | 'administrador';
 
 /**
- * Perfil basico del usuario extraido de la tabla public.profiles.
- * Representa los datos minimos necesarios para la capa de presentacion.
+ * Perfil básico del usuario extraído de la tabla public.profiles.
+ * Representa los datos mínimos necesarios para la capa de presentación.
  */
 export interface UserProfile {
   id: string;
@@ -21,14 +21,14 @@ export interface UserProfile {
 }
 
 /**
- * Servicio central de autenticacion y gestion de sesion.
+ * Servicio central de autenticación y gestión de sesión.
  *
  * Responsable del ciclo de vida completo del usuario autenticado:
- * restauracion de sesion, inicio/registro/cierre, y sincronizacion
+ * restauración de sesión, inicio/registro/cierre, y sincronización
  * del perfil desde Supabase Auth hacia la tabla public.profiles.
  *
  * Expone Signals reactivas para que Guards y componentes consuman
- * el estado de autenticacion sin acoplarse al SDK de Supabase.
+ * el estado de autenticación sin acoplarse al SDK de Supabase.
  */
 @Injectable({
   providedIn: 'root',
@@ -49,10 +49,10 @@ export class AuthService {
   readonly userRole = computed(() => this.userProfileSignal()?.role ?? null);
 
   /**
-   * Promesa que se resuelve cuando Supabase ha completado la recuperacion
-   * inicial de la sesion. Los Guards deben esperar esta senal antes de
+   * Promesa que se resuelve cuando Supabase ha completado la recuperación
+   * inicial de la sesión. Los Guards deben esperar esta señal antes de
    * tomar decisiones de redireccionamiento, evitando carreras de tiempo
-   * en refrescos de pagina donde la sesion aun no esta disponible.
+   * en refrescos de página donde la sesión aún no está disponible.
    */
   readonly sessionReady: Promise<void> = new Promise(resolve => {
     this.sessionReadyResolve = resolve;
@@ -66,14 +66,14 @@ export class AuthService {
   }
 
   /**
-   * Restaura la sesion desde el Storage local de Supabase y configura
-   * el listener de cambios de autenticacion. Resuelve sessionReady
+   * Restaura la sesión desde el Storage local de Supabase y configura
+   * el listener de cambios de autenticación. Resuelve sessionReady
    * independientemente del resultado para desbloquear los Guards.
    *
    * Se ignora el evento INITIAL_SESSION para evitar consultas
-   * fantasma con tokens potencialmente obsoletos en recargas de pagina.
+   * fantasma con tokens potencialmente obsoletos en recargas de página.
    * Solo se carga el perfil cuando el evento es SIGNED_IN o
-   * TOKEN_REFRESHED con una sesion activa confirmada.
+   * TOKEN_REFRESHED con una sesión activa confirmada.
    */
   private async initializeSession(): Promise<void> {
     try {
@@ -114,7 +114,7 @@ export class AuthService {
    * Consulta la tabla public.profiles para obtener el perfil completo
    * del usuario y poblar userProfileSignal con los datos de rol.
    *
-   * @param userId Identificador unico del usuario autenticado en Auth.
+   * @param userId Identificador único del usuario autenticado en Auth.
    */
   private async loadUserProfile(userId: string): Promise<void> {
     const { data, error } = await this.supabase.supabase
@@ -139,12 +139,12 @@ export class AuthService {
   }
 
   /**
-   * Autentica al usuario con credenciales de correo y contrasena.
+   * Autentica al usuario con credenciales de correo y contraseña.
    * Muestra toast de error en caso de fallo.
    *
-   * @param email Correo electronico del usuario.
-   * @param password Contrasena en texto plano.
-   * @returns Objeto con error null si la autenticacion fue exitosa.
+   * @param email Correo electrónico del usuario.
+   * @param password Contraseña en texto plano.
+   * @returns Objeto con error null si la autenticación fue exitosa.
    */
   async signIn(email: string, password: string): Promise<{ error: AuthError | null }> {
     const { error } = await this.supabase.supabase.auth.signInWithPassword({
@@ -162,11 +162,11 @@ export class AuthService {
 
   /**
    * Registra un nuevo usuario en Supabase Auth con metadatos de perfil.
-   * El trigger handle_new_user_sync popula las tablas de extension
-   * (profiles, pacientes/especialistas/administradores) automaticamente.
+   * El trigger handle_new_user_sync popula las tablas de extensión
+   * (profiles, pacientes/especialistas/administradores) automáticamente.
    *
-   * @param email Correo electronico unico para la cuenta.
-   * @param password Contrasena minima de 8 caracteres.
+   * @param email Correo electrónico único para la cuenta.
+   * @param password Contraseña mínima de 8 caracteres.
    * @param metadata Metadatos del perfil (role, full_name, dni, edad, etc.).
    * @returns Identificador del usuario creado o error en caso de fallo.
    */
@@ -189,14 +189,14 @@ export class AuthService {
   }
 
   /**
-   * Cierra la sesion activa, limpia el estado local y redirige
-   * al usuario a la pantalla de autenticacion.
+   * Cierra la sesión activa, limpia el estado local y redirige
+   * al usuario a la pantalla de autenticación.
    */
   async signOut(): Promise<void> {
     await this.supabase.supabase.auth.signOut();
     this.currentUserSignal.set(null);
     this.userProfileSignal.set(null);
-    this.router.navigate(['/auth']);
+    this.router.navigate(['/autenticacion']);
   }
 
   /**
@@ -223,11 +223,11 @@ export class AuthService {
   }
 
   /**
-   * Transforma los mensajes de error tecnicos de Supabase Auth
-   * en mensajes comprensibles para el usuario final en espanol.
+   * Transforma los mensajes de error técnicos de Supabase Auth
+   * en mensajes comprensibles para el usuario final en español.
    *
    * @param errorMessage Mensaje original devuelto por Supabase.
-   * @returns Mensaje amigable traducido al espanol.
+   * @returns Mensaje amigable traducido al español.
    */
   private mapAuthError(errorMessage: string): string {
     const errorMap: Record<string, string> = {

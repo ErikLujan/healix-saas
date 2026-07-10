@@ -5,6 +5,10 @@ import { AdminUsersService, AdminUser } from '../../services/admin-users.service
 import { AdminUsersModalComponent } from '../admin-users-modal/admin-users-modal.component';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge, slideDown } from '../../animations/admin-animations';
+import { ExcelExportService } from '@features/medical-history/services/excel-export.service';
+import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
+import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
+import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 
 /**
  * Panel unificado de administracion de usuarios.
@@ -17,13 +21,15 @@ import { modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminUsersModalComponent, PaginationComponent],
+  imports: [CommonModule, FormsModule, AdminUsersModalComponent, PaginationComponent, MedicalHistoryListComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
   animations: [modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge, slideDown],
 })
 export class AdminUsersComponent implements OnInit {
   private readonly adminUsersService = inject(AdminUsersService);
+  private readonly excelExportService = inject(ExcelExportService);
+  private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly users = this.adminUsersService.users;
   readonly isLoading = this.adminUsersService.isLoading;
@@ -33,6 +39,18 @@ export class AdminUsersComponent implements OnInit {
   readonly loadingApprovalId = signal<string | null>(null);
 
   readonly currentPage = signal(1);
+
+  /** Paciente seleccionado para auditar su historial clinico. */
+  readonly pacienteSeleccionado = signal<AdminUser | null>(null);
+
+  /** Historial clinico del paciente seleccionado. */
+  readonly historialPaciente = signal<readonly MedicalRecordConRelaciones[]>([]);
+
+  /** Estado de carga del historial. */
+  readonly isLoadingHistorial = signal(false);
+
+  /** Estado de exportacion Excel. */
+  readonly isExportingExcel = signal(false);
 
   /** Cantidad de registros visibles por pagina en la tabla. */
   private readonly ITEMS_PER_PAGE = 5;
@@ -226,5 +244,66 @@ export class AdminUsersComponent implements OnInit {
 
   onUserCreated(): void {
     this.closeModal();
+  }
+
+  /**
+   * Exporta la lista completa de usuarios a un archivo Excel.
+   * Incluye todos los usuarios sin importar el filtro activo.
+   */
+  exportarExcelUsuarios(): void {
+    this.isExportingExcel.set(true);
+
+    const usuariosParaExportar = this.users().map((u) => ({
+      id: u.id,
+      full_name: u.full_name,
+      email: u.email,
+      dni: u.pacientes?.dni ?? u.especialistas?.dni ?? u.administradores?.dni,
+      edad: u.pacientes?.edad ?? u.especialistas?.edad ?? u.administradores?.edad,
+      role: u.role,
+      created_at: u.created_at,
+    }));
+
+    setTimeout(() => {
+      this.excelExportService.exportarUsuarios(usuariosParaExportar, 'usuarios-registrados');
+      this.isExportingExcel.set(false);
+    }, 100);
+  }
+
+  /**
+   * Selecciona un paciente para auditar su historial clinico.
+   *
+   * @param user Usuario paciente a seleccionar.
+   */
+  seleccionarPacienteHistorial(user: AdminUser): void {
+    this.pacienteSeleccionado.set(user);
+    this.cargarHistorialPaciente(user.id);
+  }
+
+  /**
+   * Carga el historial clinico completo de un paciente.
+   *
+   * @param pacienteId UUID del paciente.
+   */
+  private cargarHistorialPaciente(pacienteId: string): void {
+    this.isLoadingHistorial.set(true);
+    this.historialPaciente.set([]);
+
+    this.medicalRecordsService.getHistoryByPatientId(pacienteId).subscribe({
+      next: (records) => {
+        this.historialPaciente.set(records);
+        this.isLoadingHistorial.set(false);
+      },
+      error: () => {
+        this.isLoadingHistorial.set(false);
+      },
+    });
+  }
+
+  /**
+   * Cierra el panel de historial clinico.
+   */
+  cerrarPanelHistorial(): void {
+    this.pacienteSeleccionado.set(null);
+    this.historialPaciente.set([]);
   }
 }

@@ -30,6 +30,16 @@
             Mis Horarios
           </button>
         }
+        @if (rol() === 'paciente') {
+          <button
+            type="button"
+            (click)="seleccionarTab('historial')"
+            class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
+            [ngClass]="tabActiva() === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+          >
+            Mi Historial Clínico
+          </button>
+        }
       </div>
 
       @if (tabActiva() === 'informacion') {
@@ -175,6 +185,62 @@
                 [diasDisponibles]="diasDisponibles"
               />
             </div>
+          </div>
+        </div>
+      }
+
+      @if (tabActiva() === 'historial' && rol() === 'paciente') {
+        <div class="space-y-6">
+          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 class="text-lg font-semibold text-text-primary">Mi Historial Clínico</h3>
+                <p class="text-sm text-text-secondary mt-1">
+                  Consulta cronológica de todas tus atenciones médicas.
+                </p>
+              </div>
+              @if (historialClinico().length > 0) {
+                <button
+                  type="button"
+                  (click)="exportarHistorialPDF()"
+                  [disabled]="isExportingPDF()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  @if (isExportingPDF()) {
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>Exportando...</span>
+                  } @else {
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Descargar Historial Clínico (PDF)</span>
+                  }
+                </button>
+              }
+            </div>
+
+            @if (isLoadingHistorial()) {
+              <div class="flex flex-col items-center justify-center py-16">
+                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p class="text-sm text-text-secondary">Cargando historial clínico...</p>
+              </div>
+            } @else if (historialClinico().length > 0) {
+              <app-medical-history-list [records]="historialClinico()" />
+            } @else {
+              <div class="flex flex-col items-center justify-center py-16 px-4">
+                <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-1">Sin historial clínico</h3>
+                <p class="text-sm text-gray-500 text-center max-w-sm">
+                  Aún no tienes consultas médicas registradas en el sistema.
+                </p>
+              </div>
+            }
           </div>
         </div>
       }

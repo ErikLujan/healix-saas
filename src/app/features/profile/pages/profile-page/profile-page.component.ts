@@ -4,6 +4,10 @@ import { TitleCasePipe, NgClass } from '@angular/common';
 import { SupabaseService } from '@core/services/supabase.service';
 import { AuthService } from '@core/services/auth.service';
 import { DisponibilidadService } from '@core/services/disponibilidad.service';
+import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
+import { PdfExportService } from '@features/medical-history/services/pdf-export.service';
+import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
+import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 import { FileUploadComponent } from '@shared/components/file-upload/file-upload.component';
 import { AvailabilityFormComponent } from '@features/specialist/availability/components/availability-form/availability-form.component';
 import { SlotsPreviewComponent } from '@features/specialist/availability/components/slots-preview/slots-preview.component';
@@ -16,7 +20,7 @@ import {
   NOMBRES_DIAS,
 } from '@core/models/disponibilidad.model';
 
-type TabId = 'informacion' | 'horarios';
+type TabId = 'informacion' | 'horarios' | 'historial';
 
 /** Datos extendidos cargados desde la tabla hija segun el rol del usuario. */
 interface DatosRol {
@@ -45,6 +49,7 @@ interface ConfiguracionDiaExtendida extends ConfiguracionDia {
     FileUploadComponent,
     AvailabilityFormComponent,
     SlotsPreviewComponent,
+    MedicalHistoryListComponent,
   ],
   templateUrl: './profile-page.component.html',
 })
@@ -52,6 +57,8 @@ export class ProfilePageComponent implements OnInit {
   private readonly supabase = inject(SupabaseService);
   private readonly authService = inject(AuthService);
   readonly disponibilidadService = inject(DisponibilidadService);
+  private readonly medicalRecordsService = inject(MedicalRecordsService);
+  private readonly pdfExportService = inject(PdfExportService);
 
   /** Tab activa actualmente. */
   readonly tabActiva = signal<TabId>('informacion');
@@ -90,23 +97,34 @@ export class ProfilePageComponent implements OnInit {
   /** Especialidades del especialista (para el formulario de disponibilidad). */
   readonly especialidades = signal<readonly EspecialidadPerfil[]>([]);
 
-  /** Configuracion semanal de disponibilidad. */
+  /** Configuración semanal de disponibilidad. */
   readonly configuracion = signal<Record<number, ConfiguracionDiaExtendida>>({});
 
-  /** Indica si la configuracion esta siendo guardada. */
+  /** Indica si la configuración está siendo guardada. */
   readonly isGuardando = signal(false);
 
-  /** Titulo de la pestana actual. */
+  /** Historial clínico del paciente (solo para rol paciente). */
+  readonly historialClinico = signal<readonly MedicalRecordConRelaciones[]>([]);
+
+  /** Indica si se está cargando el historial clínico. */
+  readonly isLoadingHistorial = signal(false);
+
+  /** Indica si se está exportando el PDF del historial. */
+  readonly isExportingPDF = signal(false);
+
+  /** Título de la pestaña actual. */
   readonly tituloTab = computed(() => {
     switch (this.tabActiva()) {
       case 'informacion':
         return 'Información Personal';
       case 'horarios':
         return 'Mis Horarios';
+      case 'historial':
+        return 'Mi Historial Clínico';
     }
   });
 
-  /** Nombre de la tabla hija segun el rol. */
+  /** Nombre de la tabla hija según el rol. */
   private get tablaRol(): string {
     const rol = this.rol();
     if (rol === 'paciente') return 'pacientes';
@@ -121,6 +139,9 @@ export class ProfilePageComponent implements OnInit {
         this.cargarEspecialidades(),
         this.cargarDisponibilidad(),
       ]);
+    }
+    if (this.rol() === 'paciente') {
+      await this.cargarHistorialClinico();
     }
     this.isLoading.set(false);
   }
@@ -146,7 +167,44 @@ export class ProfilePageComponent implements OnInit {
         obra_social: row['obra_social'] as string | undefined,
       });
     } catch {
-      // Silenciar errores de carga de datos de rol
+    }
+  }
+
+  /** Carga el historial clínico completo del paciente autenticado. */
+  private async cargarHistorialClinico(): Promise<void> {
+    const perfil = this.perfil();
+    if (!perfil) return;
+
+    this.isLoadingHistorial.set(true);
+
+    this.medicalRecordsService.getHistoryByPatientId(perfil.id).subscribe({
+      next: (records) => {
+        this.historialClinico.set(records);
+        this.isLoadingHistorial.set(false);
+      },
+      error: () => {
+        this.isLoadingHistorial.set(false);
+      },
+    });
+  }
+
+  /** Exporta el historial clínico del paciente a PDF con logo institucional. */
+  async exportarHistorialPDF(): Promise<void> {
+    const perfil = this.perfil();
+    if (!perfil || this.historialClinico().length === 0) return;
+
+    this.isExportingPDF.set(true);
+
+    try {
+      await this.pdfExportService.exportarHistorialPaciente(
+        this.historialClinico(),
+        perfil.full_name,
+        this.datosRol()?.dni ?? '',
+        perfil.email,
+        this.datosRol()?.edad,
+      );
+    } finally {
+      this.isExportingPDF.set(false);
     }
   }
 
@@ -182,11 +240,10 @@ export class ProfilePageComponent implements OnInit {
         )
       );
     } catch {
-      // Silenciar errores
     }
   }
 
-  /** Carga la disponibilidad actual y construye la configuracion semanal. */
+  /** Carga la disponibilidad actual y construye la configuración semanal. */
   private async cargarDisponibilidad(): Promise<void> {
     const perfil = this.perfil();
     if (!perfil) return;
@@ -238,7 +295,7 @@ export class ProfilePageComponent implements OnInit {
     this.configuracion.set(config);
   }
 
-  /** Cambia la pestana activa. */
+  /** Cambia la pestaña activa. */
   seleccionarTab(tab: TabId): void {
     this.tabActiva.set(tab);
   }
@@ -347,7 +404,6 @@ export class ProfilePageComponent implements OnInit {
 
       await this.disponibilidadService.guardarDisponibilidadSemanal(perfil.id, registros);
     } catch {
-      // El servicio ya muestra toast de error
     } finally {
       this.isGuardando.set(false);
     }
