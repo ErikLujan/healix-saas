@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import {
   provideLucideIcons,
   LucideUsers,
@@ -33,6 +34,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(),
     provideAnimations(),
+    provideCharts(withDefaultRegisterables()),
     provideLucideIcons(
       LucideUsers,
       LucideStethoscope,

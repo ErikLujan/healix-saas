@@ -22,6 +22,8 @@ El sistema opera sobre un modelo de identidad centralizado donde Supabase Auth a
 | Estilos | Tailwind CSS | 4.x |
 | Backend即服务 | Supabase (Auth, Database, Storage, Realtime) | 2.109+ |
 | Iconografia | Lucide Angular | 1.23+ |
+| Graficos | Chart.js + ng2-charts | 4.5+ / 10.0+ |
+| Exportacion | jsPDF + xlsx (SheetJS) | 4.2+ / 0.18+ |
 | Notificaciones | ngx-sonner | 3.1+ |
 | Lenguaje | TypeScript (strict mode) | 5.7+ |
 
@@ -683,6 +685,53 @@ El filtrado se extiende a los campos de la historia clinica (altura, peso, tempe
 
 ---
 
+## Pagina de Inicio Publica (Landing Page Dinamica)
+
+La pagina de inicio (`features/landing/`) es la primera interfaz que visualiza el usuario sin sesion activa. Desde el Sprint 4, la landing es completamente dinamica: todo el contenido visual proviene de consultas reales a Supabase, eliminando por completo los datos hardcodeados.
+
+### Secciones Activas
+
+| Seccion | Fuente de Datos | Descripcion |
+|---------|-----------------|-------------|
+| Hero | Estatica | Titulo, subtitulo y CTAs de navegacion |
+| Estadisticas | `profiles` (conteo de especialistas) | Conteo dinamico de especialistas activos |
+| Especialidades (`#especialidades`) | `specialties` (filtro `is_active = true`) | Tarjetas con icono dinamico via `especialidadIcon` pipe |
+| Profesionales (`#profesionales`) | `profiles` + `especialistas` + `especialista_especialidad` + `specialties` | Tarjetas con avatar (fallbackAvatar) y efecto hover (resaltarCard) |
+| Producto | Estatica | Tarjetas de funcionalidades del sistema |
+| CTA | Estatica | Llamado a la accion para registro |
+
+### Carga de Datos y Skeleton Loading
+
+El componente carga especialidades y especialistas en paralelo durante `ngOnInit()`:
+
+```typescript
+async ngOnInit(): Promise<void> {
+  await Promise.all([this.loadSpecialties(), this.loadSpecialists()]);
+}
+```
+
+Cada seccion incluye un estado de carga con esqueletos animados (`animate-pulse`) y un fallback `@empty` cuando no hay datos disponibles.
+
+### Consulta Unica con Desambiguacion FK
+
+La seccion Profesionales utiliza una unica consulta a `profiles` con embedding de 3 niveles, desambiguando la FK de la tabla puente con `!especialidad_id`:
+
+```typescript
+.select(`
+  id, full_name, avatar_url,
+  especialistas!inner(
+    is_approved,
+    especialista_especialidad(
+      specialties!especialidad_id(name)
+    )
+  )
+`)
+```
+
+La cadena resuelve: `profiles` → `especialistas` (via PK `id`) → `especialista_especialidad` (via FK `especialista_id`) → `specialties` (via FK `especialidad_id`). El operador `!especialidad_id` especifica explicitamente que la relacion entre `especialista_especialidad` y `specialties` se resuelve por la columna `especialidad_id`.
+
+---
+
 ## Modulos de Exportacion Local
 
 ### PdfExportService
@@ -732,7 +781,8 @@ Todas las URLs visibles en el navegador estan localizadas al idioma espanol:
 | `/historial-clinico` | Historial clinico (paciente) |
 | `/administracion` | Panel de administracion |
 | `/administracion/usuarios` | Gestion de usuarios (admin) |
-| `/estadisticas` | Estadisticas y reportes |
+| `/administracion/especialidades` | Gestion de especialidades (admin) |
+| `/estadisticas` | Estadisticas y reportes (admin) |
 | `/perfil` | Mi perfil (todos los roles) |
 
 ### Code Splitting
@@ -763,9 +813,11 @@ src/app/
 │   ├── guards/                    # roleGuard, specialistApprovalGuard
 │   └── animations/                # Animaciones de ruta
 │
-├── shared/                        # Componentes reutilizables
+├── shared/                        # Componentes, pipes y directivas reutilizables
+│   ├── pipes/                     # formatDni, estadoTurnoColor, especialidadIcon
+│   ├── directives/                # resaltarCard, roleAccess, fallbackAvatar
 │   └── components/
-│       ├── pagination/            # Paginacion reactiva generica
+│       ├── pagination/            # Paginacion reactiva generica + tipos
 │       ├── captcha/               # Validacion humana (2 modos)
 │       ├── file-upload/           # Arrastre y seleccion de imagenes
 │       ├── image-cropper/         # Recorte de imagenes
@@ -803,6 +855,247 @@ src/app/
 
 ---
 
+## Catalogo de Utilidades Compartidas (Shared Module)
+
+La capa `shared/` del proyecto concentra pipes puros, directivas de comportamiento y componentes reutilizables que eliminan duplicacion de logica visual y de presentacion en todo el sistema.
+
+### Pipes Personalizados
+
+Todos los pipes son standalone, puros (`pure: true`) y no dependen de servicios ni estado global. Su transformacion es exclusivamente visual y no muta el valor de entrada.
+
+| Pipe | Selector | Archivo | Proposito |
+|------|----------|---------|-----------|
+| `FormatDniPipe` | `formatDni` | `shared/pipes/format-dni.pipe.ts` | Formatea DNI con separadores de miles argentinos (`32123456` → `32.123.456`) |
+| `EstadoTurnoColorPipe` | `estadoTurnoColor` | `shared/pipes/estado-turno-color.pipe.ts` | Resuelve objeto visual `{ badge, dot, label }` para cada estado de turno |
+| `EspecialidadIconPipe` | `especialidadIcon` | `shared/pipes/especialidad-icon.pipe.ts` | Asocia nombre de especialidad a identificador de icono Lucide |
+
+**Firma del pipe `estadoTurnoColor`:**
+
+```typescript
+// Retorna un objeto inmutable con las clases de Tailwind predefinidas
+transform(value: TurnoEstado | string | null | undefined): EstadoTurnoVisual {
+  // pendiente  → { badge: 'bg-amber-100 text-amber-700',  dot: 'bg-amber-500',  label: 'Pendiente'  }
+  // confirmado → { badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', label: 'Confirmado' }
+  // finalizado → { badge: 'bg-blue-100 text-blue-700',    dot: 'bg-blue-500',    label: 'Finalizado' }
+  // rechazado  → { badge: 'bg-red-100 text-red-700',      dot: 'bg-red-500',     label: 'Rechazado'  }
+  // cancelado  → { badge: 'bg-slate-100 text-slate-700',  dot: 'bg-slate-500',   label: 'Cancelado'  }
+}
+```
+
+**Ejemplo de uso en plantilla:**
+
+```html
+<span [class]="(turno.estado | estadoTurnoColor).badge">
+  <span [class]="(turno.estado | estadoTurnoColor).dot"></span>
+  {{ (turno.estado | estadoTurnoColor).label }}
+</span>
+```
+
+### Directivas de Comportamiento
+
+| Directiva | Selector | Tipo | Archivo | Proposito |
+|-----------|----------|------|---------|-----------|
+| `ResaltarCardDirective` | `[resaltarCard]` | Atributo | `shared/directives/resaltar-card.directive.ts` | Aplica sombra elevada y `translateY(-2px)` al `mouseenter`; restaura al `mouseleave` |
+| `RoleAccessDirective` | `[roleAccess]` | Estructural | `shared/directives/role-access.directive.ts` | Renderiza o remueve el contenido del DOM segun el rol del usuario via `effect()` |
+| `FallbackAvatarDirective` | `img[fallbackAvatar]` | Atributo | `shared/directives/fallback-avatar.directive.ts` | Reemplaza `<img src>` roto con SVG de avatar generico |
+
+**Mecanismo de `RoleAccessDirective`:**
+
+La directiva utiliza `effect()` de Angular Signals para observar reactivamente el rol actual desde `AuthService.userRole()`. Cuando el rol no esta en la lista de roles autorizados, la directiva elimina completamente el `EmbeddedView` del DOM (no lo oculta con CSS):
+
+```html
+<button *roleAccess="['administrador']">
+  Eliminar usuario
+</button>
+```
+
+**Proteccion de imagenes con `FallbackAvatarDirective`:**
+
+Supabase Storage puede retornar URLs expiradas o inexistentes. La directiva escucha el evento `error` del elemento `<img>` y sustituye el `src` por un SVG inline de avatar generico, evitando imagenes rotas en la interfaz. Utiliza un atributo `data-fallback-applied` para evitar re-aplicaciones en bucle.
+
+---
+
+## Tableros Analiticos, Estadisticas y Motor de Descargas
+
+### Panel Principal Multiperfil (`/panel-principal`)
+
+El componente `HomeComponent` (`features/dashboard/pages/home/`) renderiza un conjunto de tarjetas KPI (Key Performance Indicators) cuyo contenido varia dinamicamente segun el rol del usuario autenticado:
+
+| Rol | KPI Cards |
+|-----|-----------|
+| **Administrador** | Usuarios totales, Pendientes de aprobacion, Especialidades activas, Historias clinicas |
+| **Especialista** | Turnos del dia, Pendientes, Pacientes atendidos, Disponibilidad |
+| **Paciente** | Mis turnos, Historial clinico, Solicitar turno, Mi perfil |
+
+Las tarjetas se computan mediante `computed()` a partir de signals de datos cargados desde Supabase. Cada tarjeta incluye `label`, `value`, `icon`, `color`, `bgColor` y un `link` opcional para navegacion directa.
+
+Debajo del grid de KPIs, se renderizan secciones de accesos rapidos especificas por rol, con links directos a las funcionalidades mas utilizadas.
+
+### Panel de Estadisticas del Administrador (`/estadisticas`)
+
+El componente `StatisticsDashboardComponent` (`features/statistics/pages/statistics-dashboard/`) ofrece un dashboard completo con graficos interactivos alimentados por datos reales de Supabase:
+
+#### Graficos Interactivos (Chart.js + ng2-charts)
+
+| Grafico | Tipo | Datos | Descripcion |
+|---------|------|-------|-------------|
+| Turnos por especialidad | Dona (`doughnut`) | `specialties.name` via join | Distribucion de turnos por area medica |
+| Turnos por dia de semana | Barras (`bar`) | `fecha_hora` agrupado por dia | Promedio historico de demanda por dia |
+| Turnos por medico | Barras agrupadas (`bar`) | `profiles.full_name` via FK | Solicitados vs finalizados, filtrable por rango de fechas |
+
+#### Filtros Reactivos de Fecha
+
+El grafico de turnos por medico incluye controles de fecha `Desde/Hasta` conectados a signals. Al cambiar el rango, se re-ejecuta la consulta a Supabase y se actualiza el grafico automaticamente:
+
+```typescript
+readonly filtroFecha = signal<DateRangeFilter>({ desde, hasta });
+
+onFechaDesdeChange(value: string): void {
+  this.filtroFecha.update(f => ({ ...f, desde: value }));
+  this.loadMedicoData();  // re-query Supabase
+}
+```
+
+#### Estados de UI
+
+- **Cargando:** Spinner animado con texto "Cargando estadisticas..."
+- **Sin datos:** Banner ilustrado con icono y mensaje "No se encontraron registros clinicos en el rango de fechas seleccionado."
+- **Con datos:** Grid responsivo `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` para KPIs, `lg:grid-cols-2` para graficos.
+
+### Motor de Exportacion (Excel y PDF)
+
+El archivo `statistics/utils/export.utils.ts` exporta 8 funciones puras para generacion de reportes corporativos:
+
+| Funcion | Formato | Datos |
+|---------|---------|-------|
+| `exportarTurnosPorEspecialidadExcel` | XLSX | Turnos agrupados por especialidad |
+| `exportarTurnosPorEspecialidadPDF` | PDF | Turnos agrupados por especialidad |
+| `exportarTurnosPorDiaExcel` | XLSX | Turnos agrupados por dia |
+| `exportarTurnosPorDiaPDF` | PDF | Turnos agrupados por dia |
+| `exportarTurnosPorMedicoExcel` | XLSX | Turnos por medico (solicitados/finalizados) |
+| `exportarTurnosPorMedicoPDF` | PDF | Turnos por medico (solicitados/finalizados) |
+| `exportarLogAccesosExcel` | XLSX | Log de accesos al sistema |
+| `exportarLogAccesosPDF` | PDF | Log de accesos al sistema |
+
+Las funciones Excel utilizan la libreria `xlsx` (SheetJS) y las funciones PDF utilizan `jsPDF`. Ambas respetan los filtros activos en pantalla al momento de la exportacion.
+
+### Gestion de Especialidades (`/administracion/especialidades`)
+
+El componente `AdminSpecialtiesComponent` (`features/administration/pages/admin-specialties/`) permite al administrador:
+
+- **Crear** nuevas especialidades con nombre y descripcion
+- **Activar/Desactivar** especialidades via toggle reactivo
+- **Eliminar** especialidades con confirmacion
+- Visualizar grilla responsiva de tarjetas con icono, descripcion y conteo de especialistas vinculados
+
+---
+
+## Bitacora de Decisiones Arquitectonicas Destacadas (Sprint 4)
+
+### 1. Modularidad de Graficos: Registro de Chart.js v4+ en Angular 19
+
+**Desafio:** Chart.js v4+ es altamente modular. Sin registro explicito de controladores (doughnut, bar, line), el motor grafico lanza errores en consola como `"doughnut" is not a registered controller`.
+
+**Solucion:** Se utiliza el provider `provideCharts(withDefaultRegisterables())` de `ng2-charts` en `app.config.ts`. Esta funcion registra globalmente todos los controladores, escalas, elementos y plugins necesarios sin llamadas manuales a `Chart.register()`:
+
+```typescript
+// app.config.ts
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // ...
+    provideCharts(withDefaultRegisterables()),
+  ],
+};
+```
+
+**Alternativa descartada:** `Chart.register(...registerables)` en el constructor del componente. Se descarto porque genera dependencia circular potencial y no aprovecha el sistema de DI de Angular.
+
+### 2. Desambiguacion en Supabase: Operador `!` de PostgREST
+
+**Desafio:** La tabla `turnos` tiene dos relaciones foraneas hacia `profiles` (via `paciente_id` y `especialista_id`). Cuando se ejecuta `.select('profiles(full_name)')`, Supabase no sabe cual union resolver y retorna el error: `"Could not embed because more than one relationship was found for 'turnos' and 'profiles'"`.
+
+**Solucion:** Se utiliza el operador de exclamacion `!` de PostgREST para especificar explicitamente el nombre de la columna foranea:
+
+```typescript
+// Consulta correcta: especifica que el join es via especialista_id
+.select('especialista_id, estado, profiles!especialista_id(full_name)')
+```
+
+**Principio general:** Siempre que una tabla tenga multiples relaciones hacia la misma tabla destino, el operador `!nombre_columna_fk` resuelve la ambiguedad de forma declarativa.
+
+### 3. Layout Flexible Embebido: Sidebar Fija con Footer Corporativo
+
+**Desafio:** El layout del dashboard necesitaba una sidebar fija que no scrolleara con el contenido, y un footer que apareciera al final del area de contenido.
+
+**Solucion:** Se reestructuro el HTML del `DashboardLayoutComponent` aplicando:
+
+- **Sidebar:** `sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto` — se fija debajo del header (64px) y scrollea independentemente.
+- **Contenedor de contenido:** `flex flex-col` con el `<router-outlet>` envuelto en un `div.flex-1` para empujar el footer al fondo.
+- **Footer:** `mt-8 pt-4 border-t` con texto de copyright, renderizado al final del area de contenido.
+
+```html
+<main class="flex-1 min-w-0 w-full overflow-x-hidden p-4 sm:p-6 flex flex-col">
+  <div class="flex-1">
+    <router-outlet />
+  </div>
+  <footer class="mt-8 pt-4 border-t border-border text-center text-xs text-text-secondary">
+    <p>&copy; 2026 Clinica Online. Todos los derechos reservados.</p>
+  </footer>
+</main>
+```
+
+### 4. Desambiguacion de Relaciones Anidadas en Landing Page
+
+**Desafio:** La tabla `especialista_especialidad` originalmente generaba errores de ambiguedad en PostgREST al intentar encadenar 4 niveles de relaciones (`profiles → especialistas → especialista_especialidad → specialties`). Tras sanear las restricciones duplicadas en la tabla intermedia, el embedding funciona correctamente con desambiguacion explícita de FK.
+
+**Solucion:** Consulta unica a `profiles` con embedding de 3 niveles, usando `!especialidad_id` para especificar la FK entre `especialista_especialidad` y `specialties`:
+
+```typescript
+.select(`
+  id, full_name, avatar_url,
+  especialistas!inner(
+    is_approved,
+    especialista_especialidad(
+      specialties!especialidad_id(name)
+    )
+  )
+`)
+```
+
+| Nivel | Operador | FK Resuelta |
+|-------|----------|-------------|
+| `profiles` → `especialistas` | `!inner` | PK `id` de `profiles` = FK en `especialistas` |
+| `especialistas` → `especialista_especialidad` | (implicito) | FK `especialista_id` en `especialista_especialidad` |
+| `especialista_especialidad` → `specialties` | `!especialidad_id` | FK `especialidad_id` en `especialista_especialidad` |
+
+**Principio:** Cuando una tabla puente tiene multiples FK hacia la misma tabla destino, el operador `!nombre_columna_fk` resuelve la ambiguedad de forma declarativa en la sintaxis PostgREST.
+
+### 5. Escalabilidad de Formularios: Buscador + Scroll Interno en Onboarding
+
+**Desafio:** Si la clinica escala a 20+ especialidades, el contenedor de seleccion en el formulario de registro de especialistas se estiraria infinitamente hacia abajo, deformando el formulario.
+
+**Solucion:** Se implemento un sistema de busqueda en tiempo real con contenedor de altura maxima fija:
+
+- **Signal `specialtySearch`:** Almacena el texto de busqueda.
+- **Computed `filteredSpecialties`:** Filtra las especialidades en memoria segun el texto.
+- **Contenedor:** `max-h-48 overflow-y-auto pr-2` — altura maxima de 192px con scroll interno.
+- **Input de busqueda:** Campo de texto con icono de lupa que actualiza la signal en cada evento `input`.
+
+```typescript
+readonly specialtySearch = signal('');
+readonly filteredSpecialties = computed(() => {
+  const query = this.specialtySearch().toLowerCase().trim();
+  if (!query) return this.specialties();
+  return this.specialties().filter(s => s.name.toLowerCase().includes(query));
+});
+```
+
+Este enfoque garantiza que el formulario mantenga su integridad visual sin importar el volumen de especialidades en el catalogo.
+
+---
+
 ## Estado del Roadmap
 
 | Sprint | Nombre | Estado | Componentes |
@@ -811,7 +1104,7 @@ src/app/
 | Sprint 1 | Autenticacion y Sistema Multiperfil | Completado | Landing, Login, Register (3 perfiles), Guards, Dashboard Layout, Admin Users Panel, Toasts semanticos, Realtime |
 | Sprint 2 | Gestion de Turnos y Agenda | Completado | Disponibilidad, Wizard de solicitud (5 pasos), Dashboard de turnos, Tarjetas semanticas, Paginacion reactiva, Captcha nativo, Mi Perfil, Calificacion, Resena medica |
 | Sprint 3 | Historia Clinica y Optimizacion | Completado | Historia clinica, datos dinamicos JSONB, filtrado avanzado, exportacion PDF/Excel, Lazy Loading, rutas localizadas en espanol, animaciones de transicion |
-| Sprint 4 | Estadisticas y Reportes | Planificado | Dashboard administrativo, graficos, exportacion |
+| Sprint 4 | Utilidades Compartidas, Estadisticas y Reportes | Completado | Pipes (formatDni, estadoTurnoColor, especialidadIcon), Directivas (resaltarCard, roleAccess, fallbackAvatar), Dashboard multiperfil KPI, Panel de estadisticas Chart.js, Motor de exportacion Excel/PDF, Gestion de especialidades, Sidebar sticky + footer, Buscador de especialidades paginado, Landing page dinamica (Supabase) |
 | Sprint 5 | Optimizacion y Despliegue | Planificado | Performance, testing e2e, CI/CD, despliegue |
 
 ---

@@ -3,11 +3,12 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { TitleCasePipe } from '@angular/common';
 import { fadeIn, slideInLeft, dropdownFade, overlayFade, drawerSlide } from '@core/animations/route-animations';
 import { AuthService } from '@core/services/auth.service';
+import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
 
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TitleCasePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TitleCasePipe, FallbackAvatarDirective],
   templateUrl: './dashboard-layout.component.html',
   styleUrl: './dashboard-layout.component.scss',
   animations: [fadeIn, slideInLeft, dropdownFade, overlayFade, drawerSlide],
@@ -44,7 +45,7 @@ export class DashboardLayoutComponent {
 
     if (role === 'administrador') {
       links.push(
-        { path: '/especialistas', label: 'Especialistas', icon: 'stethoscope' },
+        { path: '/administracion/especialidades', label: 'Especialidades', icon: 'heart' },
         { path: '/administracion/usuarios', label: 'Usuarios', icon: 'user-cog' },
         { path: '/estadisticas', label: 'Estadísticas', icon: 'bar-chart' },
       );

@@ -203,22 +203,33 @@
           </label>
           <span class="text-xs text-text-secondary">Puedes elegir varias</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          @for (specialty of specialties(); track specialty.id) {
-            <label
-              class="flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-all duration-200
+        <div class="relative mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar especialidad..."
+            [value]="specialtySearch()"
+            (input)="onSpecialtySearchInput($event)"
+            class="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                   transition-all duration-200 placeholder:text-text-secondary"
+          />
+        </div>
+        <div class="max-h-48 overflow-y-auto pr-2 space-y-1">
+          @for (specialty of filteredSpecialties(); track specialty.id) {
+            <button
+              type="button"
+              (click)="toggleSpecialty(specialty.id)"
+              class="w-full text-left px-3 py-2 text-sm font-medium rounded-xl border transition-all duration-200
                      {{ selectedSpecialtyIds().includes(specialty.id)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/40' }}"
-            >
-              <input
-                type="checkbox"
-                [checked]="selectedSpecialtyIds().includes(specialty.id)"
-                (change)="toggleSpecialty(specialty.id)"
-                class="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
-              />
-              <span class="text-sm text-text-primary">{{ specialty.name }}</span>
-            </label>
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-surface text-text-secondary hover:border-primary/40' }}">
+              {{ specialty.name }}
+            </button>
+          } @empty {
+            <p class="text-xs text-text-secondary text-center py-4">No se encontraron especialidades</p>
           }
         </div>
       </div>

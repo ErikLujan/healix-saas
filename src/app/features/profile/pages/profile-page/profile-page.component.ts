@@ -9,6 +9,8 @@ import { PdfExportService } from '@features/medical-history/services/pdf-export.
 import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 import { FileUploadComponent } from '@shared/components/file-upload/file-upload.component';
+import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
+import { FormatDniPipe } from '@shared/pipes/format-dni.pipe';
 import { AvailabilityFormComponent } from '@features/specialist/availability/components/availability-form/availability-form.component';
 import { SlotsPreviewComponent } from '@features/specialist/availability/components/slots-preview/slots-preview.component';
 import { toast } from 'ngx-sonner';
@@ -50,6 +52,8 @@ interface ConfiguracionDiaExtendida extends ConfiguracionDia {
     AvailabilityFormComponent,
     SlotsPreviewComponent,
     MedicalHistoryListComponent,
+    FallbackAvatarDirective,
+    FormatDniPipe,
   ],
   templateUrl: './profile-page.component.html',
 })

@@ -4,7 +4,7 @@
       <img src="assets/images/icono.png" alt="Clínica Online" class="w-9 h-9 rounded-full object-cover" />
       <div>
         <span class="text-base font-bold text-text-primary leading-tight block">Clínica Online</span>
-        <span class="text-[10px] font-semibold text-text-secondary tracking-widest uppercase">Health SaaS</span>
+        <span class="text-[10px] font-semibold text-text-secondary tracking-widest uppercase">SaaS Médico</span>
       </div>
     </a>
 
@@ -12,7 +12,6 @@
       <a href="#especialidades" class="hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">Especialidades</a>
       <a href="#profesionales" class="hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">Profesionales</a>
       <a href="#producto" class="hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">Producto</a>
-      <a href="#precios" class="hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">Precios</a>
     </nav>
 
     <div class="flex items-center gap-3">
@@ -76,7 +75,6 @@
       <a href="#especialidades" (click)="closeMobileMenu()" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-primary/5 hover:text-text-primary transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Especialidades</a>
       <a href="#profesionales" (click)="closeMobileMenu()" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-primary/5 hover:text-text-primary transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Profesionales</a>
       <a href="#producto" (click)="closeMobileMenu()" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-primary/5 hover:text-text-primary transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Producto</a>
-      <a href="#precios" (click)="closeMobileMenu()" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-secondary hover:bg-primary/5 hover:text-text-primary transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none">Precios</a>
     </nav>
 
     <div class="pt-4 border-t border-border space-y-2">
@@ -112,7 +110,7 @@
           </p>
           <div class="flex flex-wrap gap-4">
             <a routerLink="/autenticacion" class="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity flex items-center gap-2">
-              Ver dashboard demo
+              Ver panel de control
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/>
                 <polyline points="12 5 19 12 12 19"/>
@@ -182,7 +180,7 @@
           <p class="text-sm text-text-secondary mt-1">Pacientes</p>
         </div>
         <div class="text-center">
-          <p class="text-3xl font-bold text-text-primary">89</p>
+          <p class="text-3xl font-bold text-text-primary">{{ specialists().length || '89' }}</p>
           <p class="text-sm text-text-secondary mt-1">Especialistas</p>
         </div>
         <div class="text-center">
@@ -194,6 +192,191 @@
           <p class="text-sm text-text-secondary mt-1">Disponibilidad</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="especialidades" class="py-20 bg-background">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="max-w-2xl mb-12">
+        <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Especialidades</p>
+        <h2 class="text-3xl lg:text-4xl font-bold text-text-primary leading-tight mb-4">
+          Amplia cobertura médica para cada paciente.
+        </h2>
+        <p class="text-lg text-text-secondary">
+          Contamos con especialistas en diversas áreas para brindar la mejor atención.
+        </p>
+      </div>
+
+      @if (isLoadingSpecialties()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="bg-surface rounded-2xl border border-border p-5">
+              <div class="w-12 h-12 rounded-xl bg-background animate-pulse mb-4"></div>
+              <div class="h-5 bg-background rounded animate-pulse w-3/4 mb-2"></div>
+              <div class="h-4 bg-background rounded animate-pulse w-full"></div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          @for (specialty of specialties(); track specialty.id) {
+            <article class="bg-surface rounded-2xl border border-border p-5 hover:shadow-md transition-shadow">
+              <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  @switch (specialty.name | especialidadIcon) {
+                    @case ('heart-pulse') {
+                      <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>
+                      <path d="M12 6l-2 4h4l-2 4"/>
+                    }
+                    @case ('scan-face') {
+                      <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/>
+                      <path d="M9 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/>
+                      <path d="M15 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/>
+                      <path d="M9 16c1 1 2 1 3 1s2 0 3 -1"/>
+                    }
+                    @case ('baby') {
+                      <path d="M9 12h.01"/>
+                      <path d="M15 12h.01"/>
+                      <path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/>
+                      <path d="M19 6.3a9 9 0 0 1 1.8 3.9a2 2 0 0 1 .4 4.1a9 9 0 0 1-17.6 0a2 2 0 0 1 .4-4.1a9 9 0 0 1 1.8-3.9z"/>
+                    }
+                    @case ('bone') {
+                      <path d="M18.6 3.4a2.2 2.2 0 0 1 3.1 3.1L7.6 20.5 3 22l1.5-4.6Z"/>
+                      <path d="m15.5 7.5 4 4"/>
+                      <path d="m2 22 3-3"/>
+                      <path d="M18.6 3.4a2.2 2.2 0 0 0-3.1 0L7.6 11.3"/>
+                    }
+                    @case ('heart-handshake') {
+                      <path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"/>
+                      <path d="M8 14l2 2l4-4"/>
+                    }
+                    @case ('eye') {
+                      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0-4 0"/>
+                      <path d="M21 12c-2.4 4-5.4 6-9 6c-3.6 0-6.6-2-9-6c2.4-4 5.4-6 9-6c3.6 0 6.6 2 9 6"/>
+                    }
+                    @case ('smile') {
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                      <line x1="9" y1="9" x2="9.01" y2="9"/>
+                      <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    }
+                    @case ('brain') {
+                      <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                      <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+                      <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+                      <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/>
+                      <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                      <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                      <path d="M19.938 10.5a4 4 0 0 1 .585.396"/>
+                      <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                      <path d="M19.967 17.484A4 4 0 0 1 18 18"/>
+                    }
+                    @case ('droplets') {
+                      <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>
+                      <path d="M12.56 14.69c1.44 0 2.6-1.14 2.6-2.55 0-.74-.36-1.43-1.08-2.01S12.83 8.99 12.56 8.3c-.17.89-.69 1.78-1.41 2.36s-1.08 1.27-1.08 2.01c0 1.41 1.16 2.55 2.6 2.55z"/>
+                      <path d="M17.56 14.69c1.44 0 2.6-1.14 2.6-2.55 0-.74-.36-1.43-1.08-2.01s-1.2-1.56-1.47-2.26c-.17.89-.69 1.78-1.41 2.36s-1.08 1.27-1.08 2.01c0 1.41 1.16 2.55 2.6 2.55z"/>
+                    }
+                    @case ('hand') {
+                      <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
+                      <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
+                      <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+                      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+                    }
+                    @case ('droplet') {
+                      <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>
+                    }
+                    @case ('ribbon') {
+                      <path d="M12 4c-1.5 0-3 .5-4 1.5C7 6.5 6 8 6 10c0 2 1 3 2 4l4 4 4-4c1-1 2-2 2-4 0-2-1-3.5-2-4.5-1-1-2.5-1.5-4-1.5"/>
+                      <path d="M12 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>
+                    }
+                    @case ('scissors') {
+                      <circle cx="6" cy="6" r="3"/>
+                      <circle cx="6" cy="18" r="3"/>
+                      <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+                      <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+                      <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+                    }
+                    @case ('ear') {
+                      <path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10.5"/>
+                      <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 0 0 4 0"/>
+                    }
+                    @case ('wind') {
+                      <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                      <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                      <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                    }
+                    @case ('activity') {
+                      <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+                    }
+                    @case ('pill') {
+                      <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"/>
+                      <path d="m8.5 8.5 7 7"/>
+                    }
+                    @default {
+                      <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+                      <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+                      <circle cx="20" cy="10" r="2"/>
+                    }
+                  }
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-text-primary mb-1">{{ specialty.name }}</h3>
+              @if (specialty.description) {
+                <p class="text-sm text-text-secondary leading-relaxed">{{ specialty.description }}</p>
+              }
+            </article>
+          } @empty {
+            <p class="col-span-full text-center text-text-secondary py-8">
+              No hay especialidades disponibles por el momento.
+            </p>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <section id="profesionales" class="py-20 bg-gradient-to-b from-background to-blue-50/30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="max-w-2xl mb-12">
+        <p class="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Profesionales</p>
+        <h2 class="text-3xl lg:text-4xl font-bold text-text-primary leading-tight mb-4">
+          Equipo médico de primer nivel.
+        </h2>
+        <p class="text-lg text-text-secondary">
+          Profesionales aprobados y verificados listos para atenderte.
+        </p>
+      </div>
+
+      @if (isLoadingSpecialists()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="bg-surface rounded-2xl border border-border p-5 text-center">
+              <div class="w-20 h-20 rounded-full bg-background animate-pulse mx-auto mb-4"></div>
+              <div class="h-5 bg-background rounded animate-pulse w-2/3 mx-auto mb-2"></div>
+              <div class="h-4 bg-background rounded animate-pulse w-1/2 mx-auto"></div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          @for (specialist of specialists(); track specialist.id) {
+            <article class="bg-surface rounded-2xl border border-border p-5 text-center" resaltarCard>
+              <img
+                [src]="specialist.avatar_url"
+                [alt]="specialist.full_name"
+                class="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-primary/20"
+                fallbackAvatar
+              />
+              <h3 class="text-base font-semibold text-text-primary mb-1">{{ specialist.full_name }}</h3>
+              <p class="text-sm text-primary font-medium">{{ specialist.specialty }}</p>
+            </article>
+          } @empty {
+            <p class="col-span-full text-center text-text-secondary py-8">
+              Aún no hay especialistas disponibles.
+            </p>
+          }
+        </div>
+      }
     </div>
   </section>
 

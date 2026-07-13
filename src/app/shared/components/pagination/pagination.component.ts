@@ -1,22 +1,37 @@
 import { Component, input, output, computed } from '@angular/core';
 import { NgClass } from '@angular/common';
+import type { PaginationRange } from './pagination.types';
 
 /**
- * Componente genérico de paginación reactiva.
+ * Componente generico de paginacion reactiva.
  *
- * Calcula internamente el total de páginas y los números visibles
+ * Calcula internamente el total de paginas y los numeros visibles
  * a partir de los inputs proporcionados. Emite un evento cada vez
- * que el usuario selecciona una página diferente.
+ * que el usuario selecciona una pagina diferente.
+ *
+ * La coleccion original permanece inmutable. El componente opera
+ * exclusivamente sobre memoria, derivando el subconjunto visible
+ * mediante computed(). No contiene logica de negocio ni realiza
+ * consultas a Supabase.
  *
  * Utiliza Angular Signals y computed() para mantener la reactividad
  * sin ciclo de vida manual. Optimizado para ser reutilizado en
  * cualquier grilla o listado del sistema.
+ *
+ * @example
+ * // En una plantilla Angular:
+ * <app-pagination
+ *   [totalItems]="records().length"
+ *   [currentPage]="paginaActual()"
+ *   [pageSize]="4"
+ *   (pageChange)="onPageChange($event)" />
  */
 @Component({
   selector: 'app-pagination',
   standalone: true,
   imports: [NgClass],
   templateUrl: './pagination.component.html',
+  styleUrls: ['./pagination.component.scss'],
 })
 export class PaginationComponent {
   /** Página activa actual (1-indexed). */
@@ -49,8 +64,8 @@ export class PaginationComponent {
     return pages;
   });
 
-  /** Rango de índices visibles para el contador informativo. */
-  readonly paginationRange = computed(() => {
+  /** Rango de indices visibles para el contador informativo. */
+  readonly paginationRange = computed((): PaginationRange => {
     const total = this.totalItems();
     if (total === 0) return { start: 0, end: 0, total: 0 };
 

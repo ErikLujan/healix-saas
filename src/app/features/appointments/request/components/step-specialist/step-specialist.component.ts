@@ -2,12 +2,13 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { SupabaseService } from '@core/services/supabase.service';
 import { WizardTurnoService, EspecialistaWizard } from '../../services/wizard-turno.service';
+import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
 import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-step-specialist',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, FallbackAvatarDirective],
   templateUrl: './step-specialist.component.html',
 })
 export class StepSpecialistComponent implements OnInit {

@@ -9,6 +9,7 @@ import { ExcelExportService } from '@features/medical-history/services/excel-exp
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
+import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
 
 /**
  * Panel unificado de administracion de usuarios.
@@ -21,7 +22,7 @@ import { MedicalRecordConRelaciones } from '@features/medical-history/models/med
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminUsersModalComponent, PaginationComponent, MedicalHistoryListComponent],
+  imports: [CommonModule, FormsModule, AdminUsersModalComponent, PaginationComponent, MedicalHistoryListComponent, FallbackAvatarDirective],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.scss',
   animations: [modalBackdrop, modalContent, tableRowStagger, fadeSlideRow, statusBadge, slideDown],

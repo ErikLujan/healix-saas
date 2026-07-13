@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { UpperCasePipe } from '@angular/common';
 import { AuthService } from '@core/services/auth.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
+import { filtrarHistoriasClinicas } from '@features/medical-history/utils/medical-record-filter';
 
 /**
  * Interfaz para el paciente atendido por el especialista.
@@ -119,7 +120,26 @@ interface PacienteAtendido {
                     <p class="text-sm text-gray-500">Cargando historial...</p>
                   </div>
                 } @else {
-                  <app-medical-history-list [records]="historialPaciente()" />
+                  <div class="mb-4">
+                    <div class="relative">
+                      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        [value]="terminoBusqueda()"
+                        (input)="onSearchInput($event)"
+                        placeholder="Buscar en historial clinico..."
+                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all duration-200" />
+                    </div>
+                    @if (terminoBusqueda()) {
+                      <p class="text-xs text-gray-500 mt-2">
+                        {{ historialFiltrado().length }} resultado{{ historialFiltrado().length !== 1 ? 's' : '' }}
+                        para "{{ terminoBusqueda() }}"
+                      </p>
+                    }
+                  </div>
+                  <app-medical-history-list [records]="historialFiltrado()" />
                 }
               </div>
             } @else {
@@ -153,6 +173,14 @@ export class PatientListComponent implements OnInit {
 
   /** Historial clinico del paciente seleccionado. */
   readonly historialPaciente = signal<readonly MedicalRecordConRelaciones[]>([]);
+
+  /** Termino de busqueda libre sobre el historial clinico. */
+  readonly terminoBusqueda = signal('');
+
+  /** Historial clinico filtrado reactivamente por el termino de busqueda. */
+  readonly historialFiltrado = computed(() =>
+    filtrarHistoriasClinicas(this.historialPaciente(), this.terminoBusqueda()),
+  );
 
   /** Estado de carga inicial. */
   readonly isLoading = signal(true);
@@ -240,10 +268,22 @@ export class PatientListComponent implements OnInit {
   }
 
   /**
+   * Maneja el evento input del campo de busqueda.
+   * Actualiza el signal del termino de busqueda para activar el filtrado reactivo.
+   *
+   * @param event Evento de input del campo de texto.
+   */
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.terminoBusqueda.set(input.value);
+  }
+
+  /**
    * Cierra el panel de historial y deselecciona el paciente.
    */
   cerrarPanel(): void {
     this.pacienteSeleccionado.set(null);
     this.historialPaciente.set([]);
+    this.terminoBusqueda.set('');
   }
 }
