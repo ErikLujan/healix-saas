@@ -3,11 +3,12 @@ import { NgClass } from '@angular/common';
 import { SupabaseService } from '@core/services/supabase.service';
 import { EspecialidadInfo } from '@core/models/turno.model';
 import { WizardTurnoService } from '../../services/wizard-turno.service';
+import { ResaltarCardDirective } from '@shared/directives/resaltar-card.directive';
 
 @Component({
   selector: 'app-step-specialty',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, ResaltarCardDirective],
   templateUrl: './step-specialty.component.html',
 })
 export class StepSpecialtyComponent implements OnInit {

@@ -16,6 +16,14 @@ const routes: Routes = [
       ),
     title: 'Clínica Online | Administración de Usuarios',
   },
+  {
+    path: 'especialidades',
+    loadComponent: () =>
+      import('./pages/admin-specialties/admin-specialties.component').then(
+        (m) => m.AdminSpecialtiesComponent,
+      ),
+    title: 'Clínica Online | Especialidades',
+  },
 ];
 
 export default routes;

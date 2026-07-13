@@ -2,24 +2,7 @@ import { Component, input, output, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { TurnoConRelaciones } from '@core/models/turno.model';
 import { UserRole } from '@core/services/auth.service';
-
-/** Colores semanticos para los badges de estado del turno. */
-const COLORES_ESTADO: Record<string, string> = {
-  pendiente: 'bg-amber-100 text-amber-700',
-  confirmado: 'bg-emerald-100 text-emerald-700',
-  rechazado: 'bg-red-100 text-red-700',
-  cancelado: 'bg-gray-100 text-gray-500',
-  finalizado: 'bg-emerald-100 text-emerald-700',
-};
-
-/** Iconos de puntos para cada estado. */
-const DOT_COLORS: Record<string, string> = {
-  pendiente: 'bg-amber-500',
-  confirmado: 'bg-emerald-500',
-  rechazado: 'bg-red-500',
-  cancelado: 'bg-gray-400',
-  finalizado: 'bg-emerald-500',
-};
+import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
 
 /**
  * Componente presentacional que renderiza una tarjeta de turno medico.
@@ -33,7 +16,7 @@ const DOT_COLORS: Record<string, string> = {
 @Component({
   selector: 'app-turno-card',
   standalone: true,
-  imports: [NgClass],
+  imports: [NgClass, EstadoTurnoColorPipe],
   templateUrl: './turno-card.component.html',
 })
 export class TurnoCardComponent {
@@ -66,16 +49,6 @@ export class TurnoCardComponent {
 
   /** Indica si hay una operacion en curso sobre este turno. */
   readonly isProcesando = signal(false);
-
-  /** Obtiene las clases CSS para el badge de estado. */
-  colorEstado(estado: string): string {
-    return COLORES_ESTADO[estado] ?? 'bg-gray-100 text-gray-500';
-  }
-
-  /** Obtiene la clase CSS para el punto indicador del estado. */
-  dotColor(estado: string): string {
-    return DOT_COLORS[estado] ?? 'bg-gray-400';
-  }
 
   /** Indica si el turno permite ser cancelado. */
   puedeCancelar(): boolean {

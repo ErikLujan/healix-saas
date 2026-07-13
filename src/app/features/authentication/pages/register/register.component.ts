@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -61,6 +61,14 @@ export class RegisterComponent {
 
   readonly specialties = signal<{ id: string; name: string }[]>([]);
   readonly selectedSpecialtyIds = signal<string[]>([]);
+  readonly specialtySearch = signal('');
+
+  readonly filteredSpecialties = computed(() => {
+    const query = this.specialtySearch().toLowerCase().trim();
+    const all = this.specialties();
+    if (!query) return all;
+    return all.filter(s => s.name.toLowerCase().includes(query));
+  });
 
   readonly obraSocialOptions = [
     'OSDE',
@@ -186,6 +194,11 @@ export class RegisterComponent {
     );
   }
 
+  onSpecialtySearchInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.specialtySearch.set(value);
+  }
+
   /**
    * Valida todos los campos del formulario, ejecuta el signUp en Supabase
    * Auth, sube las imagenes a Storage y vincula las especialidades
@@ -246,18 +259,13 @@ export class RegisterComponent {
       const { userId, error: signUpError } = await this.authService.signUp(email, password, metadata);
 
       if (signUpError || !userId) {
-        console.error('[Register] signUp failed:', signUpError?.message ?? 'no userId returned');
         this.isSubmitting.set(false);
         return;
       }
 
-      console.log('[Register] signUp success, userId:', userId);
-
       if (this.selectedProfile() === 'paciente') {
         const frontalUrl = await this.uploadImage(userId, 'frontal', this.frontalCroppedData()!);
         const secondaryUrl = await this.uploadImage(userId, 'secundario', this.secondaryCroppedData()!);
-
-        console.log('[Register] images uploaded, patching paciente record');
 
         const { error: patchError } = await this.supabase.supabase
           .from('pacientes')
@@ -265,9 +273,7 @@ export class RegisterComponent {
           .eq('id', userId);
 
         if (patchError) {
-          console.error('[Register] paciente patch error:', patchError.message);
-        } else {
-          console.log('[Register] paciente record updated with image URLs');
+          toast.error('Error al guardar la foto de perfil. Intenta nuevamente.');
         }
 
         await this.supabase.supabase
@@ -288,7 +294,6 @@ export class RegisterComponent {
           .eq('id', userId);
 
         if (especialistaError) {
-          console.error('[Register] especialista update error:', especialistaError.message);
           toast.error('Error al guardar los datos del especialista. Intenta nuevamente.');
           return;
         }
@@ -314,18 +319,14 @@ export class RegisterComponent {
 
         const specialtyErrors = specialtyResults.filter(r => r.error);
         if (specialtyErrors.length > 0) {
-          console.error('[Register] specialty link errors:', specialtyErrors.map(r => r.error!.message));
           toast.error('Error al vincular las especialidades. Intenta nuevamente.');
           return;
         }
-
-        console.log('[Register] specialties linked:', this.selectedSpecialtyIds().length);
       }
 
       toast.success('Cuenta creada exitosamente');
       this.router.navigate(['/autenticacion']);
-    } catch (err) {
-      console.error('[Register] unexpected error:', err);
+    } catch {
       toast.error('Ocurrió un error inesperado. Intenta nuevamente');
     } finally {
       this.isSubmitting.set(false);

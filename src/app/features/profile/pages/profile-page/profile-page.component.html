@@ -49,7 +49,7 @@
               <div class="relative">
                 <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-border">
                   @if (getAvatarUrl(); as avatarUrl) {
-                    <img [src]="avatarUrl" [alt]="profile.full_name" class="w-24 h-24 rounded-full object-cover" />
+                    <img [src]="avatarUrl" [alt]="profile.full_name" class="w-24 h-24 rounded-full object-cover" fallbackAvatar />
                   } @else {
                     <span class="text-2xl font-bold text-primary">{{ getInitials(profile.full_name) }}</span>
                   }
@@ -128,7 +128,7 @@
               @if (datosRol(); as datos) {
                 <div class="p-4 rounded-xl bg-background border border-border/50">
                   <p class="text-xs font-medium text-text-secondary mb-1">DNI</p>
-                  <p class="text-sm font-semibold text-text-primary">{{ datos.dni }}</p>
+                  <p class="text-sm font-semibold text-text-primary">{{ datos.dni | formatDni }}</p>
                 </div>
                 <div class="p-4 rounded-xl bg-background border border-border/50">
                   <p class="text-xs font-medium text-text-secondary mb-1">Edad</p>
