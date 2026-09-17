@@ -87,13 +87,99 @@ Historial clínico del paciente en Healix <img width="1920" height="1080" alt="0
 
 ### Estructura del proyecto
 
+Arquitectura orientada a dominios (Domain-Driven Architecture) sobre Angular 19 en modo standalone: sin `NgModule`, con componentes autónomos, control flow nativo (`@if`, `@for`, `@switch`) y estado reactivo con Signals. Cada dominio de negocio vive aislado en su propia carpeta bajo `features/` y expone sus rutas mediante lazy loading, de modo que el bundle inicial solo contiene el shell y la landing.
+
 ```text
-src/app/
-├── core/          # Servicios singleton, guards, modelos y animaciones globales
-├── features/      # Dominios de negocio lazy-loaded (turnos, historias, administración, ...)
-├── shared/        # Componentes, pipes y directivas reutilizables
-└── layouts/       # Shells de navegación (dashboard, autenticación)
+src/
+├── main.ts                      # Punto de arranque: bootstrap de la app standalone
+├── index.html                   # Preloader estático de marca + punto de montaje
+├── styles.scss                  # Design tokens globales + Tailwind CSS v4
+└── environments/
+│   ├── environment.ts           # Configuración de desarrollo (clave pública anon)
+│   └── environment.prod.ts      # Configuración productiva (reemplazo en build)
+└── app/
+    ├── app.routes.ts            # Mapa raíz de rutas (shells + redirecciones)
+    ├── app.config.ts            # Proveedores globales (router, animaciones, HTTP)
+    ├── app.component.ts         # Componente raíz + animación de transición de rutas
+    ├── core/                    # Núcleo transversal: singletons, seguridad y dominio
+    │   ├── services/
+    │   │   ├── auth.service.ts           # Sesión, perfil, rol y verificación (Supabase Auth)
+    │   │   ├── supabase.service.ts       # Cliente único de Supabase (PostgreSQL + Storage)
+    │   │   ├── turnos.service.ts         # Ciclo de vida de turnos y enriquecimiento
+    │   │   ├── medical-records.service.ts# Reexport del dominio clínico centralizado
+    │   │   ├── disponibilidad.service.ts # Bloques de atención del especialista
+    │   │   ├── registration.service.ts   # Alta de usuarios y catálogo de especialidades
+    │   │   ├── loading.service.ts        # Loader global con tiempo mínimo visible
+    │   │   └── inactivity.service.ts     # Cierre por inactividad de sesión
+    │   ├── guards/
+    │   │   ├── auth.guard.ts    # Exige sesión activa (sin sesión → /autenticacion)
+    │   │   └── role.guard.ts    # Exige rol de ruta (sin rol → /panel-principal)
+    │   ├── models/
+    │   │   ├── database.types.ts       # Tipos generados del esquema Supabase
+    │   │   ├── turno.model.ts          # Entidad Turno + estados y transiciones
+    │   │   ├── medical-record.model.ts # Historia clínica + datos dinámicos JSONB
+    │   │   └── disponibilidad.model.ts # Bloques horarios del especialista
+    │   ├── interceptors/        # Interceptores HTTP transversales
+    │   └── animations/
+    │       └── route-animations.ts # Transiciones :enter/:leave por ruta
+    ├── features/                # Dominios de negocio aislados (100 % lazy-loaded)
+    │   ├── landing/             # Página pública de captación
+    │   ├── authentication/      # Login y registro multiperfil con captcha
+    │   ├── approval-pending/    # Sala de espera de aprobación/verificación
+    │   ├── dashboard/           # Panel principal según rol
+    │   ├── appointments/        # Reserva (wizard en 5 pasos) y gestión de turnos
+    │   │   ├── request/         # Wizard: specialty → specialist → date → time → confirm
+    │   │   ├── dashboard/       # Listado, filtros, diálogos y calificación
+    │   │   ├── finish/          # Alta médica (cierre del turno atendido)
+    │   │   └── appointments.routes.ts
+    │   ├── medical-history/     # Historia clínica (listado, detalle, PDF)
+    │   │   ├── components/      # Tarjetas y listados clínicos
+    │   │   ├── pages/           # Vistas de historial y registro
+    │   │   ├── services/        # Enriquecimiento + exportación a PDF
+    │   │   ├── models/          # Tipos clínicos del dominio
+    │   │   └── medical-history.routes.ts
+    │   ├── patients/            # Gestión de pacientes (admin/especialista)
+    │   ├── specialists/         # Directorio de especialistas
+    │   ├── specialist/          # Disponibilidad del especialista (agenda propia)
+    │   ├── administration/      # Usuarios, especialidades y panel admin
+    │   ├── statistics/          # KPIs, gráficos Chart.js y exportación Excel/PDF
+    │   ├── profile/             # Perfil propio y documentos
+    │   └── legal/               # Términos, privacidad y página 404
+    ├── shared/                  # Presentación reutilizable, sin lógica de negocio
+    │   ├── components/
+    │   │   ├── captcha/             # Verificación humana nativa del registro
+    │   │   ├── image-cropper/       # Recorte de avatar antes de subir
+    │   │   ├── file-upload/         # Subida de documentos a Storage
+    │   │   ├── page-loader/         # Barra indeterminada corporativa global
+    │   │   ├── pagination/          # Paginador genérico (turnos, admin)
+    │   │   └── clinical-controls/   # Controles clínicos del Sprint 5 (EVA, FC, alergias)
+    │   ├── pipes/
+    │   │   ├── estado-turno-color.pipe.ts  # Color semántico por estado del turno
+    │   │   ├── fecha-format.pipe.ts        # Formato es-AR de fechas clínicas
+    │   │   ├── format-dni.pipe.ts          # Formato de documento de identidad
+    │   │   └── especialidad-icon.pipe.ts   # Icono por especialidad
+    │   ├── directives/
+    │   │   ├── captcha.directive.ts         # Directiva de desafío de seguridad
+    │   │   ├── role-access.directive.ts     # Render condicional por rol
+    │   │   ├── fallback-avatar.directive.ts # Avatar por defecto ante error de imagen
+    │   │   └── resaltar-card.directive.ts   # Resaltado de tarjetas coincidentes
+    │   ├── services/
+    │   │   └── captcha-config.service.ts    # Configuración del captcha compartido
+    │   └── models/                          # Tipos transversales de presentación
+    └── layouts/                 # Shells de UI según estado de sesión
+        ├── auth-layout/         # Shell público (landing, login, registro, legal)
+        └── dashboard-layout/    # Shell privado (sidebar, topbar, outlet de dominios)
 ```
+
+**`src/app/core/` — núcleo singleton y seguridad.** Contiene los servicios de instancia única (`auth.service.ts` para identidad, sesión y rol; `supabase.service.ts` como único punto de acceso al backend), los modelos de dominio (`turno.model.ts`, `medical-record.model.ts`, `database.types.ts`), los guards funcionales (`auth.guard.ts` protege la sesión, `role.guard.ts` protege el rol con redirección estricta a `/panel-principal`), además de interceptores y animaciones de ruta globales. Nada aquí renderiza UI: es la capa transversal que todos los dominios consumen.
+
+**`src/app/features/` — dominios de negocio estrictamente aislados.** Cada carpeta (`appointments`, `medical-history`, `administration`, `statistics`, `patients`, `specialists`, `specialist`, `profile`, `dashboard`, `landing`, `authentication`, `approval-pending`, `legal`) encapsula sus componentes, páginas, servicios, modelos y archivo `*.routes.ts`. El 100 % de estas rutas se carga con `loadChildren`/`loadComponent` (lazy loading), por lo que el bundle inicial solo incluye el shell y la landing; cada dominio descarga su chunk bajo demanda. Un dominio nunca importa código interno de otro: la comunicación transversal pasa por `core/` (servicios) o `shared/` (presentación).
+
+**`src/app/shared/` — presentación reutilizable standalone.** Componentes puramente presentacionales sin lógica de negocio (`image-cropper` para recortar avatares, `file-upload` para documentos, `captcha` para verificación humana, `page-loader`, `pagination` y `clinical-controls`), junto a pipes de formato (`estado-turno-color`, `fecha-format`, `format-dni`, `especialidad-icon`) y directivas (`role-access`, `captcha`, `fallback-avatar`, `resaltar-card`). Todo es standalone e importable por cualquier dominio sin acoplamientos.
+
+**`src/app/layouts/` — shells según sesión.** `auth-layout` envuelve las vistas públicas (landing, autenticación, registro, legales) y `dashboard-layout` envuelve el área privada (sidebar, barra superior y outlet donde se montan los dominios). El `app.routes.ts` decide el shell por estado de sesión combinado con `authGuard`.
+
+**`src/environments/` — aislamiento de configuración.** `environment.ts` (desarrollo) y `environment.prod.ts` (producción, con reemplazo automático en build) concentran las únicas credenciales que el frontend conoce: URL del proyecto y clave pública `anon`. La clave de servicio jamás llega al cliente; la autorización real vive en las políticas RLS de PostgreSQL.
 
 ---
 
@@ -139,7 +225,3 @@ ng build
 ```
 
 Los artefactos se generan en `dist/` con sustitución automática de entorno productivo.
-
----
-
-*Healix — gestión médica integral, lista para producción.*
