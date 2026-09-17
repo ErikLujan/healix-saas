@@ -7,6 +7,7 @@ const routes: Routes = [
       import('./pages/statistics-dashboard/statistics-dashboard.component').then(
         (m) => m.StatisticsDashboardComponent,
       ),
+    data: { animation: 'estadisticas' },
   },
 ];
 

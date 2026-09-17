@@ -66,6 +66,7 @@ export interface Database {
           obra_social: string;
           avatar_url_frontal: string | null;
           avatar_url_secundario: string | null;
+          is_verified: boolean;
         };
         Insert: {
           id: string;
@@ -74,6 +75,7 @@ export interface Database {
           obra_social: string;
           avatar_url_frontal?: string | null;
           avatar_url_secundario?: string | null;
+          is_verified?: boolean;
         };
         Update: {
           id?: string;
@@ -82,6 +84,7 @@ export interface Database {
           obra_social?: string;
           avatar_url_frontal?: string | null;
           avatar_url_secundario?: string | null;
+          is_verified?: boolean;
         };
         Relationships: [];
       };
@@ -225,7 +228,6 @@ export interface Database {
           temperatura: number;
           presion_arterial: string;
           datos_dinamicos: { clave: string; valor: string }[];
-          resena: string | null;
           created_at: string;
         };
         Insert: {
@@ -238,7 +240,6 @@ export interface Database {
           temperatura: number;
           presion_arterial: string;
           datos_dinamicos: { clave: string; valor: string }[];
-          resena?: string | null;
           created_at?: string;
         };
         Update: {
@@ -251,13 +252,43 @@ export interface Database {
           temperatura?: number;
           presion_arterial?: string;
           datos_dinamicos?: { clave: string; valor: string }[];
-          resena?: string | null;
           created_at?: string;
         };
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      /**
+       * Vista publica de perfiles con columnas no sensibles.
+       * Expone identidad basica para flujos entre usuarios;
+       * el correo queda reservado al propietario y al administrador.
+       */
+      vista_perfiles_publicos: {
+        Row: {
+          id: string;
+          full_name: string;
+          avatar_url: string | null;
+          role: UserRole;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      /**
+       * Vista publica de especialistas con columnas no sensibles.
+       * Expone identidad y estado de aprobacion; `dni` y `edad`
+       * quedan reservados al propietario y al administrador.
+       */
+      vista_especialistas_publicos: {
+        Row: {
+          id: string;
+          is_approved: boolean;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+    };
     Functions: Record<string, never>;
     Enums: {
       user_role: UserRole;

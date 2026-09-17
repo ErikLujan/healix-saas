@@ -5,7 +5,8 @@ const routes: Routes = [
     path: '',
     loadComponent: () =>
       import('./pages/login/login.component').then((m) => m.LoginComponent),
-    title: 'Clínica Online | Iniciar sesión',
+    title: 'Healix | Iniciar sesión',
+    data: { animation: 'login' },
   },
   {
     path: 'registro',
@@ -13,7 +14,8 @@ const routes: Routes = [
       import('./pages/register/register.component').then(
         (m) => m.RegisterComponent,
       ),
-    title: 'Clínica Online | Registrarse',
+    title: 'Healix | Registrarse',
+    data: { animation: 'register' },
   },
 ];
 

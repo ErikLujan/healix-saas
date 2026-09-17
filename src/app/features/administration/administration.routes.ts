@@ -14,7 +14,7 @@ const routes: Routes = [
       import('./pages/admin-users/admin-users.component').then(
         (m) => m.AdminUsersComponent,
       ),
-    title: 'Clínica Online | Administración de Usuarios',
+    title: 'Healix | Administración de Usuarios',
   },
   {
     path: 'especialidades',
@@ -22,7 +22,7 @@ const routes: Routes = [
       import('./pages/admin-specialties/admin-specialties.component').then(
         (m) => m.AdminSpecialtiesComponent,
       ),
-    title: 'Clínica Online | Especialidades',
+    title: 'Healix | Especialidades',
   },
 ];
 

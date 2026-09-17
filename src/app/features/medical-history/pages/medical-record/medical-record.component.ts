@@ -1,37 +1,46 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, tap, of } from 'rxjs';
+import { LucideDynamicIcon } from '@lucide/angular';
+import { toast } from 'ngx-sonner';
 import { AuthService } from '@core/services/auth.service';
 import { MedicalRecordsService } from '../../services/medical-records.service';
 import { PdfExportService } from '../../services/pdf-export.service';
 import { MedicalRecordConRelaciones } from '../../models/medical-record.model';
 import { MedicalHistoryListComponent } from '../../components/medical-history-list/medical-history-list.component';
 
-/**
- * Página de visualización del historial clínico para el perfil de Paciente.
- *
- * Componente smart/container que carga las historias clínicas propias
- * del paciente autenticado y las presenta mediante el componente
- * MedicalHistoryListComponent.
- *
- * Incluye botón de exportación a PDF que genera un documento
- * institucional con el historial completo del paciente.
- */
 @Component({
   selector: 'app-medical-record',
   standalone: true,
-  imports: [MedicalHistoryListComponent],
+  imports: [LucideDynamicIcon, MedicalHistoryListComponent],
   template: `
-    <div class="min-h-full">
+    <div class="min-h-full overflow-x-hidden">
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Mi Historial Clínico</h1>
-        <p class="text-sm text-gray-500 mt-1">
-          Consulta cronológica de todas tus atenciones médicas.
+        <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">{{ pageTitle() }}</h1>
+        <p class="mt-1 text-sm text-text-secondary">
+          {{ pageSubtitle() }}
         </p>
       </div>
 
       @if (isLoading()) {
-        <div class="flex flex-col items-center justify-center py-16">
-          <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-          <p class="text-sm text-gray-500">Cargando historial clínico...</p>
+        <div class="space-y-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="rounded-2xl border border-slate-200/80 bg-surface p-5 space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl animate-shimmer"></div>
+                <div class="space-y-2 flex-1">
+                  <div class="h-4 w-40 rounded-full animate-shimmer"></div>
+                  <div class="h-3 w-28 rounded-full animate-shimmer"></div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+              </div>
+            </div>
+          }
         </div>
       } @else if (records().length > 0) {
         <div class="mb-4 flex justify-end">
@@ -39,15 +48,12 @@ import { MedicalHistoryListComponent } from '../../components/medical-history-li
             type="button"
             (click)="exportarPDF()"
             [disabled]="isExporting()"
-            class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-700 text-white text-sm font-semibold hover:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.97]">
             @if (isExporting()) {
               <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               <span>Exportando...</span>
             } @else {
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <svg lucideIcon="download" class="h-4 w-4"></svg>
               <span>Exportar PDF</span>
             }
           </button>
@@ -55,77 +61,85 @@ import { MedicalHistoryListComponent } from '../../components/medical-history-li
 
         <app-medical-history-list [records]="records()" />
       } @else {
-        <div class="flex flex-col items-center justify-center py-16 px-4">
-          <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div class="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-slate-200/80 bg-surface">
+          <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mb-4">
+            <svg lucideIcon="folder-open" class="h-8 w-8 text-slate-400"></svg>
           </div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-1">Sin historial clínico</h3>
-          <p class="text-sm text-gray-500 text-center max-w-sm">
-            Aún no tienes consultas médicas registradas en el sistema.
+          <h3 class="text-lg font-semibold text-text-primary mb-1">{{ emptyTitle() }}</h3>
+          <p class="text-sm text-text-secondary text-center max-w-sm">
+            {{ emptyDescription() }}
           </p>
         </div>
       }
     </div>
   `,
 })
-export class MedicalRecordComponent implements OnInit {
+export class MedicalRecordComponent {
   private readonly authService = inject(AuthService);
   private readonly medicalRecordsService = inject(MedicalRecordsService);
   private readonly pdfExportService = inject(PdfExportService);
 
-  /** Historial clínico del paciente. */
-  readonly records = signal<readonly MedicalRecordConRelaciones[]>([]);
+  private readonly perfil = this.authService.userProfile();
+  private readonly isSpecialist = computed(() => this.authService.userRole() === 'especialista');
 
-  /** Estado de carga inicial. */
-  readonly isLoading = signal(true);
-
-  /** Estado de exportación PDF. */
+  private readonly _isLoading = signal(true);
+  readonly isLoading = this._isLoading.asReadonly();
   readonly isExporting = signal(false);
 
-  async ngOnInit(): Promise<void> {
-    await this.cargarHistorial();
-  }
+  readonly pageTitle = computed(() =>
+    this.isSpecialist()
+      ? 'Historial Clínico — Mis Pacientes'
+      : 'Mi Historial Clínico',
+  );
 
-  /**
-   * Carga las historias clínicas del paciente autenticado.
-   */
-  private async cargarHistorial(): Promise<void> {
-    this.isLoading.set(true);
-    const perfil = this.authService.userProfile();
+  readonly pageSubtitle = computed(() =>
+    this.isSpecialist()
+      ? 'Consulta cronológica de las atenciones médicas de tus pacientes.'
+      : 'Consulta cronológica de todas tus atenciones médicas.',
+  );
 
-    if (!perfil) {
-      this.isLoading.set(false);
-      return;
-    }
+  readonly emptyTitle = computed(() =>
+    this.isSpecialist()
+      ? 'Sin historial clínico'
+      : 'Sin historial clínico',
+  );
 
-    this.medicalRecordsService.getHistoryByPatientId(perfil.id).subscribe({
-      next: (records) => {
-        this.records.set(records);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-      },
-    });
-  }
+  readonly emptyDescription = computed(() =>
+    this.isSpecialist()
+      ? 'No hay historias clínicas registradas para tus pacientes atendidos.'
+      : 'Aún no tienes consultas médicas registradas en el sistema.',
+  );
 
-  /**
-   * Dispara la exportación del historial clínico a PDF.
-   */
+  readonly records = toSignal(
+    this.perfil
+      ? (this.isSpecialist()
+          ? this.medicalRecordsService.getHistoryBySpecialistId(this.perfil.id)
+          : this.medicalRecordsService.getHistoryByPatientId(this.perfil.id)
+        ).pipe(
+          catchError(() => {
+            toast.error('No se pudo cargar el historial clínico. Intenta nuevamente.');
+            return of([] as readonly MedicalRecordConRelaciones[]);
+          }),
+          tap(() => this._isLoading.set(false)),
+        )
+      : of([] as readonly MedicalRecordConRelaciones[]).pipe(
+          tap(() => this._isLoading.set(false)),
+        ),
+    { initialValue: [] as readonly MedicalRecordConRelaciones[] },
+  );
+
   async exportarPDF(): Promise<void> {
-    const perfil = this.authService.userProfile();
-    if (!perfil || this.records().length === 0) return;
+    if (!this.perfil || this.records().length === 0) return;
 
     this.isExporting.set(true);
 
     try {
       await this.pdfExportService.exportarHistorialPaciente(
         this.records(),
-        perfil.full_name,
+        this.perfil.full_name,
       );
+    } catch {
+      toast.error('No se pudo exportar el PDF. Intenta nuevamente.');
     } finally {
       this.isExporting.set(false);
     }

@@ -2,10 +2,7 @@ import { Component, output, signal, computed } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 
-/** Tipos de desafio disponibles para el captcha. */
-type ChallengeType = 'math' | 'alphanumeric';
-
-/** Representa un caracter alfanumrico con estilo visual distorsionado. */
+/** Representa un carácter alfanumérico con estilo visual distorsionado. */
 interface DistortedChar {
   readonly char: string;
   readonly rotation: number;
@@ -17,19 +14,19 @@ interface DistortedChar {
 /** Conjunto de caracteres alfanumericos validos para generacion de desafios. */
 const CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-/** Cantidad de caracteres para el desafio alfanumerico. */
-const ALCHA_LENGTH = 6;
+/** Cantidad de caracteres para el desafío alfanumérico. */
+const ALPHA_LENGTH = 6;
 
 /**
  * Componente compartido de validacion humana (Captcha) nativo y reutilizable.
  *
- * Genera desafios dinamicos aleatorios de dos tipos: operaciones matematicas
- * simples o cadenas alfanumericas con distorsion visual CSS. Expone un
- * output de tipo booleano que permite al formulario padre bloquear o
- * habilitar acciones criticas segun el estado de resolucion.
+ * Genera desafios dinamicos aleatorios de cadenas alfanumericas con
+ * distorsion visual CSS. Expone un output de tipo booleano que permite
+ * al formulario padre bloquear o habilitar acciones criticas segun
+ * el estado de resolucion.
  *
  * Totalmente standalone, sin dependencias externas ni servicios de terceros.
- * Diseado mobile-first con Tailwind CSS v4.
+ * Disenado mobile-first con Tailwind CSS v4.
  */
 @Component({
   selector: 'app-captcha',
@@ -42,13 +39,6 @@ export class CaptchaComponent {
   /** Evento de salida que notifica al formulario padre el estado de resolucion. */
   resolved = output<boolean>();
 
-  /** Tipo de desafio generado actualmente. */
-  readonly challengeType = signal<ChallengeType>('math');
-
-  /** Valor correcto del desafio matematico (suma de dos operandos). */
-  readonly operandA = signal(0);
-  readonly operandB = signal(0);
-
   /** Cadena alfanumerica correcta generada para el desafio. */
   readonly alphanumericValue = signal('');
 
@@ -56,18 +46,13 @@ export class CaptchaComponent {
   readonly distortedChars = signal<readonly DistortedChar[]>([]);
 
   /** Control reactivo del input del usuario. */
-  readonly control = new FormControl<string | number | null>(null);
+  readonly control = new FormControl<string | null>(null);
 
   /** Indica si el captcha fue resuelto correctamente. */
   readonly isVerified = signal(false);
 
   /** Mensaje de error visible para el usuario. */
   readonly errorMessage = signal('');
-
-  /** Texto del desafio matematico formateado para lectores de pantalla. */
-  readonly mathLabel = computed(() =>
-    `${this.operandA()} mas ${this.operandB()}`,
-  );
 
   /** Texto del desafio alfanumerico para lectores de pantalla. */
   readonly alphaLabel = computed(() =>
@@ -79,19 +64,10 @@ export class CaptchaComponent {
   }
 
   /**
-   * Genera un nuevo desafio aleatorio. Alterna entre tipo matematico
-   * y alfanumerico con probabilidad equilibrada.
+   * Genera un nuevo desafio alfanumerico con caracteres distorsionados.
    */
   generarDesafio(): void {
-    const tipo: ChallengeType = Math.random() < 0.5 ? 'math' : 'alphanumeric';
-    this.challengeType.set(tipo);
-
-    if (tipo === 'math') {
-      this.generarDesafioMatematico();
-    } else {
-      this.generarDesafioAlfanumerico();
-    }
-
+    this.generarDesafioAlfanumerico();
     this.control.reset();
     this.control.enable();
     this.isVerified.set(false);
@@ -113,9 +89,8 @@ export class CaptchaComponent {
       return;
     }
 
-    const esCorrecto = this.challengeType() === 'math'
-      ? Number(valor) === this.operandA() + this.operandB()
-      : String(valor).toUpperCase().trim() === this.alphanumericValue();
+    const esCorrecto =
+      String(valor).toUpperCase().trim() === this.alphanumericValue();
 
     if (esCorrecto) {
       this.errorMessage.set('');
@@ -137,14 +112,6 @@ export class CaptchaComponent {
   }
 
   /**
-   * Genera dos operandos aleatorios entre 1 y 20 para una suma simple.
-   */
-  private generarDesafioMatematico(): void {
-    this.operandA.set(Math.floor(Math.random() * 20) + 1);
-    this.operandB.set(Math.floor(Math.random() * 20) + 1);
-  }
-
-  /**
    * Genera una cadena alfanumerica de longitud fija con propiedades
    * de distorsion visual aleatoria para cada caracter.
    */
@@ -152,7 +119,7 @@ export class CaptchaComponent {
     let cadena = '';
     const chars: DistortedChar[] = [];
 
-    for (let i = 0; i < ALCHA_LENGTH; i++) {
+    for (let i = 0; i < ALPHA_LENGTH; i++) {
       const c = CHARSET[Math.floor(Math.random() * CHARSET.length)];
       cadena += c;
       chars.push({

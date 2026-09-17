@@ -12,13 +12,10 @@ import { Pipe, PipeTransform } from '@angular/core';
  * contenido original sin provocar errores en la interfaz.
  *
  * @example
- * // En una plantilla Angular:
- * // {{ 32123456 | formatDni }}
- * // Salida: "32.123.456"
+ * En una plantilla Angular, {{ 32123456 | formatDni }} produce "32.123.456".
  *
  * @example
- * // {{ '12345678' | formatDni }}
- * // Salida: "12.345.678"
+ * En una plantilla Angular, {{ '12345678' | formatDni }} produce "12.345.678".
  */
 @Pipe({
   name: 'formatDni',

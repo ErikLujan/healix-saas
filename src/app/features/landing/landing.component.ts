@@ -1,43 +1,103 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { fadeIn, slideUp, overlayFade, drawerSlide } from '@core/animations/route-animations';
-import { SupabaseService } from '@core/services/supabase.service';
-import { EspecialidadIconPipe } from '@shared/pipes/especialidad-icon.pipe';
-import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
-import { ResaltarCardDirective } from '@shared/directives/resaltar-card.directive';
-
-interface LandingSpecialty {
-  readonly id: string;
-  readonly name: string;
-  readonly description: string | null;
-}
-
-interface LandingSpecialist {
-  readonly id: string;
-  readonly full_name: string;
-  readonly avatar_url: string | null;
-  readonly specialty: string;
-}
+import { AuthService } from '@core/services/auth.service';
+import { LandingService } from './landing.service';
+import {
+  LucideMenu,
+  LucideX,
+  LucideArrowRight,
+  LucideCalendar,
+  LucideFileText,
+  LucideUsers,
+  LucideBarChart3,
+  LucideShield,
+  LucideClock,
+  LucideStethoscope,
+  LucideZap,
+  LucideShieldCheck,
+  LucideActivity,
+  LucideAward,
+  LucideHeartPulse,
+  LucideTrendingUp,
+  LucideLogOut,
+  LucideChevronRight,
+  LucideCheckCircle2,
+} from '@lucide/angular';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink, EspecialidadIconPipe, FallbackAvatarDirective, ResaltarCardDirective],
+  imports: [
+    NgClass,
+    RouterLink,
+    LucideMenu,
+    LucideX,
+    LucideArrowRight,
+    LucideCalendar,
+    LucideFileText,
+    LucideUsers,
+    LucideBarChart3,
+    LucideShield,
+    LucideClock,
+    LucideStethoscope,
+    LucideZap,
+    LucideShieldCheck,
+    LucideActivity,
+    LucideAward,
+    LucideHeartPulse,
+    LucideTrendingUp,
+    LucideLogOut,
+    LucideChevronRight,
+    LucideCheckCircle2,
+  ],
   templateUrl: './landing.component.html',
   styleUrl: './landing.component.scss',
-  animations: [fadeIn, slideUp, overlayFade, drawerSlide],
 })
 export class LandingComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly authService = inject(AuthService);
+  private readonly landingService = inject(LandingService);
 
   readonly isMobileMenuOpen = signal(false);
-  readonly isLoadingSpecialties = signal(true);
-  readonly isLoadingSpecialists = signal(true);
-  readonly specialties = signal<readonly LandingSpecialty[]>([]);
-  readonly specialists = signal<readonly LandingSpecialist[]>([]);
+  readonly isScrolled = signal(false);
 
-  async ngOnInit(): Promise<void> {
-    await Promise.all([this.loadSpecialties(), this.loadSpecialists()]);
+  readonly specialties = this.landingService.specialties;
+  readonly specialists = this.landingService.specialists;
+  readonly specialistCounts = this.landingService.specialistCounts;
+  readonly isLoadingSpecialties = this.landingService.isLoadingSpecialties;
+  readonly isLoadingSpecialists = this.landingService.isLoadingSpecialists;
+
+  readonly isAuthenticated = this.authService.isAuthenticated;
+  readonly userProfile = this.authService.userProfile;
+
+  readonly headerClass = computed(() => {
+    return this.isScrolled()
+      ? 'bg-white/85 backdrop-blur-md border-b border-slate-200/60 shadow-sm py-3'
+      : 'bg-transparent border-transparent py-4';
+  });
+
+  readonly brandTextClass = computed(() => {
+    return this.isScrolled() ? 'text-slate-900' : 'text-slate-900';
+  });
+
+  readonly navLinkClass = computed(() => {
+    return 'text-slate-700 hover:text-teal-600 font-medium text-sm transition-colors';
+  });
+
+  readonly mobileToggleClass = computed(() => {
+    return this.isScrolled()
+      ? 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 shadow-sm';
+  });
+
+  constructor() {
+    this.checkScrollPosition();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', () => {
+        this.isScrolled.set(window.scrollY > 40);
+      }, { passive: true });
+    }
   }
 
   toggleMobileMenu(): void {
@@ -48,66 +108,46 @@ export class LandingComponent implements OnInit {
     this.isMobileMenuOpen.set(false);
   }
 
-  private async loadSpecialties(): Promise<void> {
-    this.isLoadingSpecialties.set(true);
+  scrollToSection(event: Event, sectionId: string): void {
+    event.preventDefault();
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const headerOffset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-    const { data, error } = await this.supabase.supabase
-      .from('specialties')
-      .select('id, name, description')
-      .eq('is_active', true)
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('[LandingComponent] loadSpecialties error:', error.message);
-      this.isLoadingSpecialties.set(false);
-      return;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
     }
-
-    this.specialties.set((data ?? []) as LandingSpecialty[]);
-    this.isLoadingSpecialties.set(false);
+    this.closeMobileMenu();
   }
 
-  private async loadSpecialists(): Promise<void> {
-    this.isLoadingSpecialists.set(true);
+  async signOut(): Promise<void> {
+    await this.authService.signOut();
+  }
 
-    const { data, error } = await this.supabase.supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        avatar_url,
-        especialistas!inner(
-          is_approved,
-          especialista_especialidad(
-            specialties!especialidad_id(name)
-          )
-        )
-      `)
-      .eq('role', 'especialista')
-      .eq('especialistas.is_approved', true)
-      .order('full_name', { ascending: true });
-
-    if (error) {
-      console.error('[LandingComponent] loadSpecialists error:', error.message);
-      this.isLoadingSpecialists.set(false);
-      return;
+  private checkScrollPosition(): void {
+    if (typeof window !== 'undefined') {
+      this.isScrolled.set(window.scrollY > 40);
     }
+  }
 
-    const specialists: LandingSpecialist[] = (data ?? []).map((row: Record<string, unknown>) => {
-      const esp = row['especialistas'] as Record<string, unknown>;
-      const rels = (esp?.['especialista_especialidad'] ?? []) as Record<string, unknown>[];
-      const firstRel = rels[0] as Record<string, unknown> | undefined;
-      const spec = firstRel?.['specialties'] as Record<string, unknown> | undefined;
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  }
 
-      return {
-        id: row['id'] as string,
-        full_name: row['full_name'] as string,
-        avatar_url: row['avatar_url'] as string | null,
-        specialty: (spec?.['name'] as string) ?? 'Especialista',
-      };
-    });
-
-    this.specialists.set(specialists);
-    this.isLoadingSpecialists.set(false);
+  async ngOnInit(): Promise<void> {
+    await Promise.all([
+      this.landingService.loadSpecialties(),
+      this.landingService.loadSpecialists(),
+    ]);
   }
 }

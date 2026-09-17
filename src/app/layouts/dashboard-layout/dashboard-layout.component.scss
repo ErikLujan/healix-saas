@@ -1,3 +1,10 @@
 :host {
   display: block;
 }
+
+/* Contención del outlet interno: padre relativo + clip, sin saltos de layout. */
+.route-shell-inner {
+  position: relative;
+  display: block;
+  overflow: clip;
+}

@@ -5,6 +5,8 @@ import {
   DisponibilidadEspecialista,
   DisponibilidadEspecialistaInsert,
   DiaSemana,
+  BloqueHorario,
+  EspecialidadPerfil,
   RESTRICCIONES_HORARIAS,
   DURACION_SLOT_MINUTOS,
 } from '../models/disponibilidad.model';
@@ -203,6 +205,71 @@ export class DisponibilidadService {
   }
 
   /**
+   * Carga las especialidades vinculadas a un especialista desde Supabase.
+   *
+   * Consulta la tabla `especialista_especialidad` para obtener los IDs
+   * de especialidades vinculadas, luego consulta la tabla `specialties`
+   * para obtener los nombres.
+   *
+   * @param especialistaId UUID del especialista.
+   * @returns Array de especialidades vinculadas o array vacío en caso de error.
+   */
+  async cargarEspecialidadesDelEspecialista(especialistaId: string): Promise<readonly EspecialidadPerfil[]> {
+    try {
+      const { data: vinculos, error: vinculosError } = await this.supabase.supabase
+        .from('especialista_especialidad')
+        .select('especialidad_id')
+        .eq('especialista_id', especialistaId);
+
+      if (vinculosError || !vinculos || vinculos.length === 0) {
+        toast.error('Error al cargar las especialidades del médico.');
+        return [];
+      }
+
+      const ids = vinculos.map(v => v.especialidad_id);
+
+      const { data: especialidades, error: espError } = await this.supabase.supabase
+        .from('specialties')
+        .select('id, name')
+        .in('id', ids);
+
+      if (espError || !especialidades) {
+        toast.error('Error al cargar las especialidades del médico.');
+        return [];
+      }
+
+      return especialidades;
+    } catch {
+      toast.error('Error de conexión al cargar las especialidades.');
+      return [];
+    }
+  }
+
+  /**
+   * Detecta solapamientos entre bloques horarios del mismo día.
+   *
+   * Dos bloques se consideran solapados si el inicio de uno es anterior
+   * al fin del otro y viceversa. Retorna un mensaje de error descriptivo
+   * si se detecta algún solapamiento, o null si no hay conflictos.
+   *
+   * @param bloques Lista de bloques horarios del día.
+   * @returns Mensaje de error o null.
+   */
+  validarSolapamiento(bloques: readonly BloqueHorario[]): string | null {
+    for (let i = 0; i < bloques.length; i++) {
+      for (let j = i + 1; j < bloques.length; j++) {
+        const a = bloques[i];
+        const b = bloques[j];
+
+        if (a.hora_inicio < b.hora_fin && b.hora_inicio < a.hora_fin) {
+          return `Bloques solapados: ${a.hora_inicio}-${a.hora_fin} y ${b.hora_inicio}-${b.hora_fin}`;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Ejecuta el conjunto completo de validaciones de negocio sobre
    * un array de disponibilidades antes de permitir su persistencia.
    *
@@ -244,6 +311,20 @@ export class DisponibilidadService {
         throw new Error(
           `La hora de fin (${registro.hora_fin}) debe ser posterior a la hora de inicio (${registro.hora_inicio}).`,
         );
+      }
+    }
+
+    const porDia = new Map<number, DisponibilidadEspecialistaInsert[]>();
+    for (const registro of disponibilidades) {
+      const existentes = porDia.get(registro.dia_semana) ?? [];
+      existentes.push(registro);
+      porDia.set(registro.dia_semana, existentes);
+    }
+
+    for (const [dia, bloques] of porDia) {
+      const solapamiento = this.validarSolapamiento(bloques);
+      if (solapamiento) {
+        throw new Error(`${solapamiento} (día ${dia}).`);
       }
     }
   }

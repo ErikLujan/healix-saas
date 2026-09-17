@@ -2,15 +2,92 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>Clínica Online</title>
+  <title>Healix</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .healix-preloader {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #FAFAF7;
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .healix-preloader.hide {
+      opacity: 0; pointer-events: none;
+    }
+
+    /* --- Logo: breathing pulse --- */
+    .healix-logo {
+      width: 56px; height: 56px; border-radius: 14px; object-fit: cover;
+      animation: healix-breathe 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      will-change: transform, opacity;
+    }
+    @keyframes healix-breathe {
+      0%, 100% { transform: scale(0.97); opacity: 0.85; }
+      50%      { transform: scale(1.02); opacity: 1; }
+    }
+
+    /* --- Barra indeterminada corporativa: idéntica al PageLoader de Angular --- */
+    .healix-bar-track {
+      margin-top: 24px; width: 180px; height: 3px; border-radius: 9999px;
+      background: #E5E7EB; overflow: hidden; position: relative;
+    }
+    .healix-bar-fill {
+      width: 40%; height: 100%; border-radius: 9999px;
+      background: #2A857F;
+      animation: healix-indeterminate 1.4s linear infinite;
+      will-change: transform;
+    }
+    @keyframes healix-indeterminate {
+      0%   { transform: translateX(-110%); }
+      100% { transform: translateX(280%); }
+    }
+
+    /* --- Caption --- */
+    .healix-caption {
+      margin-top: 16px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      color: #94A3B8;
+      opacity: 0;
+      animation: healix-fade-in 0.6s 0.4s ease forwards;
+    }
+    @keyframes healix-fade-in {
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body class="antialiased">
+  <div id="healix-preloader" class="healix-preloader">
+    <img src="assets/images/icono.png" alt="Healix" class="healix-logo" />
+    <div class="healix-bar-track"><div class="healix-bar-fill"></div></div>
+    <p class="healix-caption">Cargando plataforma medica...</p>
+  </div>
   <app-root></app-root>
+  <script>
+    (function() {
+      var preloader = document.getElementById('healix-preloader');
+      if (!preloader) return;
+      var appRoot = document.querySelector('app-root');
+      if (appRoot) {
+        var obs = new MutationObserver(function() {
+          if (appRoot.children.length > 0) {
+            preloader.classList.add('hide');
+            setTimeout(function() { preloader.remove(); }, 400);
+            obs.disconnect();
+          }
+        });
+        obs.observe(appRoot, { childList: true });
+      }
+      setTimeout(function() {
+        preloader.classList.add('hide');
+        setTimeout(function() { preloader.remove(); }, 400);
+      }, 4000);
+    })();
+  </script>
 </body>
 </html>

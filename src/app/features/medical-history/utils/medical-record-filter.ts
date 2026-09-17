@@ -62,7 +62,7 @@ function expandirDatosDinamicos(datos: readonly DynamicMedicalData[]): string[] 
  * Verifica si un registro de historia clinica coincide con un termino
  * de busqueda libre.
  *
- * Realiza un recorrido single-pass sobre todos los campos clinicos fijos
+ * Realiza un recorrido en una sola pasada sobre todos los campos clínicos fijos
  * del registro (paciente, especialista, especialidad, fecha, resena,
  * parametros fisiologicos, estado del turno) y sobre la totalidad del
  * array datos_dinamicos (claves y valores).
@@ -121,8 +121,8 @@ export function coincideConBusqueda(
  * Filtra una coleccion de historias clinicas segun un termino de busqueda
  * unificado.
  *
- * Funcion pura que no muta la coleccion original. Recorre cada registro
- * una unica vez (single-pass) evaluando la coincidencia contra todos los
+ * Función pura que no muta la colección original. Recorre cada registro
+ * una única vez evaluando la coincidencia contra todos los
  * campos clinicos fijos y los datos dinamicos JSON.
  *
  * @param records Coleccion inmutable de historias clinicas con relaciones.

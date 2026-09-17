@@ -1,6 +1,7 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal, Signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable, from, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { SupabaseService } from '@core/services/supabase.service';
 import { toast } from 'ngx-sonner';
 import {
@@ -11,6 +12,49 @@ import {
 } from '../models/medical-record.model';
 
 type MedicalRecordRow = MedicalRecord & Record<string, unknown>;
+
+/** Fila mínima del perfil público para enriquecer historias clínicas. */
+interface PerfilRelacion {
+  readonly id: string;
+  readonly full_name: string;
+  readonly email?: string;
+  readonly avatar_url: string | null;
+}
+
+/**
+ * Origen de lectura de perfiles para el enriquecimiento.
+ * `vista`: vista publica sin correo (flujos paciente y especialista).
+ * `base`: tabla `profiles` con correo (reservado al administrador via RLS).
+ */
+type FuentePerfiles = 'vista' | 'base';
+
+/** Fila mínima de paciente para resolver el DNI. */
+interface PacienteDni {
+  readonly id: string;
+  readonly dni: string;
+}
+
+/** Fila mínima del turno asociado a una historia clínica. */
+interface TurnoRelacion {
+  readonly id: string;
+  readonly fecha_hora: string;
+  readonly estado: string;
+  readonly especialidad_id: string;
+  readonly resena_diagnostico: string | null;
+}
+
+/** Fila mínima del catálogo de especialidades para enriquecer historias clínicas. */
+interface EspecialidadRelacion {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * Columnas base de `historias_clinicas` sin joins embebidos.
+ * Se evitan los embeds `paciente:paciente_id(...)` porque dependen
+ * de metadatos FK que devuelven 400 cuando no existen o difieren.
+ */
+const SELECT_BASE = 'id, turno_id, paciente_id, especialista_id, altura, peso, temperatura, presion_arterial, datos_dinamicos, created_at';
 
 /**
  * Servicio centralizado para la gestión de historias clínicas.
@@ -78,23 +122,21 @@ export class MedicalRecordsService {
       this.supabase.supabase
         .from('historias_clinicas')
         .insert(payload)
-        .select()
+        .select('id, turno_id, paciente_id, especialista_id, altura, peso, temperatura, presion_arterial, datos_dinamicos, created_at')
         .single(),
     );
 
     return operation$.pipe(
       map(({ data, error }) => {
         if (error) {
-          console.error('[MedicalRecordsService] Supabase insert error:', error.message, error.details, error.hint);
-          throw new Error('No se pudo registrar la historia clínica.');
+          throw new Error('No se pudo registrar la historia clinica.');
         }
         return data as MedicalRecord;
       }),
       catchError((err) => {
-        console.error('[MedicalRecordsService] createMedicalRecord exception:', err);
         const mensaje = err instanceof Error
           ? err.message
-          : 'Error inesperado al crear la historia clínica.';
+          : 'Error inesperado al crear la historia clinica.';
         toast.error(mensaje);
         return throwError(() => new Error(mensaje));
       }),
@@ -115,7 +157,7 @@ export class MedicalRecordsService {
     const operation$ = from(
       this.supabase.supabase
         .from('historias_clinicas')
-        .select('*')
+        .select('id, turno_id, paciente_id, especialista_id, altura, peso, temperatura, presion_arterial, datos_dinamicos, created_at')
         .eq('turno_id', turnoId)
         .maybeSingle(),
     );
@@ -140,10 +182,10 @@ export class MedicalRecordsService {
   /**
    * Recupera el historial clínico completo de un paciente.
    *
-   * Consulta todas las historias clínicas asociadas al paciente
-   * específico, enriquecidas con información del especialista,
-   * especialidad y turno. Los resultados se ordenan cronológicamente
-   * desde el registro más reciente hacia el más antiguo.
+   * Consulta primero las filas base de `historias_clinicas` y luego
+   * enriquece con perfiles, DNI y turnos mediante consultas separadas.
+   * Los perfiles se resuelven desde la vista publica (sin correo ajeno)
+   * para respetar el RLS endurecido.
    *
    * @param pacienteId UUID del paciente cuyo historial se desea consultar.
    * @returns Observable que emite la lista cronológica de historias clínicas.
@@ -152,12 +194,7 @@ export class MedicalRecordsService {
     const operation$ = from(
       this.supabase.supabase
         .from('historias_clinicas')
-        .select(`
-          *,
-          paciente:paciente_id(id, full_name, email),
-          especialista:especialista_id(id, full_name, avatar_url),
-          turno:turno_id(id, fecha_hora, estado, resena_diagnostico)
-        `)
+        .select(SELECT_BASE)
         .eq('paciente_id', pacienteId)
         .order('created_at', { ascending: false }),
     );
@@ -167,8 +204,9 @@ export class MedicalRecordsService {
         if (error) {
           throw new Error('No se pudo cargar el historial clínico del paciente.');
         }
-        return this.mapearRegistrosConRelaciones(data ?? []);
+        return (data as unknown as MedicalRecord[]) ?? [];
       }),
+      switchMap((base) => from(this.enriquecerRegistros(base, 'vista'))),
       catchError((err) => {
         const mensaje = err instanceof Error
           ? err.message
@@ -183,9 +221,8 @@ export class MedicalRecordsService {
    * Recupera las historias clínicas asociadas a pacientes atendidos
    * por un especialista específico.
    *
-   * Filtra únicamente los registros donde el especialista coincide
-   * con el parámetro proporcionado. Los resultados se ordenan
-   * cronológicamente desde el más reciente.
+   * Los perfiles se resuelven desde la vista publica (sin correo ajeno)
+   * para respetar el RLS endurecido.
    *
    * @param especialistaId UUID del especialista.
    * @returns Observable que emite la lista de historias clínicas del especialista.
@@ -194,12 +231,7 @@ export class MedicalRecordsService {
     const operation$ = from(
       this.supabase.supabase
         .from('historias_clinicas')
-        .select(`
-          *,
-          paciente:paciente_id(id, full_name, email),
-          especialista:especialista_id(id, full_name, avatar_url),
-          turno:turno_id(id, fecha_hora, estado, resena_diagnostico)
-        `)
+        .select(SELECT_BASE)
         .eq('especialista_id', especialistaId)
         .order('created_at', { ascending: false }),
     );
@@ -209,8 +241,9 @@ export class MedicalRecordsService {
         if (error) {
           throw new Error('No se pudo cargar las historias clínicas del especialista.');
         }
-        return this.mapearRegistrosConRelaciones(data ?? []);
+        return (data as unknown as MedicalRecord[]) ?? [];
       }),
+      switchMap((base) => from(this.enriquecerRegistros(base, 'vista'))),
       catchError((err) => {
         const mensaje = err instanceof Error
           ? err.message
@@ -224,9 +257,9 @@ export class MedicalRecordsService {
   /**
    * Recupera todas las historias clínicas del sistema.
    *
-   * Utilizado exclusivamente por el panel de administración para
-   * funciones de auditoría. Retorna registros enriquecidos con
-   * información de todas las relaciones.
+   * Reservado al rol administrador: enriquece desde la tabla base
+   * `profiles` (con correo), amparado por el acceso total de admin via RLS.
+   * Los demas roles deben usar las consultas por paciente o especialista.
    *
    * @returns Observable que emite la lista completa de historias clínicas.
    */
@@ -234,12 +267,7 @@ export class MedicalRecordsService {
     const operation$ = from(
       this.supabase.supabase
         .from('historias_clinicas')
-        .select(`
-          *,
-          paciente:paciente_id(id, full_name, email),
-          especialista:especialista_id(id, full_name, avatar_url),
-          turno:turno_id(id, fecha_hora, estado, resena_diagnostico)
-        `)
+        .select(SELECT_BASE)
         .order('created_at', { ascending: false }),
     );
 
@@ -248,8 +276,9 @@ export class MedicalRecordsService {
         if (error) {
           throw new Error('No se pudieron cargar las historias clínicas.');
         }
-        return this.mapearRegistrosConRelaciones(data ?? []);
+        return (data as unknown as MedicalRecord[]) ?? [];
       }),
+      switchMap((base) => from(this.enriquecerRegistros(base, 'base'))),
       catchError((err) => {
         const mensaje = err instanceof Error
           ? err.message
@@ -261,68 +290,162 @@ export class MedicalRecordsService {
   }
 
   /**
-   * Mapea los registros crudos de Supabase a objetos MedicalRecordConRelaciones.
+   * Enriquece registros base con perfiles, DNI de pacientes, turnos y especialidades.
    *
-   * Extrae las relaciones anidadas (paciente, especialista, turno)
-   * y las distribuye en el objeto de dominio tipado.
+   * Ejecuta cuatro consultas por lotes con `in()` en lugar de un único
+   * `select` con relaciones embebidas, por lo que no depende de que
+   * existan claves foráneas registradas en PostgREST. Los perfiles se
+   * leen desde la vista publica (sin correo ajeno) salvo en el flujo
+   * de administracion, que usa la tabla base amparado por RLS de admin.
+   * La especialidad se resuelve desde el catálogo público `specialties`
+   * a partir del `especialidad_id` de cada turno, evitando el texto
+   * de respaldo "Especialidad no indicada" cuando el dato existe.
    *
-   * @param registros Datos crudos del resultado de Supabase con joins.
-   * @returns Array tipado de historias clínicas con relaciones.
+   * @param base Filas base de `historias_clinicas` sin relaciones.
+   * @param fuente Origen de lectura de perfiles (`vista` o `base`).
+   * @returns Registros tipados con relaciones resueltas.
    */
-  private mapearRegistrosConRelaciones(
-    registros: Array<Record<string, unknown>>,
-  ): MedicalRecordConRelaciones[] {
-    return registros.map((row) => {
-      const paciente = row['paciente'] as Record<string, unknown> | null;
-      const especialista = row['especialista'] as Record<string, unknown> | null;
-      const turno = row['turno'] as Record<string, unknown> | null;
+  private async enriquecerRegistros(base: readonly MedicalRecord[], fuente: FuentePerfiles): Promise<MedicalRecordConRelaciones[]> {
+    if (base.length === 0) {
+      return [];
+    }
 
-      const registroBase: MedicalRecord = {
-        id: row['id'] as string,
-        turno_id: row['turno_id'] as string,
-        paciente_id: row['paciente_id'] as string,
-        especialista_id: row['especialista_id'] as string,
-        altura: row['altura'] as number,
-        peso: row['peso'] as number,
-        temperatura: row['temperatura'] as number,
-        presion_arterial: row['presion_arterial'] as string,
-        datos_dinamicos: (row['datos_dinamicos'] as readonly { clave: string; valor: string }[]) ?? [],
-        created_at: row['created_at'] as string,
-      };
+    const pacienteIds: readonly string[] = [...new Set(base.map((r) => r.paciente_id))];
+    const especialistaIds: readonly string[] = [...new Set(base.map((r) => r.especialista_id))];
+    const turnoIds: readonly string[] = [...new Set(base.map((r) => r.turno_id))];
+    const perfilIds: readonly string[] = [...new Set([...pacienteIds, ...especialistaIds])];
 
-      const pacienteData = (paciente && typeof paciente === 'object')
-        ? {
-            id: paciente['id'] as string,
-            full_name: paciente['full_name'] as string,
-            email: paciente['email'] as string,
-          }
-        : undefined;
+    const columnasPerfil = fuente === 'base'
+      ? 'id, full_name, email, avatar_url'
+      : 'id, full_name, avatar_url';
 
-      const especialistaData = (especialista && typeof especialista === 'object')
-        ? {
-            id: especialista['id'] as string,
-            full_name: especialista['full_name'] as string,
-            avatar_url: (especialista['avatar_url'] as string) ?? null,
-          }
-        : undefined;
+    const [perfilesRes, dniRes, turnosRes] = await Promise.all([
+      fuente === 'base'
+        ? this.supabase.supabase
+          .from('profiles')
+          .select(columnasPerfil)
+          .in('id', [...perfilIds])
+        : this.supabase.supabase
+          .from('vista_perfiles_publicos')
+          .select(columnasPerfil)
+          .in('id', [...perfilIds]),
+      this.supabase.supabase
+        .from('pacientes')
+        .select('id, dni')
+        .in('id', [...pacienteIds]),
+      this.supabase.supabase
+        .from('turnos')
+        .select('id, fecha_hora, estado, especialidad_id, resena_diagnostico')
+        .in('id', [...turnoIds]),
+    ]);
 
-      const turnoData = (turno && typeof turno === 'object')
-        ? {
-            id: turno['id'] as string,
-            fecha_hora: turno['fecha_hora'] as string,
-            estado: turno['estado'] as string,
-            resena_diagnostico: (turno['resena_diagnostico'] as string) ?? null,
-          }
-        : undefined;
+    if (perfilesRes.error || dniRes.error || turnosRes.error) {
+      throw new Error('No se pudieron cargar las historias clínicas.');
+    }
+
+    const turnosLista: readonly TurnoRelacion[] = (turnosRes.data as unknown as TurnoRelacion[]) ?? [];
+    const especialidadIds: readonly string[] = [
+      ...new Set(turnosLista.map((t) => t.especialidad_id).filter((id): id is string => typeof id === 'string' && id.length > 0)),
+    ];
+
+    const especialidadesRes = especialidadIds.length > 0
+      ? await this.supabase.supabase
+        .from('specialties')
+        .select('id, name')
+        .in('id', [...especialidadIds])
+      : { data: [] as EspecialidadRelacion[], error: null };
+
+    if (especialidadesRes.error) {
+      throw new Error('No se pudieron cargar las historias clínicas.');
+    }
+
+    const perfiles = new Map<string, PerfilRelacion>(
+      ((perfilesRes.data as unknown as PerfilRelacion[]) ?? []).map((p) => [p.id, p]),
+    );
+    const dnis = new Map<string, string>(
+      ((dniRes.data as unknown as PacienteDni[]) ?? []).map((p) => [p.id, p.dni]),
+    );
+    const turnos = new Map<string, TurnoRelacion>(
+      turnosLista.map((t) => [t.id, t]),
+    );
+    const especialidades = new Map<string, EspecialidadRelacion>(
+      ((especialidadesRes.data as unknown as EspecialidadRelacion[]) ?? []).map((e) => [e.id, e]),
+    );
+
+    return base.map((row) => {
+      const perfilPaciente: PerfilRelacion | undefined = perfiles.get(row.paciente_id);
+      const perfilEspecialista: PerfilRelacion | undefined = perfiles.get(row.especialista_id);
+      const turno: TurnoRelacion | undefined = turnos.get(row.turno_id);
+      const dni: string | undefined = dnis.get(row.paciente_id);
+      const especialidad: EspecialidadRelacion | undefined = turno ? especialidades.get(turno.especialidad_id) : undefined;
 
       const resultado: MedicalRecordConRelaciones = {
-        ...registroBase,
-        ...(pacienteData ? { paciente: pacienteData } : {}),
-        ...(especialistaData ? { especialista: especialistaData } : {}),
-        ...(turnoData ? { turno: turnoData } : {}),
+        ...row,
+        paciente: {
+          id: row.paciente_id,
+          full_name: perfilPaciente?.full_name ?? 'Paciente',
+          ...(perfilPaciente?.email ? { email: perfilPaciente.email } : {}),
+          avatar_url: perfilPaciente?.avatar_url ?? null,
+          ...(dni ? { dni } : {}),
+        },
+        ...(perfilEspecialista
+          ? {
+              especialista: {
+                id: perfilEspecialista.id,
+                full_name: perfilEspecialista.full_name,
+                avatar_url: perfilEspecialista.avatar_url,
+              },
+            }
+          : {}),
+        ...(especialidad
+          ? {
+              especialidad: {
+                id: especialidad.id,
+                name: especialidad.name,
+              },
+            }
+          : {}),
+        ...(turno
+          ? {
+              turno: {
+                id: turno.id,
+                fecha_hora: turno.fecha_hora,
+                estado: turno.estado,
+                resena_diagnostico: turno.resena_diagnostico,
+              },
+            }
+          : {}),
       };
 
       return resultado;
     });
+  }
+
+  /**
+   * Expone un signal con la historia clínica del paciente indicado.
+   * Debe llamarse dentro de un contexto de inyección válido.
+   *
+   * @param pacienteId Identificador del paciente.
+   */
+  getHistoryByPatientIdSignal(pacienteId: string): Signal<readonly MedicalRecordConRelaciones[]> {
+    return toSignal(this.getHistoryByPatientId(pacienteId), { initialValue: [] });
+  }
+
+  /**
+   * Expone un signal con la historia clínica del especialista indicado.
+   * Debe llamarse dentro de un contexto de inyección válido.
+   *
+   * @param especialistaId Identificador del especialista.
+   */
+  getHistoryBySpecialistIdSignal(especialistaId: string): Signal<readonly MedicalRecordConRelaciones[]> {
+    return toSignal(this.getHistoryBySpecialistId(especialistaId), { initialValue: [] });
+  }
+
+  /**
+   * Expone un signal con todas las historias clínicas disponibles.
+   * Debe llamarse dentro de un contexto de inyección válido.
+   */
+  getAllRecordsSignal(): Signal<readonly MedicalRecordConRelaciones[]> {
+    return toSignal(this.getAllRecords(), { initialValue: [] });
   }
 }

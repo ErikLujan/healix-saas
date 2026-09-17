@@ -1,21 +1,13 @@
-import { Component, input, output, signal, computed } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   ConfiguracionDia,
   DiaSemana,
   BloqueHorario,
+  EspecialidadPerfil,
+  DiaInfo,
   RESTRICCIONES_HORARIAS,
 } from '@core/models/disponibilidad.model';
-
-interface EspecialidadPerfil {
-  readonly id: string;
-  readonly name: string;
-}
-
-interface DiaInfo {
-  readonly id: DiaSemana;
-  readonly nombre: string;
-}
 
 @Component({
   selector: 'app-availability-form',

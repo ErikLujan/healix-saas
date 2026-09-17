@@ -12,7 +12,7 @@ import { Directive, ElementRef, HostListener, inject, Renderer2 } from '@angular
  * tarjetas de especialistas, pacientes, turnos, paneles administrativos, etc.
  *
  * @example
- * // En una plantilla Angular:
+ * En una plantilla Angular:
  * <div class="bg-white rounded-lg p-4" resaltarCard>
  *   Contenido de la tarjeta
  * </div>

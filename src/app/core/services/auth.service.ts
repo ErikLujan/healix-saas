@@ -119,9 +119,9 @@ export class AuthService {
   private async loadUserProfile(userId: string): Promise<void> {
     const { data, error } = await this.supabase.supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, full_name, avatar_url, role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       return;
@@ -139,15 +139,15 @@ export class AuthService {
   }
 
   /**
-   * Autentica al usuario con credenciales de correo y contraseña.
-   * Muestra toast de error en caso de fallo.
+   * Inicia sesión con correo y contraseña mediante Supabase Auth.
+   * Sincroniza el perfil local y registra el acceso en la auditoría.
    *
-   * @param email Correo electrónico del usuario.
-   * @param password Contraseña en texto plano.
-   * @returns Objeto con error null si la autenticación fue exitosa.
+   * @param email Correo electrónico de la cuenta.
+   * @param password Contraseña de la cuenta.
+   * @returns Objeto con el error de autenticación o null si el acceso fue exitoso.
    */
   async signIn(email: string, password: string): Promise<{ error: AuthError | null }> {
-    const { error } = await this.supabase.supabase.auth.signInWithPassword({
+    const { data, error } = await this.supabase.supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -155,9 +155,16 @@ export class AuthService {
     if (error) {
       const message = this.mapAuthError(error.message);
       toast.error(message);
+      return { error };
     }
 
-    return { error };
+    if (data.user) {
+      this.currentUserSignal.set(data.user);
+      await this.loadUserProfile(data.user.id);
+      this.registrarAcceso(data.user.id);
+    }
+
+    return { error: null };
   }
 
   /**
@@ -165,26 +172,38 @@ export class AuthService {
    * El trigger handle_new_user_sync popula las tablas de extensión
    * (profiles, pacientes/especialistas/administradores) automáticamente.
    *
+   * Los roles permitidos para auto-registro son exclusivamente
+   * 'paciente' y 'especialista'. Cualquier intento de inyectar
+   * un rol administrativo es rechazado en el cliente.
+   *
    * @param email Correo electrónico único para la cuenta.
    * @param password Contraseña mínima de 8 caracteres.
    * @param metadata Metadatos del perfil (role, full_name, dni, edad, etc.).
    * @returns Identificador del usuario creado o error en caso de fallo.
    */
   async signUp(email: string, password: string, metadata: Record<string, unknown>): Promise<{ userId: string | null; error: AuthError | null }> {
+    const rolesPermitidos: readonly UserRole[] = ['paciente', 'especialista'];
+    const rolSolicitado = metadata['role'];
+
+    if (typeof rolSolicitado !== 'string' || !rolesPermitidos.includes(rolSolicitado as UserRole)) {
+      toast.error('No fue posible completar el registro. Rol no valido.');
+      return { userId: null, error: null };
+    }
+
+    const metadataSegura: Record<string, unknown> = { ...metadata, role: rolSolicitado };
+
     const { data, error } = await this.supabase.supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: { data: metadataSegura },
     });
 
     if (error) {
       const message = this.mapAuthError(error.message);
       toast.error(message);
-      console.error('[AuthService] signUp error:', error.message);
       return { userId: null, error };
     }
 
-    console.log('[AuthService] signUp success, userId:', data.user?.id);
     return { userId: data.user?.id ?? null, error: null };
   }
 
@@ -214,12 +233,98 @@ export class AuthService {
       .from('especialistas')
       .select('is_approved')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!data) return null;
 
     const specialist = data as Database['public']['Tables']['especialistas']['Row'];
     return specialist.is_approved;
+  }
+
+  /**
+   * Verifica si el paciente actual se encuentra verificado.
+   * Utilizado por patientVerificationGuard para bloquear el acceso
+   * a pacientes que no han completado la verificacion de cuenta.
+   *
+   * @returns true si esta verificado, false si no, null si no hay usuario o no es paciente.
+   */
+  async getPatientVerificationStatus(): Promise<boolean | null> {
+    const user = this.currentUserSignal();
+    if (!user) return null;
+
+    if (this.userProfileSignal()?.role !== 'paciente') return null;
+
+    const { data } = await this.supabase.supabase
+      .from('pacientes')
+      .select('is_verified')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!data) return null;
+
+    const patient = data as Database['public']['Tables']['pacientes']['Row'];
+    return patient.is_verified;
+  }
+
+  /**
+   * Actualiza el signal local de perfil con datos parciales.
+   * Es el único método público para modificar el estado del perfil;
+   * los componentes nunca deben acceder directamente al signal interno.
+   *
+   * @param updates Campos parciales del perfil a fusionar con el perfil actual.
+   */
+  updateUserProfile(updates: Partial<Pick<UserProfile, 'full_name' | 'avatar_url' | 'email'>>): void {
+    const current = this.userProfileSignal();
+    if (!current) return;
+    this.userProfileSignal.set({ ...current, ...updates });
+  }
+
+  /**
+   * Actualiza la contraseña del usuario autenticado mediante Supabase Auth.
+   *
+   * @param newPassword Nueva contraseña a establecer (mínimo 6 caracteres).
+   * @returns Objeto con el error si la operación falló.
+   */
+  async updatePassword(newPassword: string): Promise<{ error: AuthError | null }> {
+    const { error } = await this.supabase.supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      const message = this.mapAuthError(error.message);
+      toast.error(message);
+      return { error };
+    }
+
+    return { error: null };
+  }
+
+  /**
+   * Reenvía el enlace de verificación al usuario autenticado actual.
+   * Se utiliza para pacientes no verificados en la pantalla de espera de aprobación.
+   *
+   * @returns Objeto con el error si la operación falló.
+   */
+  async resendVerificationEmail(): Promise<{ error: AuthError | null }> {
+    const user = this.currentUserSignal();
+    if (!user?.email) {
+      toast.error('No se pudo reenviar el correo. Inicia sesion nuevamente.');
+      return { error: null };
+    }
+
+    const { error } = await this.supabase.supabase.auth.resend({
+      type: 'signup',
+      email: user.email,
+    });
+
+    if (error) {
+      const message = this.mapAuthError(error.message);
+      toast.error(message);
+      return { error };
+    }
+
+    toast.success('Correo de verificacion reenviado. Revisa tu bandeja de entrada.');
+    return { error: null };
   }
 
   /**
@@ -241,5 +346,29 @@ export class AuthService {
     };
 
     return errorMap[errorMessage] || 'Ocurrió un error inesperado. Intenta nuevamente';
+  }
+
+  /**
+   * Registra el ingreso del usuario en la tabla de auditoría logs_accesos.
+   *
+   * La inserción se ejecuta de forma aspiracional: si la red falla
+   * no bloquea la-redirección del usuario al panel principal.
+   *
+   * @param userId Identificador único del usuario autenticado.
+   */
+  private registrarAcceso(userId: string): void {
+    const client = this.supabase.supabase as unknown as {
+      from: (table: string) => {
+        insert: (payload: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+      };
+    };
+    client
+      .from('logs_accesos')
+      .insert({ user_id: userId })
+      .then(({ error }) => {
+        if (error) {
+          toast.error('No fue posible registrar el acceso. Por favor, verifica los datos e intenta nuevamente.');
+        }
+      });
   }
 }

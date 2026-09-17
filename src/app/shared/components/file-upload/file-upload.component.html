@@ -1,13 +1,13 @@
-<div class="space-y-1">
+<div class="space-y-1.5">
   @if (label()) {
-    <label class="block text-sm font-medium text-text-primary">{{ label() }}</label>
+    <label class="block text-sm font-medium text-slate-700">{{ label() }}</label>
   }
   <div
     class="relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl
            transition-all duration-200 cursor-pointer
            {{ isDragOver()
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-primary/40 hover:bg-background' }}"
+              ? 'border-teal-400 bg-teal-50/50'
+              : 'border-slate-200 hover:border-teal-300 hover:bg-slate-50/50' }}"
     (dragover)="onDragOver($event)"
     (dragleave)="onDragLeave($event)"
     (drop)="onDrop($event)"
@@ -16,27 +16,34 @@
     [attr.aria-label]="'Subir ' + label()"
   >
     @if (previewUrl()) {
-      <img
-        [src]="previewUrl()"
-        alt="Vista previa"
-        class="w-20 h-20 rounded-full object-cover border-2 border-border"
-      />
-      <p class="mt-2 text-xs text-text-secondary">Cambiar imagen</p>
+      <div class="relative group">
+        <img
+          [src]="previewUrl()"
+          alt="Vista previa"
+          class="w-20 h-20 rounded-2xl object-cover border-2 border-teal-400 shadow-sm"
+        />
+        <div class="absolute inset-0 rounded-2xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-slate-500 font-medium">Cambiar imagen</p>
     } @else {
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      <p class="mt-2 text-sm text-text-secondary">
-        Arrastra una imagen o <span class="text-primary font-medium">selecciona un archivo</span>
+      <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <p class="text-sm text-slate-600">
+        Arrastra una imagen o <span class="text-teal-600 font-semibold">selecciona un archivo</span>
       </p>
-      <p class="mt-1 text-xs text-text-secondary">PNG, JPG (max. 5MB)</p>
+      <p class="mt-1 text-xs text-slate-400">PNG, JPG, WEBP (max. 2MB)</p>
     }
     <input
       #fileInput
       type="file"
-      accept="image/png,image/jpeg,image/jpg"
+      accept="image/png,image/jpeg,image/jpg,image/webp"
       class="hidden"
       (change)="onFileSelect($event)"
     />

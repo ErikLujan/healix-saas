@@ -15,11 +15,11 @@ import { Directive, ElementRef, inject, input, OnDestroy, OnInit, Renderer2 } fr
  * Cuando la imagen se carga correctamente, no realiza ninguna modificacion.
  *
  * @example
- * // En una plantilla Angular:
+ * En una plantilla Angular:
  * <img [src]="usuario.avatar_url" [alt]="usuario.nombre" fallbackAvatar />
  *
  * @example
- * // Con una imagen de respaldo personalizada:
+ * Con una imagen de respaldo personalizada:
  * <img [src]="avatarUrl" fallbackAvatar="/assets/images/custom-default.png" />
  *
  * @selector [fallbackAvatar]

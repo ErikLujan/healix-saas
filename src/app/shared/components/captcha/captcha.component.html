@@ -2,30 +2,21 @@
   <div
     class="captcha-challenge relative flex flex-wrap items-center gap-3 p-3 bg-background rounded-xl border border-border overflow-hidden"
     role="group"
-    [attr.aria-label]="challengeType() === 'math' ? 'Desafío matemático: ' + mathLabel() : 'Desafío alfanumérico'"
+    aria-label="Desafío alfanumérico"
   >
     <div class="captcha-interference"></div>
 
-    @if (challengeType() === 'math') {
-      <div class="flex items-center gap-2 text-sm text-text-primary font-semibold select-none relative z-10">
-        <span>{{ operandA() }}</span>
-        <span class="text-text-secondary">+</span>
-        <span>{{ operandB() }}</span>
-        <span class="text-text-secondary">=</span>
-      </div>
-    } @else {
-      <div class="flex items-center gap-0.5 select-none relative z-10" aria-hidden="true">
-        @for (item of distortedChars(); track $index) {
-          <span
-            class="inline-block font-bold text-text-primary captcha-alpha-char"
-            [style.fontSize.px]="item.fontSize"
-            [style.transform]="'rotate(' + item.rotation + 'deg) translate(' + item.offsetX + 'px, ' + item.offsetY + 'px)'"
-          >{{ item.char }}</span>
-        }
-      </div>
-    }
+    <div class="flex items-center gap-0.5 select-none relative z-10" aria-hidden="true">
+      @for (item of distortedChars(); track $index) {
+        <span
+          class="inline-block font-bold text-text-primary captcha-alpha-char"
+          [style.fontSize.px]="item.fontSize"
+          [style.transform]="'rotate(' + item.rotation + 'deg) translate(' + item.offsetX + 'px, ' + item.offsetY + 'px)'"
+        >{{ item.char }}</span>
+      }
+    </div>
 
-    <input [formControl]="control" [type]="challengeType() === 'math' ? 'number' : 'text'" [placeholder]="challengeType() === 'math' ? '?' : 'Escribí aquí'" [attr.aria-label]="challengeType() === 'math' ? 'Resultado de la suma' : 'Escriba los caracteres mostrados'" [disabled]="isVerified()" [ngClass]="{ 'border-success': isVerified(), 'bg-success/5': isVerified(), 'text-success': isVerified(), 'border-danger': !!errorMessage() }" class="captcha-input relative z-10 w-24 sm:w-28 px-3 py-1.5 text-sm text-center rounded-lg border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-text-primary" (input)="onInput()" (keydown.enter)="verificar()" autocomplete="off" />
+    <input [formControl]="control" type="text" placeholder="Escribí aquí" [attr.aria-label]="'Escriba los caracteres mostrados'" [disabled]="isVerified()" [ngClass]="{ 'border-success': isVerified(), 'bg-success/5': isVerified(), 'text-success': isVerified(), 'border-danger': !!errorMessage() }" class="captcha-input relative z-10 w-24 sm:w-28 px-3 py-1.5 text-sm text-center rounded-lg border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-text-primary" (input)="onInput()" (keydown.enter)="verificar()" autocomplete="off" />
 
     @if (!isVerified()) {
       <button

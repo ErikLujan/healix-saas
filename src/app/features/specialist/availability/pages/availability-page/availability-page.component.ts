@@ -1,23 +1,16 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { SupabaseService } from '@core/services/supabase.service';
 import { DisponibilidadService } from '@core/services/disponibilidad.service';
 import {
   DisponibilidadEspecialistaInsert,
   ConfiguracionDia,
   BloqueHorario,
   DiaSemana,
+  EspecialidadPerfil,
   NOMBRES_DIAS,
-  RESTRICCIONES_HORARIAS,
 } from '@core/models/disponibilidad.model';
 import { AvailabilityFormComponent } from '../../components/availability-form/availability-form.component';
 import { SlotsPreviewComponent } from '../../components/slots-preview/slots-preview.component';
-import { toast } from 'ngx-sonner';
-
-interface EspecialidadPerfil {
-  readonly id: string;
-  readonly name: string;
-}
 
 @Component({
   selector: 'app-availability-page',
@@ -27,11 +20,10 @@ interface EspecialidadPerfil {
 })
 export class AvailabilityPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
-  private readonly supabase = inject(SupabaseService);
   private readonly disponibilidadService = inject(DisponibilidadService);
 
   readonly isLoading = this.disponibilidadService.isLoading;
-  readonly especialidades = signal<EspecialidadPerfil[]>([]);
+  readonly especialidades = signal<readonly EspecialidadPerfil[]>([]);
   readonly configuracion = signal<Record<number, ConfiguracionDia>>({
     1: { habilitado: false, bloques: [] },
     2: { habilitado: false, bloques: [] },
@@ -52,6 +44,8 @@ export class AvailabilityPageComponent implements OnInit {
 
   readonly perfil = this.authService.userProfile;
 
+  readonly isLoadingData = signal(true);
+
   readonly totalDiasHabilitados = computed(() =>
     Object.values(this.configuracion()).filter(d => d.habilitado).length,
   );
@@ -67,34 +61,14 @@ export class AvailabilityPageComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.cargarEspecialidades();
     await this.cargarDisponibilidadExistente();
+    this.isLoadingData.set(false);
   }
 
   private async cargarEspecialidades(): Promise<void> {
     const userId = this.perfil()?.id;
     if (!userId) return;
 
-    const { data: vinculos, error: vinculosError } = await this.supabase.supabase
-      .from('especialista_especialidad')
-      .select('especialidad_id')
-      .eq('especialista_id', userId);
-
-    if (vinculosError || !vinculos || vinculos.length === 0) {
-      toast.error('Error al cargar las especialidades del médico.');
-      return;
-    }
-
-    const ids = vinculos.map(v => v.especialidad_id);
-
-    const { data: especialidades, error: espError } = await this.supabase.supabase
-      .from('specialties')
-      .select('id, name')
-      .in('id', ids);
-
-    if (espError || !especialidades) {
-      toast.error('Error al cargar las especialidades del médico.');
-      return;
-    }
-
+    const especialidades = await this.disponibilidadService.cargarEspecialidadesDelEspecialista(userId);
     this.especialidades.set(especialidades);
   }
 
@@ -134,6 +108,12 @@ export class AvailabilityPageComponent implements OnInit {
     this.tieneCambiosPendientes.set(true);
   }
 
+  /**
+   * Guarda la disponibilidad semanal construida desde la configuración local.
+   *
+   * Delega la notificación de errores al servicio de disponibilidad,
+   * por lo que este flujo no muestra avisos adicionales.
+   */
   async onGuardar(): Promise<void> {
     const userId = this.perfil()?.id;
     if (!userId) return;
@@ -144,7 +124,7 @@ export class AvailabilityPageComponent implements OnInit {
       await this.disponibilidadService.guardarDisponibilidadSemanal(userId, registros);
       this.tieneCambiosPendientes.set(false);
     } catch {
-      // El servicio ya notifica el error via toast
+      return;
     }
   }
 

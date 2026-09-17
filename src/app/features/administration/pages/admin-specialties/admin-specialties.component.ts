@@ -34,7 +34,7 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
         <button
           type="button"
           (click)="showForm.set(!showForm())"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-900 transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
@@ -52,7 +52,7 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
                 type="text"
                 [(ngModel)]="newName"
                 placeholder="Ej: Cardiologia"
-                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all" />
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-300 focus:ring-2 focus:ring-brand-100 outline-none transition-all" />
             </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Descripcion</label>
@@ -60,7 +60,7 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
                 type="text"
                 [(ngModel)]="newDescription"
                 placeholder="Breve descripcion de la especialidad"
-                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all" />
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-300 focus:ring-2 focus:ring-brand-100 outline-none transition-all" />
             </div>
           </div>
           <div class="flex gap-2 mt-4">
@@ -68,7 +68,7 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
               type="button"
               (click)="createSpecialty()"
               [disabled]="!newName().trim()"
-              class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              class="px-4 py-2 bg-brand-700 text-white text-sm font-medium rounded-lg hover:bg-brand-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Crear
             </button>
             <button
@@ -83,7 +83,7 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
 
       @if (specialtiesService.isLoading()) {
         <div class="flex justify-center py-16">
-          <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div class="w-10 h-10 border-4 border-brand-100 border-t-brand-700 rounded-full animate-spin"></div>
         </div>
       } @else if (specialtiesService.specialties().length === 0) {
         <div class="flex flex-col items-center justify-center py-16">
@@ -133,8 +133,8 @@ import { SpecialtiesService, SpecialtyWithCount } from '../../services/specialti
                     [checked]="specialty.is_active"
                     (change)="toggleActive(specialty)"
                     class="sr-only peer" />
-                  <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                  <span class="ml-2 text-xs font-medium" [class]="specialty.is_active ? 'text-blue-600' : 'text-gray-500'">
+                  <div class="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-700"></div>
+                  <span class="ml-2 text-xs font-medium" [class]="specialty.is_active ? 'text-brand-700' : 'text-gray-500'">
                     {{ specialty.is_active ? 'Activa' : 'Inactiva' }}
                   </span>
                 </label>

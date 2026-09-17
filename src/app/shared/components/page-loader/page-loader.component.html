@@ -1,11 +1,17 @@
 @if (isLoading()) {
-  <div @fadeIn class="page-loader-backdrop">
-    <div class="page-loader-shimmer"></div>
+  <div
+    @overlayFade
+    class="page-loader-backdrop"
+    role="status"
+    aria-live="polite"
+    aria-label="Cargando módulo"
+  >
     <div class="page-loader-content">
-      <div class="page-loader-ring">
-        <div class="page-loader-arc"></div>
+      <img src="assets/images/icono.png" alt="" aria-hidden="true" class="page-loader-logo" />
+      <div class="page-loader-bar-track" aria-hidden="true">
+        <div class="page-loader-bar-fill"></div>
       </div>
-      <div class="page-loader-dot"></div>
+      <p class="page-loader-caption">Cargando módulo…</p>
     </div>
   </div>
 }

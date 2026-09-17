@@ -3,26 +3,21 @@ import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { AuthService, UserRole } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
-import { TurnoConRelaciones } from '@core/models/turno.model';
-import { TurnoCardComponent } from '../../components/turno-card/turno-card.component';
+import { TurnoConRelaciones, EncuestaSatisfaccion } from '@core/models/turno.model';
 import { ComentarioDialogComponent } from '../../dialogs/comentario-dialog.component';
 import { ResenaModalComponent } from '../../dialogs/resena-modal.component';
 import { CalificarAtencionDialogComponent } from '../../dialogs/calificar-atencion-dialog.component';
+import { EncuestaSatisfaccionDialogComponent } from '../../dialogs/encuesta-satisfaccion-dialog.component';
 import { FinishAppointmentDialogComponent } from '../../../finish/dialogs/finish-appointment.dialog';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
-import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
-import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
-
-/** Etiquetas legibles para los tabs de filtrado por estado. */
-const ETIQUETAS_ESTADO: Record<string, string> = {
-  pendiente: 'Pendiente',
-  confirmado: 'Aceptado',
-  rechazado: 'Rechazado',
-  cancelado: 'Cancelado',
-  finalizado: 'Finalizado',
-};
+import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
+import { FechaFormatPipe } from '@shared/pipes/fecha-format.pipe';
+import { MedicalRecordsService } from '@core/services/medical-records.service';
+import { MedicalRecordConRelaciones } from '@core/models/medical-record.model';
+import { RegistrationService, Specialty } from '@core/services/registration.service';
 
 /** Cantidad maxima de tarjetas visibles por pagina en el dashboard. */
 const PAGE_SIZE = 4;
@@ -44,12 +39,15 @@ const PAGE_SIZE = 4;
     NgClass,
     FormsModule,
     RouterLink,
-    TurnoCardComponent,
+    LucideDynamicIcon,
     ComentarioDialogComponent,
     ResenaModalComponent,
     CalificarAtencionDialogComponent,
+    EncuestaSatisfaccionDialogComponent,
     FinishAppointmentDialogComponent,
     PaginationComponent,
+    EstadoTurnoColorPipe,
+    FechaFormatPipe,
   ],
   templateUrl: './dashboard-page.component.html',
 })
@@ -57,10 +55,12 @@ export class DashboardPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly turnosService = inject(TurnosService);
   private readonly medicalRecordsService = inject(MedicalRecordsService);
+  private readonly registrationService = inject(RegistrationService);
 
   readonly dialogComentario = signal<ComentarioDialogComponent | null>(null);
   readonly modalResena = signal<ResenaModalComponent | null>(null);
   readonly dialogCalificar = signal<CalificarAtencionDialogComponent | null>(null);
+  readonly dialogEncuesta = signal<EncuestaSatisfaccionDialogComponent | null>(null);
   readonly dialogFinalizar = signal<FinishAppointmentDialogComponent | null>(null);
 
   @ViewChild('dialogComentario') set setDialogComentario(ref: ComentarioDialogComponent | undefined) {
@@ -73,6 +73,10 @@ export class DashboardPageComponent implements OnInit {
 
   @ViewChild('dialogCalificar') set setDialogCalificar(ref: CalificarAtencionDialogComponent | undefined) {
     if (ref) this.dialogCalificar.set(ref);
+  }
+
+  @ViewChild('dialogEncuesta') set setDialogEncuesta(ref: EncuestaSatisfaccionDialogComponent | undefined) {
+    if (ref) this.dialogEncuesta.set(ref);
   }
 
   @ViewChild('dialogFinalizar') set setDialogFinalizar(ref: FinishAppointmentDialogComponent | undefined) {
@@ -91,6 +95,12 @@ export class DashboardPageComponent implements OnInit {
   /** Filtro activo por estado (null = todos). */
   readonly filtroEstado = signal<string | null>(null);
 
+  /** Especialidades disponibles para el filtro dropdown. */
+  readonly especialidades = signal<readonly Specialty[]>([]);
+
+  /** Filtro activo por especialidad (null = todas). */
+  readonly filtroEspecialidad = signal<string | null>(null);
+
   /** Rol del usuario autenticado. */
   readonly rol = this.authService.userRole;
 
@@ -103,8 +113,8 @@ export class DashboardPageComponent implements OnInit {
   /** Turno seleccionado para alguna operacion. */
   readonly turnoSeleccionado = signal<TurnoConRelaciones | null>(null);
 
-  /** Tipo de accion pendiente en el dialogo de comentario ('cancelar' | 'rechazar'). */
-  private accionPendiente = signal<'cancelar' | 'rechazar'>('cancelar');
+  /** Tipo de accion pendiente en el dialogo de comentario ('cancelar' | 'rechazar' | 'confirmar'). */
+  private accionPendiente = signal<'cancelar' | 'rechazar' | 'confirmar'>('cancelar');
 
   /** Contadores por estado para los tabs. */
   readonly contadores = computed(() => {
@@ -122,15 +132,20 @@ export class DashboardPageComponent implements OnInit {
     return contadores;
   });
 
-  /** Turnos filtrados por busqueda global y estado. */
+  /** Turnos filtrados por busqueda global, estado y especialidad. */
   readonly turnosFiltrados = computed(() => {
     let turnos = this._turnos();
     const query = this.searchQuery().toLowerCase().trim();
     const estado = this.filtroEstado();
+    const especialidadId = this.filtroEspecialidad();
     const historiasMap = this._historiasClinicas();
 
     if (estado) {
       turnos = turnos.filter(t => t.estado === estado);
+    }
+
+    if (especialidadId) {
+      turnos = turnos.filter(t => t.especialidad_id === especialidadId);
     }
 
     if (!query) return turnos;
@@ -143,12 +158,28 @@ export class DashboardPageComponent implements OnInit {
       const resena = t.resena_diagnostico?.toLowerCase() ?? '';
       const comentarioCancelacion = t.comentario_cancelacion_rechazo?.toLowerCase() ?? '';
 
+      const fechaRaw = t.fecha_hora.substring(0, 10);
+      const [anio, mes, dia] = fechaRaw.split('-');
+      const fechaISO = `${anio}-${mes}-${dia}`;
+      const fechaBarra = `${dia}/${mes}/${anio}`;
+      const mesNombres: Record<string, string> = {
+        '01': 'enero', '02': 'febrero', '03': 'marzo', '04': 'abril',
+        '05': 'mayo', '06': 'junio', '07': 'julio', '08': 'agosto',
+        '09': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre',
+      };
+      const fechaLegible = `${dia} de ${mesNombres[mes] ?? mes} de ${anio}`;
+      const hora = t.fecha_hora.substring(11, 16);
+
       const coincideBasico = especialidad.includes(query)
         || especialista.includes(query)
         || paciente.includes(query)
         || estadoTurno.includes(query)
         || resena.includes(query)
-        || comentarioCancelacion.includes(query);
+        || comentarioCancelacion.includes(query)
+        || fechaISO.includes(query)
+        || fechaBarra.includes(query)
+        || fechaLegible.toLowerCase().includes(query)
+        || hora.includes(query);
 
       if (coincideBasico) return true;
 
@@ -196,30 +227,44 @@ export class DashboardPageComponent implements OnInit {
   /** Titulo adaptado segun el rol. */
   readonly titulo = computed(() => {
     const r = this.rol();
-    if (r === 'paciente') return 'Mis turnos';
-    if (r === 'especialista') return 'Mis turnos';
-    return 'Turnos';
+    if (r === 'paciente') return 'Mis Turnos';
+    if (r === 'especialista') return 'Mi Agenda de Turnos';
+    return 'Gestión Global de Turnos';
   });
 
   /** Subtitulo adaptado segun el rol. */
   readonly subtitulo = computed(() => {
     const r = this.rol();
-    if (r === 'administrador') return 'Supervisá y auditá todas las consultas del sistema.';
-    return 'Filtrá por estado y gestioná tus consultas.';
+    if (r === 'paciente') return 'Consulta y gestiona tus citas médicas programadas';
+    if (r === 'especialista') return 'Gestiona la atención y consultas de tus pacientes';
+    return 'Supervisión y control administrativo central';
   });
 
   async ngOnInit(): Promise<void> {
-    await this.cargarTurnos();
+    await Promise.all([
+      this.fetchTurnosByRole(true),
+      this.cargarEspecialidades(),
+    ]);
   }
 
-  /** Carga los turnos segun el rol del usuario autenticado. */
-  private async cargarTurnos(): Promise<void> {
-    this.isLoading.set(true);
+  /**
+   * Obtiene los turnos del usuario autenticado segun su rol.
+   *
+   * Metodo unificado que reemplaza la logica duplicada de
+   * cargarTurnos() y recargarTurnos(). Consulta Supabase,
+   * actualiza el signal interno y carga las historias clinicas
+   * asociadas para habilitar la busqueda en datos clinicos.
+   *
+   * @param mostrarLoading Si es true, activa el indicador de carga.
+   */
+  private async fetchTurnosByRole(mostrarLoading = false): Promise<void> {
+    if (mostrarLoading) this.isLoading.set(true);
+
     const perfil = this.perfil();
     const rol = this.rol();
 
     if (!perfil || !rol) {
-      this.isLoading.set(false);
+      if (mostrarLoading) this.isLoading.set(false);
       return;
     }
 
@@ -241,7 +286,7 @@ export class DashboardPageComponent implements OnInit {
 
     this._turnos.set(turnos as TurnoConRelaciones[]);
     await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
-    this.isLoading.set(false);
+    if (mostrarLoading) this.isLoading.set(false);
   }
 
   /**
@@ -299,6 +344,18 @@ export class DashboardPageComponent implements OnInit {
     this.currentPage.set(1);
   }
 
+  /** Selecciona un filtro de especialidad o lo deselecciona, reseteando la paginacion. */
+  seleccionarFiltroEspecialidad(especialidadId: string | null): void {
+    this.filtroEspecialidad.update(actual => actual === especialidadId ? null : especialidadId);
+    this.currentPage.set(1);
+  }
+
+  /** Carga las especialidades activas para el filtro dropdown. */
+  private async cargarEspecialidades(): Promise<void> {
+    const data = await this.registrationService.getActiveSpecialties();
+    this.especialidades.set(data);
+  }
+
   /** Maneja el cambio de pagina desde el componente de paginacion. */
   onPageChange(page: number): void {
     this.currentPage.set(page);
@@ -332,33 +389,45 @@ export class DashboardPageComponent implements OnInit {
     this.dialogFinalizar()?.abrir();
   }
 
-  /** Confirma la cancelacion o rechazo de un turno segun la accion pendiente. */
-  async confirmarCancelar(comentario: string): Promise<void> {
+  /** Callback tras finalizacion exitosa desde el dialogo de alta medica. */
+  async onFinalizacionCompleta(): Promise<void> {
+    await this.fetchTurnosByRole();
+    this.turnoSeleccionado.set(null);
+  }
+
+  /** Confirma la aceptacion de un turno tras dialogo de confirmacion. */
+  abrirDialogoConfirmarAceptar(turno: TurnoConRelaciones): void {
+    this.turnoSeleccionado.set(turno);
+    this.accionPendiente.set('confirmar');
+    this.dialogComentario()?.abrirConfirmacion({
+      titulo: 'Confirmar turno',
+      descripcion: `¿Deseas aceptar el turno del paciente ${turno.paciente?.full_name ?? '—'} para ${turno.especialidad?.name ?? '—'} el ${this.formatearFechaLegible(turno.fecha_hora)} a las ${this.formatearHora(turno.fecha_hora)} hs?`,
+      textoConfirmar: 'Confirmar aceptación',
+    });
+  }
+
+  /** Ejecuta la accion pendiente sobre un turno desde el dialogo de comentario. */
+  async confirmarAccionDesdeDialogo(comentario: string): Promise<void> {
     const turno = this.turnoSeleccionado();
     if (!turno) return;
 
     const accion = this.accionPendiente();
 
-    if (accion === 'rechazar') {
-      await this.turnosService.rechazarTurno(turno.id, comentario);
-    } else {
-      await this.turnosService.cancelarTurno(turno.id, comentario);
+    switch (accion) {
+      case 'rechazar':
+        await this.turnosService.rechazarTurno(turno.id, comentario);
+        break;
+      case 'confirmar':
+        await this.turnosService.confirmarTurno(turno.id);
+        break;
+      case 'cancelar':
+      default:
+        await this.turnosService.cancelarTurno(turno.id, comentario);
+        break;
     }
 
-    await this.recargarTurnos();
+    await this.fetchTurnosByRole();
     this.turnoSeleccionado.set(null);
-  }
-
-  /** Callback tras finalizacion exitosa desde el dialogo de alta medica. */
-  async onFinalizacionCompleta(): Promise<void> {
-    await this.recargarTurnos();
-    this.turnoSeleccionado.set(null);
-  }
-
-  /** Confirma la aceptacion de un turno. */
-  async confirmarAceptar(turno: TurnoConRelaciones): Promise<void> {
-    await this.turnosService.confirmarTurno(turno.id);
-    await this.recargarTurnos();
   }
 
   /** Abre el modal de resena medica para un turno. */
@@ -372,49 +441,58 @@ export class DashboardPageComponent implements OnInit {
     this.dialogCalificar()?.abrir();
   }
 
+  /** Abre el dialogo de calificacion en modo lectura. */
+  verCalificacion(turno: TurnoConRelaciones): void {
+    this.turnoSeleccionado.set(turno);
+    this.dialogCalificar()?.abrirLectura(turno.calificacion_estrellas ?? 0, turno.calificacion_comentario ?? '');
+  }
+
   /** Confirma la calificacion de un turno. */
   async confirmarCalificar(datos: { comentario: string; estrellas: number }): Promise<void> {
     const turno = this.turnoSeleccionado();
     if (!turno) return;
 
     await this.turnosService.calificarTurno(turno.id, datos.comentario, datos.estrellas);
-    await this.recargarTurnos();
+    await this.fetchTurnosByRole();
     this.turnoSeleccionado.set(null);
   }
 
-  /** Abre el stub de encuesta (proximamente). */
+  /** Abre el dialogo de encuesta de satisfaccion para un turno. */
   abrirEncuesta(turno: TurnoConRelaciones): void {
     this.turnoSeleccionado.set(turno);
-    this.dialogComentario()?.abrir({
-      titulo: 'Encuesta de Satisfacción',
-      placeholder: 'Encuesta de Satisfacción de la Clínica - Próximamente disponible',
-      textoConfirmar: 'Cerrar',
-    });
+    this.dialogEncuesta()?.abrir();
   }
 
-  /** Recarga los turnos desde Supabase. */
-  private async recargarTurnos(): Promise<void> {
-    const perfil = this.perfil();
-    const rol = this.rol();
-    if (!perfil || !rol) return;
-
-    let turnos: readonly TurnoConRelaciones[];
-
-    switch (rol) {
-      case 'paciente':
-        turnos = await this.turnosService.obtenerTurnosPorPaciente(perfil.id);
-        break;
-      case 'especialista':
-        turnos = await this.turnosService.obtenerTurnosPorEspecialista(perfil.id);
-        break;
-      case 'administrador':
-        turnos = await this.turnosService.obtenerTodosLosTurnosAdmin();
-        break;
-      default:
-        turnos = [];
+  /** Abre el dialogo de encuesta en modo lectura. */
+  verEncuesta(turno: TurnoConRelaciones): void {
+    this.turnoSeleccionado.set(turno);
+    if (turno.encuesta_satisfaccion) {
+      this.dialogEncuesta()?.abrirLectura(turno.encuesta_satisfaccion);
     }
+  }
 
-    this._turnos.set(turnos as TurnoConRelaciones[]);
-    await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
+  /** Confirma el envio de la encuesta de satisfaccion. */
+  async confirmarEncuesta(encuesta: EncuestaSatisfaccion): Promise<void> {
+    const turno = this.turnoSeleccionado();
+    if (!turno) return;
+
+    await this.turnosService.guardarEncuesta(turno.id, encuesta);
+    await this.fetchTurnosByRole();
+    this.turnoSeleccionado.set(null);
+  }
+
+  formatearHora(fechaHora: string): string {
+    return fechaHora.substring(11, 16);
+  }
+
+  formatearFechaLegible(fechaHora: string): string {
+    const fechaStr = fechaHora.substring(0, 10);
+    const [anio, mes, dia] = fechaStr.split('-').map(Number);
+    const fechaObj = new Date(anio, mes - 1, dia);
+    return fechaObj.toLocaleDateString('es-AR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   }
 }

@@ -1,0 +1,84 @@
+@if (isOpen()) {
+  <!-- Glassmorphic backdrop -->
+  <div class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs animate-in fade-in-0 duration-200"
+    (click)="onClose.emit()"></div>
+
+  <!-- Drawer panel -->
+  <div class="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-surface shadow-2xl border-l border-divider
+    flex flex-col overflow-hidden animate-in slide-in-from-right fill-mode-forwards duration-200"
+    role="dialog" aria-modal="true" [attr.aria-label]="'Historia clínica de ' + (paciente()?.full_name ?? '')">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-divider px-6 py-4 flex-shrink-0">
+      <div class="flex items-center gap-3 min-w-0">
+        @if (paciente()?.avatar_url) {
+          <img [src]="paciente()!.avatar_url" [alt]="paciente()!.full_name"
+            class="h-10 w-10 rounded-2xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
+        } @else {
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 ring-2 ring-brand-100/50 flex-shrink-0">
+            <span class="text-sm font-bold text-brand-700">{{ paciente()!.full_name.charAt(0) | uppercase }}</span>
+          </div>
+        }
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-text-primary truncate">{{ paciente()!.full_name }}</h2>
+          <div class="flex items-center gap-2 text-xs text-text-subtle">
+            @if (paciente()?.dni) {
+              <span class="tabular-nums">DNI {{ paciente()!.dni! | formatDni }}</span>
+              <span>&middot;</span>
+            }
+            <span class="truncate">{{ paciente()!.email }}</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" (click)="onClose.emit()"
+        class="rounded-xl p-2 text-text-subtle hover:bg-danger/10 hover:text-danger transition-colors duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-500/20 flex-shrink-0 ml-3"
+        aria-label="Cerrar">
+        <svg lucideIcon="x" class="h-5 w-5"></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-5">
+      @if (isLoading()) {
+        <div class="space-y-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="rounded-2xl border border-slate-200/80 p-4 space-y-3">
+              <div class="h-4 w-24 rounded-full animate-shimmer"></div>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+                <div class="h-16 rounded-xl animate-shimmer"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (records().length === 0) {
+        <div class="flex flex-col items-center justify-center py-12">
+          <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 mb-3">
+            <svg lucideIcon="folder-open" class="h-6 w-6 text-slate-400"></svg>
+          </div>
+          <p class="text-sm font-medium text-text-primary mb-1">Sin historia clínica</p>
+          <p class="text-xs text-text-secondary text-center max-w-xs">
+            Este paciente aún no tiene registros clínicos asociados a tus consultas.
+          </p>
+        </div>
+      } @else {
+        <!-- Summary KPIs -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <div class="rounded-2xl bg-brand-50 border border-brand-100 p-4 text-center">
+            <p class="text-2xl font-bold text-brand-700 tabular-nums">{{ records().length }}</p>
+            <p class="text-xs font-medium text-brand-700/70 mt-0.5">Atenciones</p>
+          </div>
+          <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-center">
+            <p class="text-sm font-bold text-emerald-700">{{ ultimaAtencion() }}</p>
+            <p class="text-xs font-medium text-emerald-700/70 mt-0.5">Última Atención</p>
+          </div>
+        </div>
+
+        <!-- Medical History Timeline -->
+        <app-medical-history-list [records]="records()" />
+      }
+    </div>
+  </div>
+}

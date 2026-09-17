@@ -1,67 +1,85 @@
-import { Component, output, signal } from '@angular/core';
+import { Component, output, signal, computed, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgClass } from '@angular/common';
+import { LucideDynamicIcon } from '@lucide/angular';
 
-/**
- * Dialogo modular para captura de comentarios obligatorios.
- *
- * Utilizado para cancelaciones y rechazos de turnos.
- * El boton de confirmacion permanece deshabilitado mientras el
- * texto este vacio, garantizando la captura obligatoria.
- */
+/** Longitud minima requerida para motivos de cancelacion y rechazo. */
+const LONGITUD_MINIMA_MOTIVO = 10;
+
 @Component({
   selector: 'app-comentario-dialog',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, NgClass, LucideDynamicIcon],
   templateUrl: './comentario-dialog.component.html',
 })
 export class ComentarioDialogComponent {
-  /** Texto del titulo del dialogo. */
   readonly titulo = signal('Cancelar turno');
-
-  /** Texto del placeholder del textarea. */
   readonly placeholder = signal('Describe el motivo de la cancelación...');
-
-  /** Texto del boton de confirmacion. */
   readonly textoConfirmar = signal('Confirmar cancelación');
-
-  /** Evento emitido con el texto del comentario al confirmar. */
+  readonly descripcion = signal('');
+  readonly modoSoloConfirmacion = signal(false);
   readonly onConfirmar = output<string>();
-
-  /** Evento emitido al cerrar el dialogo sin confirmar. */
   readonly onCerrar = output<void>();
-
-  /** Texto actual del textarea. */
   readonly comentario = signal('');
-
-  /** Indica si el dialogo esta visible. */
   readonly isVisible = signal(false);
 
-  /** Abre el dialogo con la configuracion indicada. */
+  /** Indica si el comentario cumple con la longitud minima. */
+  readonly comentarioValido = computed(() => {
+    if (this.modoSoloConfirmacion()) return true;
+    return this.comentario().trim().length >= LONGITUD_MINIMA_MOTIVO;
+  });
+
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.isVisible()) this.cerrar();
+  }
+
+  /**
+   * Abre el dialogo en modo comentario (textarea visible).
+   */
   abrir(config: { titulo: string; placeholder: string; textoConfirmar: string }): void {
     this.titulo.set(config.titulo);
     this.placeholder.set(config.placeholder);
     this.textoConfirmar.set(config.textoConfirmar);
+    this.descripcion.set('');
+    this.modoSoloConfirmacion.set(false);
     this.comentario.set('');
     this.isVisible.set(true);
   }
 
-  /** Cierra el dialogo y emite el evento de cierre. */
+  /**
+   * Abre el dialogo en modo solo confirmacion (sin textarea).
+   * Emite el texto de descripcion como comentario al confirmar.
+   */
+  abrirConfirmacion(config: { titulo: string; descripcion: string; textoConfirmar: string }): void {
+    this.titulo.set(config.titulo);
+    this.descripcion.set(config.descripcion);
+    this.textoConfirmar.set(config.textoConfirmar);
+    this.modoSoloConfirmacion.set(true);
+    this.comentario.set('');
+    this.isVisible.set(true);
+  }
+
   cerrar(): void {
     this.isVisible.set(false);
     this.comentario.set('');
     this.onCerrar.emit();
   }
 
-  /** Confirma la accion con el comentario ingresado. */
   confirmar(): void {
+    if (this.modoSoloConfirmacion()) {
+      this.isVisible.set(false);
+      this.onConfirmar.emit(this.descripcion());
+      return;
+    }
+
     const texto = this.comentario().trim();
-    if (!texto) return;
+    if (texto.length < LONGITUD_MINIMA_MOTIVO) return;
     this.isVisible.set(false);
     this.onConfirmar.emit(texto);
     this.comentario.set('');
   }
 
-  /** Actualiza el texto del comentario. */
   actualizarComentario(valor: string): void {
     this.comentario.set(valor);
   }

@@ -1,0 +1,131 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50">
+      <svg lucideIcon="users" class="h-5 w-5 text-brand-700"></svg>
+    </div>
+    <div>
+      <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">Listado de Pacientes</h1>
+      <p class="mt-0.5 text-sm text-text-secondary">Registro de pacientes atendidos e historias clínicas completas.</p>
+    </div>
+  </div>
+
+  <!-- Search Toolbar -->
+  <div class="relative">
+    <svg lucideIcon="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-subtle"></svg>
+    <input type="text"
+      [value]="searchQuery()"
+      (input)="onSearchInput($event)"
+      placeholder="Buscar por nombre, email o DNI..."
+      class="w-full rounded-2xl border border-border bg-surface py-2.5 pl-10 pr-10 text-sm text-text-primary placeholder:text-text-subtle focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all" />
+    @if (searchQuery()) {
+      <button type="button" (click)="clearSearch()"
+        class="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-1 text-text-subtle hover:bg-surface-sunken hover:text-text-primary transition-colors active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+        <svg lucideIcon="x" class="h-4 w-4"></svg>
+      </button>
+    }
+  </div>
+
+  <!-- Loading State: Skeleton Grid -->
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="rounded-2xl border border-slate-200/80 bg-surface p-5 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="h-11 w-11 rounded-2xl animate-shimmer flex-shrink-0"></div>
+            <div class="space-y-2 flex-1">
+              <div class="h-4 w-32 rounded-full animate-shimmer"></div>
+              <div class="h-3 w-24 rounded-full animate-shimmer"></div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="h-5 w-20 rounded-lg animate-shimmer"></div>
+            <div class="h-5 w-16 rounded-lg animate-shimmer"></div>
+          </div>
+          <div class="border-t border-divider pt-3">
+            <div class="h-3 w-28 rounded animate-shimmer"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Patient Card Grid -->
+  @if (!isLoading() && filteredPatients().length > 0) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (paciente of filteredPatients(); track paciente.id) {
+        <button type="button" (click)="openDrawer(paciente)"
+          class="group rounded-2xl border border-slate-200/80 bg-surface p-5 text-left transition-all duration-200 hover:shadow-md hover:border-brand-200/80 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+          <div class="flex items-center gap-3 mb-3">
+            @if (paciente.avatar_url) {
+              <img [src]="paciente.avatar_url" [alt]="paciente.full_name"
+                class="h-11 w-11 rounded-2xl object-cover ring-2 ring-slate-100" />
+            } @else {
+              <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 ring-2 ring-brand-100/50 flex-shrink-0">
+                <span class="text-sm font-bold text-brand-700">{{ paciente.full_name.charAt(0) | uppercase }}</span>
+              </div>
+            }
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-text-primary truncate">{{ paciente.full_name }}</p>
+              <p class="text-xs text-text-subtle truncate">{{ paciente.email }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-3">
+            @if (paciente.dni) {
+              <span class="inline-flex items-center rounded-xl bg-slate-100 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-slate-600">
+                DNI {{ paciente.dni! | formatDni }}
+              </span>
+            }
+            <span class="inline-flex items-center rounded-xl bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+              {{ paciente.totalConsultas }} atenci{{ paciente.totalConsultas === 1 ? 'ón' : 'ones' }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 border-t border-divider pt-3">
+            <svg lucideIcon="file-text" class="h-3.5 w-3.5 text-brand-500"></svg>
+            <span class="text-xs font-medium text-brand-700 group-hover:text-brand-900 transition-colors">Ver Historia Clínica</span>
+          </div>
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Empty State: No search results -->
+  @if (!isLoading() && pacientes().length > 0 && filteredPatients().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-slate-200/80 bg-surface">
+      <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4">
+        <svg lucideIcon="search" class="h-7 w-7 text-slate-400"></svg>
+      </div>
+      <h3 class="text-lg font-semibold text-text-primary mb-1">No se encontraron pacientes</h3>
+      <p class="text-sm text-text-secondary text-center max-w-sm mb-4">
+        No hay resultados para "{{ searchQuery() }}". Intenta con otro término.
+      </p>
+      <button type="button" (click)="clearSearch()"
+        class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+        Limpiar búsqueda
+      </button>
+    </div>
+  }
+
+  <!-- Empty State: No patients -->
+  @if (!isLoading() && pacientes().length === 0) {
+    <div class="flex flex-col items-center justify-center py-16 px-4 rounded-2xl border border-slate-200/80 bg-surface">
+      <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 mb-4">
+        <svg lucideIcon="folder-open" class="h-7 w-7 text-slate-400"></svg>
+      </div>
+      <h3 class="text-lg font-semibold text-text-primary mb-1">Sin pacientes atendidos</h3>
+      <p class="text-sm text-text-secondary text-center max-w-sm">
+        Aún no has realizado consultas médicas con ningún paciente.
+      </p>
+    </div>
+  }
+</div>
+
+<!-- Slide-Over Drawer -->
+<app-patient-drawer
+  [paciente]="drawerPaciente()"
+  [records]="drawerRecords()"
+  [isLoading]="isDrawerLoading()"
+  [isOpen]="isDrawerOpen()"
+  (onClose)="closeDrawer()" />

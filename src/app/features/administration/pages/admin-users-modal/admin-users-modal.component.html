@@ -4,9 +4,9 @@
 >
   <div
     @modalContent
-    class="bg-surface rounded-2xl shadow-xl border border-border w-full max-w-lg max-h-[90vh] overflow-y-auto"
+    class="bg-surface rounded-2xl shadow-xl border border-divider w-full max-w-lg max-h-[90vh] overflow-y-auto"
   >
-    <div class="flex items-center justify-between p-6 border-b border-border">
+    <div class="flex items-center justify-between p-6 border-b border-divider">
       <div>
         <h2 class="text-lg font-bold text-text-primary">Nuevo Administrador</h2>
         <p class="text-sm text-text-secondary mt-0.5">Crear una cuenta de administrador</p>
@@ -15,7 +15,7 @@
         type="button"
         (click)="onClose()"
         aria-label="Cerrar modal"
-        class="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-danger/10 hover:text-danger transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+        class="w-8 h-8 rounded-lg flex items-center justify-center text-text-subtle hover:bg-danger/10 hover:text-danger transition-all duration-200 focus-visible:ring-2 focus-visible:ring-danger focus-visible:outline-none"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -27,7 +27,7 @@
       <div class="flex justify-center">
         @if (croppedDataUrl()) {
           <div class="relative group">
-            <img [src]="croppedDataUrl()" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-primary" />
+            <img [src]="croppedDataUrl()" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-brand-500" />
             <button
               type="button"
               (click)="removeImage()"
@@ -61,8 +61,8 @@
             type="text"
             formControlName="firstName"
             placeholder="Nombre"
-            class="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+            class="w-full px-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                    transition-all duration-200"
             [class.border-danger]="f['firstName'].touched && f['firstName'].invalid"
           />
@@ -76,8 +76,8 @@
             type="text"
             formControlName="lastName"
             placeholder="Apellido"
-            class="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+            class="w-full px-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                    transition-all duration-200"
             [class.border-danger]="f['lastName'].touched && f['lastName'].invalid"
           />
@@ -94,8 +94,8 @@
             type="text"
             formControlName="dni"
             placeholder="30123456"
-            class="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+            class="w-full px-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                    transition-all duration-200"
             [class.border-danger]="f['dni'].touched && f['dni'].invalid"
           />
@@ -115,8 +115,8 @@
             type="number"
             formControlName="edad"
             placeholder="34"
-            class="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+            class="w-full px-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                    transition-all duration-200"
             [class.border-danger]="f['edad'].touched && f['edad'].invalid"
           />
@@ -138,8 +138,8 @@
           type="email"
           formControlName="email"
           placeholder="admin@clinica.com"
-          class="w-full px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+          class="w-full px-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+                 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                  transition-all duration-200"
           [class.border-danger]="f['email'].touched && f['email'].invalid"
         />
@@ -155,8 +155,8 @@
             [type]="showPassword() ? 'text' : 'password'"
             formControlName="password"
             placeholder="Mínimo 8 caracteres"
-            class="w-full px-4 py-2.5 pr-10 text-sm rounded-xl border border-border bg-surface
-                   focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+            class="w-full px-4 py-2.5 pr-10 text-sm rounded-lg border border-border bg-surface
+                   focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
                    transition-all duration-200"
             [class.border-danger]="f['password'].touched && f['password'].invalid"
           />
@@ -186,14 +186,14 @@
         <button
           type="button"
           (click)="onClose()"
-          class="flex-1 py-2.5 text-sm font-medium text-text-secondary border border-border rounded-xl hover:bg-background transition-all duration-200"
+          class="flex-1 py-2.5 text-sm font-medium text-text-secondary border border-border rounded-lg hover:bg-background transition-all duration-200"
         >
           Cancelar
         </button>
         <button
           type="submit"
           [disabled]="isSubmitting()"
-          class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary rounded-xl hover:opacity-90 disabled:opacity-50 transition-all duration-200"
+          class="flex-1 py-2.5 text-sm font-semibold text-white bg-brand-700 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all duration-200"
         >
           @if (isSubmitting()) {
             <span class="flex items-center justify-center gap-2">

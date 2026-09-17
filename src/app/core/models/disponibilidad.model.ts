@@ -119,3 +119,20 @@ export interface BloqueHorario {
  * Clave: día de la semana (1-6). Valor: configuración del día.
  */
 export type AgendaSemanal = Readonly<Record<number, ConfiguracionDia>>;
+
+/**
+ * Especialidad vinculada al perfil de un especialista.
+ * Utilizado por el formulario de disponibilidad y la vista previa.
+ */
+export interface EspecialidadPerfil {
+  readonly id: string;
+  readonly name: string;
+}
+
+/**
+ * Información de un día de la semana para la interfaz.
+ */
+export interface DiaInfo {
+  readonly id: DiaSemana;
+  readonly nombre: string;
+}

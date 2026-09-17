@@ -18,13 +18,13 @@ import { AuthService } from '@core/services/auth.service';
  * las reglas RLS configuradas en Supabase.
  *
  * @example
- * // En una plantilla Angular:
+ * En una plantilla Angular:
  * <button *roleAccess="['administrador']">
  *   Eliminar usuario
  * </button>
  *
  * @example
- * // Para multiples roles:
+ * Para múltiples roles:
  * <nav *roleAccess="['administrador', 'especialista']">
  *   Panel de gestion
  * </nav>

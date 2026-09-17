@@ -1,23 +1,59 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #2563eb;
-  --color-success: #16a34a;
-  --color-danger: #dc2626;
-  --color-warning: #d97706;
-  --color-surface: #ffffff;
-  --color-background: #f8fafc;
-  --color-border: #e2e8f0;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
+  --color-primary: #0F4C4A;
+  --color-primary-light: #2A857F;
+  --color-success: #0F766E;
+  --color-danger: #B91C1C;
+  --color-warning: #B45309;
 
+  --color-surface: #FFFFFF;
+  --color-background: #FAFAF7;
+  --color-surface-sunken: #F3F4F1;
+  --color-border: #E5E7EB;
+  --color-border-strong: #CBD5E1;
+  --color-divider: #EEF0EC;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-subtle: #6B7280;
+
+  --color-brand-900: #0B3A38;
+  --color-brand-700: #0F4C4A;
+  --color-brand-500: #2A857F;
+  --color-brand-100: #E8F1EF;
+  --color-brand-50: #F1F7F5;
+
+  --color-pendiente: #B45309;
+  --color-pendiente-bg: #FEF3C7;
+  --color-aceptado: #0F766E;
+  --color-aceptado-bg: #CCFBF1;
+  --color-finalizado: #475569;
+  --color-finalizado-bg: #E2E8F0;
+  --color-cancelado: #92400E;
+  --color-cancelado-bg: #FEE2E2;
+  --color-rechazado: #B91C1C;
+  --color-rechazado-bg: #FEE2E2;
+
+  --border-radius-lg: 0.5rem;
   --border-radius-xl: 0.75rem;
   --border-radius-2xl: 1rem;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* --- Motion tokens: 60 FPS, solo transform + opacity --- */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-exit: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-instant: 120ms;
+  --duration-fast: 160ms;
+  --duration-base: 220ms;
 }
 
 html {
@@ -26,4 +62,103 @@ html {
 
 body {
   font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/**
+ * Movimiento idle eliminado por estabilidad clínica.
+ *
+ * Las flotaciones infinitas `float-y` sobre tarjetas con
+ * `backdrop-filter` provocaban temblor vertical continuo al
+ * combinarse con la entrada de ruta. Sin `animate-float-y`:
+ * las superficies informativas permanecen estáticas por defecto.
+ */
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes stepSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-step-in {
+  animation: stepSlideIn 180ms var(--ease-spring);
+}
+
+/* Origen de popovers/dropdowns: escala desde el disparador, no desde el centro. */
+.popover-origin,
+[data-popover] {
+  transform-origin: var(--transform-origin, top right);
+}
+
+/* Feedback de presión: toda superficie presionable responde al instante. */
+.pressable {
+  transition: transform var(--duration-instant) var(--ease-exit);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pressable:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Movimiento reducido: conserva fades de comprensión, elimina desplazamientos. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-shimmer,
+  .animate-pulse-dot,
+  .animate-step-in {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

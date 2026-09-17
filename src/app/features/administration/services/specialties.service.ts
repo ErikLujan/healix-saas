@@ -43,12 +43,11 @@ export class SpecialtiesService {
 
     const { data, error } = await this.supabase.supabase
       .from('specialties')
-      .select('*')
+      .select('id, name, description, is_active, created_at')
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('[SpecialtiesService] load error:', error.message);
-      toast.error('Error al cargar las especialidades');
+      toast.error('No fue posible cargar las especialidades. Por favor, verifica los datos e intenta nuevamente.');
       this.isLoading.set(false);
       return;
     }
@@ -57,7 +56,7 @@ export class SpecialtiesService {
       (data ?? []).map(async (sp) => {
         const { count } = await this.supabase.supabase
           .from('especialista_especialidad')
-          .select('*', { count: 'exact', head: true })
+          .select('especialista_id', { count: 'exact', head: true })
           .eq('especialidad_id', sp.id);
 
         return { ...sp, specialistCount: count ?? 0 };
@@ -80,8 +79,7 @@ export class SpecialtiesService {
       .insert({ name: name.trim(), description: description.trim() || null });
 
     if (error) {
-      console.error('[SpecialtiesService] create error:', error.message);
-      toast.error('Error al crear la especialidad');
+      toast.error('No fue posible crear la especialidad. Por favor, verifica los datos e intenta nuevamente.');
       return;
     }
 
@@ -102,8 +100,7 @@ export class SpecialtiesService {
       .eq('id', specialtyId);
 
     if (error) {
-      console.error('[SpecialtiesService] toggle error:', error.message);
-      toast.error('Error al actualizar la especialidad');
+      toast.error('No fue posible actualizar la especialidad. Por favor, verifica los datos e intenta nuevamente.');
       return;
     }
 
@@ -126,8 +123,7 @@ export class SpecialtiesService {
       .eq('id', specialtyId);
 
     if (error) {
-      console.error('[SpecialtiesService] delete error:', error.message);
-      toast.error('Error al eliminar la especialidad');
+      toast.error('No fue posible eliminar la especialidad. Por favor, verifica los datos e intenta nuevamente.');
       return;
     }
 

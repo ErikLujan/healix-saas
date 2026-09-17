@@ -100,11 +100,11 @@ export class ExcelExportService {
       const columnas = ['ID', 'Nombre Completo', 'Email', 'DNI', 'Edad', 'Rol', 'Fecha Registro'];
       const datos = usuarios.map((u) => [
         u.id,
-        u.full_name,
-        u.email,
-        u.dni ?? '-',
+        this.neutralizarFormula(u.full_name),
+        this.neutralizarFormula(u.email),
+        this.neutralizarFormula(u.dni ?? '-'),
         u.edad ?? '-',
-        this.formatearRol(u.role),
+        this.neutralizarFormula(this.formatearRol(u.role)),
         this.formatearFechaCorta(u.created_at),
       ]);
 
@@ -122,6 +122,27 @@ export class ExcelExportService {
   }
 
   /**
+   * Neutraliza un valor de celda contra inyección de fórmulas.
+   *
+   * Los contenidos generados por usuarios (nombres, reseñas, datos
+   * dinámicos) se escriben tal cual en el XLSX. Si un texto comienza
+   * con `=`, `+`, `-` o `@`, las planillas lo interpretan como
+   * fórmula al abrir el archivo. Prefijar con apóstrofe fuerza el
+   * tratamiento como texto literal sin alterar lo visible.
+   *
+   * @param valor Valor original de la celda.
+   * @returns Valor seguro para escribir en la planilla.
+   */
+  private neutralizarFormula(valor: string | number): string | number {
+    if (typeof valor !== 'string') return valor;
+    const inicial = valor.trimStart().charAt(0);
+    if (inicial === '=' || inicial === '+' || inicial === '-' || inicial === '@') {
+      return `'${valor}`;
+    }
+    return valor;
+  }
+
+  /**
    * Mapea un registro de historia clínica a un array de valores
    * para una fila del Excel.
    *
@@ -136,15 +157,15 @@ export class ExcelExportService {
     return [
       record.id,
       this.formatearFechaCorta(record.created_at),
-      record.paciente?.full_name ?? '-',
-      record.especialista?.full_name ?? '-',
-      record.especialidad?.name ?? '-',
-      record.turno?.resena_diagnostico ?? '-',
+      this.neutralizarFormula(record.paciente?.full_name ?? '-'),
+      this.neutralizarFormula(record.especialista?.full_name ?? '-'),
+      this.neutralizarFormula(record.especialidad?.name ?? '-'),
+      this.neutralizarFormula(record.turno?.resena_diagnostico ?? '-'),
       record.altura,
       record.peso,
       record.temperatura,
-      record.presion_arterial,
-      datosDinamicos || '-',
+      this.neutralizarFormula(record.presion_arterial),
+      this.neutralizarFormula(datosDinamicos || '-'),
     ];
   }
 

@@ -1,6 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { SupabaseService } from '@core/services/supabase.service';
-import { toast } from 'ngx-sonner';
 
 /**
  * Filtro de rango de fechas para consultas estadisticas.
@@ -116,28 +115,41 @@ export class StatisticsService {
 
   /**
    * Carga el log de accesos recientes al sistema.
-   * Utiliza la tabla de profiles con roles para simular log de ingresos.
-   * En un sistema real se consultaria una tabla de audit_logs.
+   * Consulta la tabla logs_accesos unida con profiles para obtener
+   * el nombre, email y rol del usuario junto con la marca de tiempo
+   * real del ingreso.
    */
   private async loadAccessLogs(): Promise<void> {
-    const { data, error } = await this.supabase.supabase
-      .from('profiles')
-      .select('id, full_name, email, role, created_at')
+    const typedClient = this.supabase.supabase as unknown as {
+      from: (table: string) => {
+        select: (cols: string) => {
+          order: (col: string, opts: { ascending: boolean }) => {
+            limit: (n: number) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+
+    const { data, error } = await typedClient
+      .from('logs_accesos')
+      .select('id, user_id, created_at, profiles:user_id(full_name, email, role)')
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (error) {
-      console.error('[StatisticsService] accessLogs error:', error.message);
       return;
     }
 
-    const logs: AccessLogEntry[] = (data ?? []).map(row => ({
-      userId: row.id,
-      fullName: row.full_name,
-      email: row.email,
-      role: row.role,
-      loginAt: row.created_at,
-    }));
+    const logs: AccessLogEntry[] = (data ?? []).map(row => {
+      const perfil = row['profiles'] as Record<string, unknown> | null;
+      return {
+        userId: row['user_id'] as string,
+        fullName: (perfil?.['full_name'] as string) ?? 'Sin nombre',
+        email: (perfil?.['email'] as string) ?? '',
+        role: (perfil?.['role'] as string) ?? '',
+        loginAt: row['created_at'] as string,
+      };
+    });
 
     this.accessLogs.set(logs);
   }
@@ -151,7 +163,6 @@ export class StatisticsService {
       .select('especialidad_id, specialties!inner(name)');
 
     if (error) {
-      console.error('[StatisticsService] turnosPorEspecialidad error:', error.message);
       return;
     }
 
@@ -178,7 +189,6 @@ export class StatisticsService {
       .select('fecha_hora');
 
     if (error) {
-      console.error('[StatisticsService] turnosPorDia error:', error.message);
       return;
     }
 
@@ -213,7 +223,6 @@ export class StatisticsService {
       .lte('fecha_hora', range.hasta + 'T23:59:59');
 
     if (error) {
-      console.error('[StatisticsService] turnosPorMedico error:', error.message);
       return;
     }
 
