@@ -35,7 +35,8 @@ El producto está diseñado con una arquitectura frontend modular y un modelo Ba
 | Panel de administración de Healix <img width="948" height="439" alt="01-panel-principal" src="https://github.com/user-attachments/assets/add8c6d0-9d5a-4437-a16a-40073f8c404a" />
 | Agenda del especialista en Healix <img width="1920" height="1080" alt="05-disponibilidad" src="https://github.com/user-attachments/assets/31e7be1e-7203-4b06-adf1-5af17bec716d" /> |
 
-Historial clínico del paciente en Healix <img width="1920" height="1080" alt="04-historial-clinico" src="https://github.com/user-attachments/assets/5139f7c8-d39c-4910-954c-76bd47f8f047"/>
+### Historial clínico del paciente en Healix <img width="947" height="439" alt="04-historial-clinico" src="https://github.com/user-attachments/assets/60ade99c-3344-4487-ab92-81662ff9037f" />
+
 
 ---
 
