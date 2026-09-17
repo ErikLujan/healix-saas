@@ -27,13 +27,15 @@ El producto está diseñado con una arquitectura frontend modular y un modelo Ba
 
 ## Showcase visual
 
-![Landing page de Healix](./capturas-portfolio/capturas-publicas/01-landing.png)
+### Landing page de Healix
+<img width="1920" height="1080" alt="01-landing" src="https://github.com/user-attachments/assets/7dcc7cf7-48b4-40a8-835b-c1efc7358dce" />
 
 | Panel de administración | Agenda del especialista |
 |---|---|
-| ![Panel de administración de Healix](./capturas-portfolio/capturas-admin/02-dashboard-admin.png) | ![Agenda del especialista en Healix](./capturas-portfolio/capturas-especialista/03-agenda.png) |
+| Panel de administración de Healix <img width="948" height="439" alt="01-panel-principal" src="https://github.com/user-attachments/assets/add8c6d0-9d5a-4437-a16a-40073f8c404a" />
+| Agenda del especialista en Healix <img width="1920" height="1080" alt="05-disponibilidad" src="https://github.com/user-attachments/assets/31e7be1e-7203-4b06-adf1-5af17bec716d" /> |
 
-![Historial clínico del paciente en Healix](./capturas-portfolio/capturas-paciente/04-historial-clinico.png)
+Historial clínico del paciente en Healix <img width="1920" height="1080" alt="04-historial-clinico" src="https://github.com/user-attachments/assets/5139f7c8-d39c-4910-954c-76bd47f8f047"/>
 
 ---
 
