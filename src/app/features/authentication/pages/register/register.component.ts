@@ -7,23 +7,14 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { NgClass } from '@angular/common';
 import { AuthService } from '@core/services/auth.service';
-import { SupabaseService } from '@core/services/supabase.service';
+import { RegistrationService } from '@core/services/registration.service';
 import { FileUploadComponent } from '@shared/components/file-upload/file-upload.component';
-import { CaptchaComponent } from '@shared/components/captcha/captcha.component';
+import { CaptchaDirective } from '@shared/directives/captcha.directive';
 import { ImageCropperComponent } from '@shared/components/image-cropper/image-cropper.component';
 import { toast } from 'ngx-sonner';
-import { slideUp } from '@core/animations/route-animations';
 
-/**
- * Pantalla de registro multi-perfil para pacientes y especialistas.
- *
- * Administra el formulario reactivo dinamico segun el perfil seleccionado,
- * el recorte de imagenes via cropper, la verificacion de captcha y la
- * subida de archivos a Supabase Storage. Los metadatos se envian al
- * signUp() del AuthService para que el trigger de PostgreSQL popule
- * las tablas de extension automaticamente.
- */
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -31,17 +22,17 @@ import { slideUp } from '@core/animations/route-animations';
     ReactiveFormsModule,
     RouterLink,
     FileUploadComponent,
-    CaptchaComponent,
+    CaptchaDirective,
     ImageCropperComponent,
+    NgClass,
   ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
-  animations: [slideUp],
 })
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly supabase = inject(SupabaseService);
+  private readonly registrationService = inject(RegistrationService);
   private readonly router = inject(Router);
 
   readonly form: FormGroup;
@@ -96,19 +87,10 @@ export class RegisterComponent {
     this.loadSpecialties();
   }
 
-  /**
-   * Carga el catalogo de especialidades activas desde Supabase
-   * para mostrar en el selector de especialidades del especialista.
-   */
   private async loadSpecialties(): Promise<void> {
-    const { data } = await this.supabase.supabase
-      .from('specialties')
-      .select('id, name')
-      .eq('is_active', true)
-      .order('name');
-
-    if (data) {
-      this.specialties.set(data as { id: string; name: string }[]);
+    const data = await this.registrationService.getActiveSpecialties();
+    if (data.length > 0) {
+      this.specialties.set(data);
     }
   }
 
@@ -124,12 +106,10 @@ export class RegisterComponent {
     return this.selectedProfile() === 'especialista';
   }
 
-  /**
-   * Cambia el perfil seleccionado y reconfigura los validadores
-   * del formulario dinamicamente (obra social solo para pacientes).
-   *
-   * @param profile Tipo de perfil seleccionado.
-   */
+  isSpecialtySelected(specialtyId: string): boolean {
+    return this.selectedSpecialtyIds().includes(specialtyId);
+  }
+
   selectProfile(profile: 'paciente' | 'especialista'): void {
     this.selectedProfile.set(profile);
     if (profile === 'paciente') {
@@ -181,11 +161,6 @@ export class RegisterComponent {
     this.showSecondaryCropper.set(false);
   }
 
-  /**
-   * Alterna la seleccion de una especialidad en la lista de IDs seleccionados.
-   *
-   * @param specialtyId Identificador de la especialidad a togglear.
-   */
   toggleSpecialty(specialtyId: string): void {
     this.selectedSpecialtyIds.update(ids =>
       ids.includes(specialtyId)
@@ -199,12 +174,6 @@ export class RegisterComponent {
     this.specialtySearch.set(value);
   }
 
-  /**
-   * Valida todos los campos del formulario, ejecuta el signUp en Supabase
-   * Auth, sube las imagenes a Storage y vincula las especialidades
-   * (si aplica). Muestra retroalimentacion via toast para cada
-   * escenario de exito o error.
-   */
   async onSubmit(): Promise<void> {
     if (this.isSubmitting()) return;
 
@@ -212,8 +181,8 @@ export class RegisterComponent {
 
     if (this.form.get('firstName')?.invalid) missing.push('El nombre');
     if (this.form.get('lastName')?.invalid) missing.push('El apellido');
-    if (this.form.get('email')?.invalid) missing.push('El correo electrónico');
-    if (this.form.get('password')?.invalid) missing.push('La contraseña');
+    if (this.form.get('email')?.invalid) missing.push('El correo electronico');
+    if (this.form.get('password')?.invalid) missing.push('La contrasena');
 
     if (this.showPatientFields) {
       if (this.form.get('dni')?.invalid) missing.push('El DNI');
@@ -230,8 +199,8 @@ export class RegisterComponent {
       if (this.selectedSpecialtyIds().length === 0) missing.push('Al menos una especialidad');
     }
 
-    if (!this.captchaSolved()) missing.push('La verificación del captcha');
-    if (this.form.get('acceptTerms')?.invalid) missing.push('Los términos y la política de privacidad');
+    if (!this.captchaSolved()) missing.push('La verificacion del captcha');
+    if (this.form.get('acceptTerms')?.invalid) missing.push('Los terminos y la politica de privacidad');
 
     if (missing.length > 0) {
       toast.error(`Faltan completar: ${missing.join(', ')}`);
@@ -243,12 +212,12 @@ export class RegisterComponent {
 
     try {
       const { firstName, lastName, email, password, dni, edad, obraSocial } = this.form.value;
-      const fullName = `${firstName} ${lastName}`;
+      const fullName = `${firstName} ${lastName}`.trim();
 
       const metadata: Record<string, unknown> = {
         role: this.selectedProfile(),
         full_name: fullName,
-        dni,
+        dni: String(dni).trim(),
         edad: Number(edad),
       };
 
@@ -264,62 +233,37 @@ export class RegisterComponent {
       }
 
       if (this.selectedProfile() === 'paciente') {
-        const frontalUrl = await this.uploadImage(userId, 'frontal', this.frontalCroppedData()!);
-        const secondaryUrl = await this.uploadImage(userId, 'secundario', this.secondaryCroppedData()!);
+        const result = await this.registrationService.registerPatient({
+          userId,
+          dni: String(dni).trim(),
+          edad: Number(edad),
+          obraSocial,
+          frontalDataUrl: this.frontalCroppedData()!,
+          secondaryDataUrl: this.secondaryCroppedData()!,
+        });
 
-        const { error: patchError } = await this.supabase.supabase
-          .from('pacientes')
-          .update({ avatar_url_frontal: frontalUrl, avatar_url_secundario: secondaryUrl })
-          .eq('id', userId);
-
-        if (patchError) {
-          toast.error('Error al guardar la foto de perfil. Intenta nuevamente.');
+        if (result.error) {
+          toast.error(result.error);
+          this.isSubmitting.set(false);
+          return;
         }
-
-        await this.supabase.supabase
-          .from('profiles')
-          .update({ avatar_url: frontalUrl })
-          .eq('id', userId);
       } else {
-        const avatarUrl = await this.uploadImage(userId, 'avatar', this.frontalCroppedData()!);
+        const result = await this.registrationService.registerSpecialist({
+          userId,
+          dni: String(dni).trim(),
+          edad: Number(edad),
+          profileDataUrl: this.frontalCroppedData()!,
+          specialtyIds: this.selectedSpecialtyIds(),
+        });
 
-        await this.supabase.supabase
-          .from('profiles')
-          .update({ avatar_url: avatarUrl })
-          .eq('id', userId);
-
-        const { error: especialistaError } = await this.supabase.supabase
-          .from('especialistas')
-          .update({ dni, edad: Number(edad) })
-          .eq('id', userId);
-
-        if (especialistaError) {
-          toast.error('Error al guardar los datos del especialista. Intenta nuevamente.');
-          return;
-        }
-
-        const { data: { session } } = await this.supabase.supabase.auth.getSession();
-
-        if (!session) {
-          toast.success('Cuenta creada exitosamente. Verifica tu correo electrónico para activar tu perfil médico y confirmar tus especialidades.');
-          this.router.navigate(['/autenticacion']);
-          return;
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const specialtyResults = await Promise.all(
-          this.selectedSpecialtyIds().map(specialtyId =>
-            this.supabase.supabase.from('especialista_especialidad').insert({
-              especialista_id: userId,
-              especialidad_id: specialtyId,
-            }),
-          ),
-        );
-
-        const specialtyErrors = specialtyResults.filter(r => r.error);
-        if (specialtyErrors.length > 0) {
-          toast.error('Error al vincular las especialidades. Intenta nuevamente.');
+        if (result.error) {
+          if (result.error === '__EMAIL_CONFIRMATION__') {
+            toast.success('Cuenta creada exitosamente. Verifica tu correo electronico para activar tu perfil medico y confirmar tus especialidades.');
+            this.router.navigate(['/autenticacion']);
+            return;
+          }
+          toast.error(result.error);
+          this.isSubmitting.set(false);
           return;
         }
       }
@@ -327,39 +271,9 @@ export class RegisterComponent {
       toast.success('Cuenta creada exitosamente');
       this.router.navigate(['/autenticacion']);
     } catch {
-      toast.error('Ocurrió un error inesperado. Intenta nuevamente');
+      toast.error('Ocurrio un error inesperado. Intenta nuevamente');
     } finally {
       this.isSubmitting.set(false);
     }
-  }
-
-  /**
-   * Convierte una data URL a blob y la sube a Supabase Storage
-   * en la carpeta del usuario, retornando la URL publica.
-   *
-   * @param userId Identificador del usuario propietario de la imagen.
-   * @param type Tipo de imagen (frontal, secundario, avatar).
-   * @param dataUrl Cadena data URL de la imagen recortada.
-   * @returns URL publica de la imagen subida.
-   */
-  private async uploadImage(userId: string, type: string, dataUrl: string): Promise<string> {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const fileName = `${type}.png`;
-    const filePath = `${userId}/${fileName}`;
-
-    const { error: uploadError } = await this.supabase.supabase.storage
-      .from('user-profiles')
-      .upload(filePath, blob, { contentType: 'image/png', upsert: true });
-
-    if (uploadError) {
-      console.error(`[Register] image upload error (${type}):`, uploadError.message);
-    }
-
-    const { data: urlData } = this.supabase.supabase.storage
-      .from('user-profiles')
-      .getPublicUrl(filePath);
-
-    return urlData.publicUrl;
   }
 }

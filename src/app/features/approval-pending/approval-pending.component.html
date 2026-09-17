@@ -1,5 +1,5 @@
-<div @fadeIn class="min-h-screen bg-background flex items-center justify-center p-6">
-  <div @slideUp class="max-w-md w-full text-center">
+<div class="min-h-screen bg-background flex items-center justify-center p-6">
+  <div class="max-w-md w-full text-center">
     <div class="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-6">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
@@ -7,13 +7,53 @@
         <line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
     </div>
-    <h1 class="text-2xl font-bold text-text-primary mb-3">Cuenta pendiente de aprobación</h1>
-    <p class="text-text-secondary leading-relaxed mb-6">
-      Tu cuenta fue creada correctamente. Un administrador debe aprobar tu acceso antes de que puedas utilizar el sistema.
-    </p>
-    <p class="text-sm text-text-secondary mb-8">
-      Te notificaremos por correo electrónico cuando tu cuenta sea habilitada.
-    </p>
+
+    @if (isSpecialist()) {
+      <h1 class="text-2xl font-bold text-text-primary mb-3">Cuenta pendiente de aprobacion</h1>
+      <p class="text-text-secondary leading-relaxed mb-6">
+        Tu cuenta fue creada correctamente. Un administrador debe aprobar tu acceso antes de que puedas utilizar el sistema.
+      </p>
+      <p class="text-sm text-text-secondary mb-8">
+        Te notificaremos por correo electronico cuando tu cuenta sea habilitada.
+      </p>
+    } @else if (isPatient()) {
+      <h1 class="text-2xl font-bold text-text-primary mb-3">Cuenta pendiente de verificacion</h1>
+      <p class="text-text-secondary leading-relaxed mb-6">
+        Tu cuenta fue creada correctamente. Debes verificar tu correo electronico para acceder al sistema.
+      </p>
+      <p class="text-sm text-text-secondary mb-8">
+        Revisa tu bandeja de entrada y haz click en el enlace de verificacion.
+      </p>
+    } @else {
+      <h1 class="text-2xl font-bold text-text-primary mb-3">Cuenta pendiente</h1>
+      <p class="text-text-secondary leading-relaxed mb-6">
+        Tu cuenta se encuentra en proceso de activacion. Por favor espera a que sea habilitada.
+      </p>
+    }
+
+    @if (isPatient()) {
+      <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <button
+          type="button"
+          (click)="resendEmail()"
+          [disabled]="isResending()"
+          class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold text-brand-700 bg-brand-50 border border-brand-200 rounded-xl hover:bg-brand-100 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (isResending()) {
+            <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+          }
+          Reenviar Correo
+        </button>
+      </div>
+    }
+
     <a
       (click)="signOutAndReturn()"
       class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:opacity-80 transition-opacity cursor-pointer"
@@ -22,7 +62,7 @@
         <line x1="19" y1="12" x2="5" y2="12"/>
         <polyline points="12 19 5 12 12 5"/>
       </svg>
-      Volver al inicio de sesión
+      Volver al inicio de sesion
     </a>
   </div>
 </div>

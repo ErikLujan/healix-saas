@@ -74,9 +74,10 @@ export type TurnoUpdate = Partial<Pick<Turno,
  * Se almacena como objeto JSON en la columna `encuesta_satisfaccion`.
  */
 export interface EncuestaSatisfaccion {
-  readonly atencion: number;
-  readonly puntualidad: number;
-  readonly instalaciones: number;
+  readonly nivel_satisfaccion: number;
+  readonly puntuacion_plataforma: number;
+  readonly recomendaria: 'si' | 'no' | 'tal_vez';
+  readonly aspectos_destacados: readonly string[];
   readonly comentarios: string;
 }
 
@@ -92,12 +93,15 @@ export interface PerfilEspecialista {
 
 /**
  * Perfil basico del paciente para consultas relacionadas.
- * Se obtiene mediante join con la tabla `profiles`.
+ * Se obtiene mediante la vista `vista_perfiles_publicos`.
+ * El correo es opcional: solo el propietario y el administrador
+ * pueden leerlo desde la tabla base `profiles`.
  */
 export interface PerfilPaciente {
   readonly id: string;
   readonly full_name: string;
-  readonly email: string;
+  readonly email?: string;
+  readonly avatar_url?: string | null;
 }
 
 /**

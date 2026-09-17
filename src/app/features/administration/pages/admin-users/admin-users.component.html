@@ -1,7 +1,7 @@
 <div class="space-y-6">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-      <h1 class="text-2xl font-bold text-text-primary">Usuarios</h1>
+      <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">Usuarios</h1>
       <p class="text-sm text-text-secondary mt-1">Aprobar especialistas, gestionar accesos y roles.</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-3">
@@ -9,7 +9,7 @@
         type="button"
         (click)="exportarExcelUsuarios()"
         [disabled]="isExportingExcel()"
-        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
       >
         @if (isExportingExcel()) {
           <svg class="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -26,7 +26,7 @@
       <button
         type="button"
         (click)="openModal()"
-        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none w-full sm:w-auto"
+        class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-700 text-white text-sm font-semibold rounded-lg hover:opacity-90 active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none w-full sm:w-auto"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -36,76 +36,135 @@
     </div>
   </div>
 
-  <div class="flex flex-col sm:flex-row gap-3">
-    <div class="relative flex-1">
-      <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        type="text"
-        placeholder="Buscar usuario..."
-        aria-label="Buscar usuarios por nombre o email"
-        [ngModel]="searchQuery()"
-        (ngModelChange)="onSearchChange($event)"
-        class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-               focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-               transition-all duration-200 placeholder:text-text-secondary"
-      />
+  <!-- KPI Strip -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="bg-surface border border-divider rounded-xl p-4">
+      <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Total Usuarios</p>
+      <p class="text-2xl font-bold text-text-primary mt-1 font-display">{{ totalUsuarios() }}</p>
     </div>
-    <select
-      [ngModel]="selectedRole()"
-      (ngModelChange)="onRoleChange($event)"
-      aria-label="Filtrar por rol"
-      class="px-4 py-2.5 text-sm rounded-xl border border-border bg-surface
-             focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-             transition-all duration-200 text-text-primary cursor-pointer w-full sm:w-auto"
-    >
-      @for (option of roleOptions; track option.value) {
-        <option [value]="option.value">{{ option.label }}</option>
-      }
-    </select>
+    <div class="bg-surface border border-divider rounded-xl p-4">
+      <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Pacientes</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1 font-display">{{ pacientesVerificados() }}</p>
+    </div>
+    <div class="bg-surface border border-divider rounded-xl p-4">
+      <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Especialistas</p>
+      <p class="text-2xl font-bold text-brand-600 mt-1 font-display">{{ especialistasAprobados() }}</p>
+    </div>
+    <div class="bg-surface border border-divider rounded-xl p-4">
+      <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Administradores</p>
+      <p class="text-2xl font-bold text-violet-600 mt-1 font-display">{{ totalAdmins() }}</p>
+    </div>
   </div>
 
-  <div class="bg-surface rounded-2xl border border-border overflow-hidden isolation-isolate">
+  <!-- Role Filter Tabs -->
+  <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit" role="tablist" aria-label="Filtrar por rol">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="selectedRole() === 'all'"
+      (click)="onRoleChange('all')"
+      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      [class]="selectedRole() === 'all'
+        ? 'bg-white text-text-primary shadow-sm'
+        : 'text-text-secondary hover:text-text-primary'"
+    >
+      Todos
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="selectedRole() === 'paciente'"
+      (click)="onRoleChange('paciente')"
+      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      [class]="selectedRole() === 'paciente'
+        ? 'bg-white text-text-primary shadow-sm'
+        : 'text-text-secondary hover:text-text-primary'"
+    >
+      Pacientes
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="selectedRole() === 'especialista'"
+      (click)="onRoleChange('especialista')"
+      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      [class]="selectedRole() === 'especialista'
+        ? 'bg-white text-text-primary shadow-sm'
+        : 'text-text-secondary hover:text-text-primary'"
+    >
+      Especialistas
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="selectedRole() === 'administrador'"
+      (click)="onRoleChange('administrador')"
+      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      [class]="selectedRole() === 'administrador'
+        ? 'bg-white text-text-primary shadow-sm'
+        : 'text-text-secondary hover:text-text-primary'"
+    >
+      Administradores
+    </button>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="relative">
+    <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input
+      type="text"
+      placeholder="Buscar por nombre o email..."
+      aria-label="Buscar usuarios por nombre o email"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="onSearchChange($event)"
+      class="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-border bg-surface
+             focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
+             transition-all duration-200 placeholder:text-text-secondary"
+    />
+  </div>
+
+  <div class="bg-surface rounded-xl border border-divider overflow-hidden isolation-isolate">
     <div class="w-full overflow-x-auto block">
       <table class="w-full text-sm min-w-[640px]">
         <thead>
-          <tr class="border-b border-border">
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Usuario</th>
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Rol</th>
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden md:table-cell">Correo</th>
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider hidden lg:table-cell">Ingreso</th>
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Estado</th>
-            <th class="text-left px-3 py-3 md:px-6 text-xs font-semibold text-text-secondary uppercase tracking-wider">Acciones</th>
+          <tr class="border-b border-divider">
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Usuario</th>
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Rol</th>
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest hidden md:table-cell">Correo</th>
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest hidden lg:table-cell">Ingreso</th>
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Estado</th>
+            <th class="text-left px-3 py-3 md:px-6 text-[11px] font-semibold text-text-subtle uppercase tracking-widest">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (user of filteredUsers(); track user.id) {
             <tr
               @fadeSlideRow
-              class="border-b border-border/50 last:border-b-0 hover:bg-primary/[0.02] transition-colors duration-150"
+              class="border-b border-divider last:border-b-0 hover:bg-brand-50 transition-colors duration-150"
             >
-              <td class="px-3 py-3 md:px-6 md:py-4">
+              <td class="px-3 py-2.5 md:px-6 md:py-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
                     @if (user.avatar_url) {
                       <img [src]="user.avatar_url" [alt]="user.full_name" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
                     } @else {
-                      <span class="text-xs font-bold text-primary">{{ getInitials(user.full_name) }}</span>
+                      <span class="text-xs font-bold text-brand-700">{{ getInitials(user.full_name) }}</span>
                     }
                   </div>
                   <div class="min-w-0">
                     <p class="font-medium text-text-primary truncate">{{ user.full_name }}</p>
-                    <p class="text-xs text-text-secondary md:hidden truncate">{{ user.email }}</p>
+                    <p class="text-xs text-text-subtle md:hidden truncate">{{ user.email }}</p>
                   </div>
                 </div>
               </td>
-              <td class="px-3 py-3 md:px-6 md:py-4">
+              <td class="px-3 py-2.5 md:px-6 md:py-3">
                 <span [class]="getRoleBadgeClass(user.role)">{{ user.role | titlecase }}</span>
               </td>
-              <td class="px-3 py-3 md:px-6 md:py-4 text-text-secondary hidden md:table-cell">{{ user.email }}</td>
-              <td class="px-3 py-3 md:px-6 md:py-4 text-text-secondary hidden lg:table-cell">{{ formatDate(user.created_at) }}</td>
-              <td class="px-3 py-3 md:px-6 md:py-4">
+              <td class="px-3 py-2.5 md:px-6 md:py-3 text-text-subtle hidden md:table-cell">{{ user.email }}</td>
+              <td class="px-3 py-2.5 md:px-6 md:py-3 text-text-subtle hidden lg:table-cell">{{ formatDate(user.created_at) }}</td>
+              <td class="px-3 py-2.5 md:px-6 md:py-3">
                 @if (user.role === 'especialista' && user.especialistas) {
                   @if (user.especialistas.is_approved) {
                     <span @statusBadge class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
@@ -123,7 +182,7 @@
                           type="button"
                           (click)="onApprove(user.id)"
                           [disabled]="loadingApprovalId() === user.id"
-                          class="px-3 py-1 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                          class="px-3 py-1 text-xs font-semibold text-white bg-brand-700 rounded-lg hover:bg-brand-700/90 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
                         >
                           @if (loadingApprovalId() === user.id) {
                             <svg class="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -138,7 +197,7 @@
                           type="button"
                           (click)="onReject(user.id)"
                           [disabled]="loadingApprovalId() === user.id"
-                          class="px-3 py-1 text-xs font-semibold text-text-secondary border border-border rounded-lg hover:bg-danger/5 hover:text-danger hover:border-danger/30 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                          class="px-3 py-1 text-xs font-semibold text-text-secondary border border-border rounded-lg hover:bg-danger/5 hover:text-danger hover:border-danger/30 disabled:opacity-50 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-danger focus-visible:outline-none"
                         >
                           Rechazar
                         </button>
@@ -162,14 +221,14 @@
                   </span>
                 }
               </td>
-              <td class="px-3 py-3 md:px-6 md:py-4">
+              <td class="px-3 py-2.5 md:px-6 md:py-3">
                 @if (user.role === 'paciente') {
                   <button
                     type="button"
                     (click)="seleccionarPacienteHistorial(user)"
                     [class]="pacienteSeleccionado()?.id === user.id
-                      ? 'px-3 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-lg cursor-default'
-                      : 'px-3 py-1 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors'"
+                      ? 'px-3 py-1 text-xs font-semibold text-brand-700 bg-brand-100 rounded-lg cursor-default'
+                      : 'px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-200 rounded-lg hover:bg-brand-50 transition-colors'"
                     [disabled]="pacienteSeleccionado()?.id === user.id">
                     @if (pacienteSeleccionado()?.id === user.id) {
                       Viendo historial...
@@ -183,7 +242,7 @@
                       type="button"
                       (click)="onReject(user.id)"
                       [disabled]="loadingApprovalId() === user.id"
-                      class="px-3 py-1 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50">
+                      class="px-3 py-1 text-xs font-semibold text-danger border border-danger/30 rounded-lg hover:bg-danger/5 transition-colors disabled:opacity-50">
                       @if (loadingApprovalId() === user.id) {
                         <svg class="animate-spin w-3 h-3 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -198,7 +257,7 @@
                       type="button"
                       (click)="onApprove(user.id)"
                       [disabled]="loadingApprovalId() === user.id"
-                      class="px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors disabled:opacity-50">
+                      class="px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-200 rounded-lg hover:bg-brand-50 transition-colors disabled:opacity-50">
                       @if (loadingApprovalId() === user.id) {
                         <svg class="animate-spin w-3 h-3 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -210,7 +269,7 @@
                     </button>
                   }
                 } @else {
-                  <span class="text-xs text-text-secondary">-</span>
+                  <span class="text-xs text-text-subtle">-</span>
                 }
               </td>
             </tr>
@@ -246,11 +305,11 @@
   }
 
   @if (pacienteSeleccionado()) {
-    <div class="mt-6 bg-white border border-border rounded-2xl p-5 shadow-sm">
+    <div class="mt-6 bg-surface border border-divider rounded-xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span class="text-sm font-bold text-primary">
+          <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
+            <span class="text-sm font-bold text-brand-700">
               {{ pacienteSeleccionado()!.full_name.charAt(0) | uppercase }}
             </span>
           </div>
@@ -264,7 +323,7 @@
         <button
           type="button"
           (click)="cerrarPanelHistorial()"
-          class="p-2 text-text-secondary hover:text-text-primary hover:bg-gray-100 rounded-lg transition-colors"
+          class="p-2 text-text-subtle hover:text-text-primary hover:bg-gray-100 rounded-lg transition-colors"
           title="Cerrar panel">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -274,7 +333,7 @@
 
       @if (isLoadingHistorial()) {
         <div class="flex flex-col items-center justify-center py-12">
-          <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+          <div class="w-8 h-8 border-4 border-brand-100 border-t-brand-700 rounded-full animate-spin mb-3"></div>
           <p class="text-sm text-text-secondary">Cargando historial clinico...</p>
         </div>
       } @else {

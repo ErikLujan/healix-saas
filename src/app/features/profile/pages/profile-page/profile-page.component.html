@@ -1,31 +1,75 @@
 <div class="max-w-4xl mx-auto space-y-6">
   @if (isLoading()) {
-    <div class="flex items-center justify-center py-16">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      <span class="ml-3 text-text-secondary">Cargando perfil...</span>
+    <!-- Skeleton Shimmer Loader -->
+    <div class="space-y-6" role="status" aria-label="Cargando perfil">
+      <div class="space-y-2">
+        <div class="profile-skeleton-line w-48 animate-shimmer"></div>
+        <div class="profile-skeleton-line-sm w-72 animate-shimmer"></div>
+      </div>
+
+      <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/80 border border-slate-200/80 rounded-2xl overflow-x-auto">
+        <div class="profile-skeleton-line-sm w-32 animate-shimmer rounded-xl h-9"></div>
+        <div class="profile-skeleton-line-sm w-24 animate-shimmer rounded-xl h-9"></div>
+      </div>
+
+      <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row items-center gap-6">
+          <div class="profile-skeleton-avatar animate-shimmer"></div>
+          <div class="flex-1 space-y-3">
+            <div class="profile-skeleton-line w-48 animate-shimmer"></div>
+            <div class="profile-skeleton-line-sm w-32 animate-shimmer"></div>
+            <div class="profile-skeleton-line-sm w-20 animate-shimmer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+        <div class="profile-skeleton-line w-40 animate-shimmer mb-4"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="space-y-1.5">
+              <div class="profile-skeleton-line-sm w-24 animate-shimmer"></div>
+              <div class="profile-skeleton-line w-full animate-shimmer"></div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <span class="sr-only">Cargando perfil...</span>
     </div>
   } @else {
     @if (perfil(); as profile) {
       <div>
-        <h1 class="text-2xl font-bold text-text-primary">Mi Perfil</h1>
+        <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">Mi Perfil</h1>
         <p class="mt-1 text-sm text-text-secondary">Gestioná tu información personal y configuración.</p>
       </div>
 
-      <div class="flex gap-2 border-b border-border pb-0">
+      <!-- Tab Bar -->
+      <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/80 border border-slate-200/80 rounded-2xl overflow-x-auto" role="tablist" aria-label="Secciones del perfil">
         <button
           type="button"
+          role="tab"
+          [attr.aria-selected]="tabActiva() === 'informacion'"
+          [attr.aria-controls]="'panel-informacion'"
           (click)="seleccionarTab('informacion')"
-          class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
-          [ngClass]="tabActiva() === 'informacion' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+          class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
+          [ngClass]="tabActiva() === 'informacion'
+            ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
+            : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
         >
           Información Personal
         </button>
         @if (rol() === 'especialista') {
           <button
             type="button"
+            role="tab"
+            [attr.aria-selected]="tabActiva() === 'horarios'"
+            [attr.aria-controls]="'panel-horarios'"
             (click)="seleccionarTab('horarios')"
-            class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
-            [ngClass]="tabActiva() === 'horarios' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+            class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
+            [ngClass]="tabActiva() === 'horarios'
+              ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
+              : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
           >
             Mis Horarios
           </button>
@@ -33,25 +77,45 @@
         @if (rol() === 'paciente') {
           <button
             type="button"
+            role="tab"
+            [attr.aria-selected]="tabActiva() === 'historial'"
+            [attr.aria-controls]="'panel-historial'"
             (click)="seleccionarTab('historial')"
-            class="px-4 py-2.5 text-sm font-semibold transition-all duration-200 border-b-2 -mb-px focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-t-lg"
-            [ngClass]="tabActiva() === 'historial' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'"
+            class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
+            [ngClass]="tabActiva() === 'historial'
+              ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
+              : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
           >
             Mi Historial Clínico
           </button>
         }
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="tabActiva() === 'seguridad'"
+          [attr.aria-controls]="'panel-seguridad'"
+          (click)="seleccionarTab('seguridad')"
+          class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
+          [ngClass]="tabActiva() === 'seguridad'
+            ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
+            : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
+        >
+          Seguridad
+        </button>
       </div>
 
+      <!-- Tab: Información Personal -->
       @if (tabActiva() === 'informacion') {
-        <div class="space-y-6">
-          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+        <div id="panel-informacion" role="tabpanel" aria-labelledby="tab-informacion" class="space-y-6 tab-content-enter">
+          <!-- Profile Header Card -->
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row items-center gap-6">
               <div class="relative">
-                <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-border">
+                <div class="w-24 h-24 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden border-2 border-border">
                   @if (getAvatarUrl(); as avatarUrl) {
                     <img [src]="avatarUrl" [alt]="profile.full_name" class="w-24 h-24 rounded-full object-cover" fallbackAvatar />
                   } @else {
-                    <span class="text-2xl font-bold text-primary">{{ getInitials(profile.full_name) }}</span>
+                    <span class="text-2xl font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
                   }
                 </div>
                 @if (isUploadingAvatar()) {
@@ -65,8 +129,8 @@
                 <h2 class="text-xl font-bold text-text-primary">{{ profile.full_name }}</h2>
                 <p class="text-sm text-text-secondary">{{ profile.email }}</p>
                 <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs font-semibold
-                  {{ profile.role === 'administrador' ? 'bg-violet-100 text-violet-700' :
-                     profile.role === 'especialista' ? 'bg-blue-100 text-blue-700' :
+                  {{ profile.role === 'administrador' ? 'bg-purple-100 text-purple-700' :
+                     profile.role === 'especialista' ? 'bg-teal-100 text-teal-700' :
                      'bg-emerald-100 text-emerald-700' }}">
                   {{ profile.role | titlecase }}
                 </span>
@@ -74,7 +138,57 @@
             </div>
           </div>
 
-          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+          <!-- Patient Profile Images -->
+          @if (rol() === 'paciente' && datosRol(); as datos) {
+            @if (datos.avatar_url_frontal || datos.avatar_url_secundario) {
+              <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+                <h3 class="text-lg font-semibold text-text-primary mb-4">Fotos de Perfil del Paciente</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  @if (datos.avatar_url_frontal) {
+                    <div class="space-y-3">
+                      <p class="text-xs font-medium text-text-subtle">Foto frontal</p>
+                      <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-divider bg-surface-sunken shadow-xs">
+                        <img [src]="datos.avatar_url_frontal" alt="Foto frontal del documento" class="w-full h-full object-cover" fallbackAvatar />
+                        @if (avatarActivo() === 'frontal') {
+                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-[#0F4C4A] text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Avatar Principal Activo
+                          </span>
+                        } @else {
+                          <button type="button" (click)="establecerAvatarPrincipal('frontal')"
+                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-slate-200/80">
+                            Establecer como Principal
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (datos.avatar_url_secundario) {
+                    <div class="space-y-3">
+                      <p class="text-xs font-medium text-text-subtle">Foto perfil</p>
+                      <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-divider bg-surface-sunken shadow-xs">
+                        <img [src]="datos.avatar_url_secundario" alt="Foto de perfil del documento" class="w-full h-full object-cover" fallbackAvatar />
+                        @if (avatarActivo() === 'secundario') {
+                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-[#0F4C4A] text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Avatar Principal Activo
+                          </span>
+                        } @else {
+                          <button type="button" (click)="establecerAvatarPrincipal('secundario')"
+                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-slate-200/80">
+                            Establecer como Principal
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Avatar Upload -->
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
             <h3 class="text-lg font-semibold text-text-primary mb-4">Foto de Perfil</h3>
             <div class="max-w-md">
               <app-file-upload
@@ -88,7 +202,7 @@
                     type="button"
                     (click)="subirAvatar()"
                     [disabled]="isUploadingAvatar()"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     @if (isUploadingAvatar()) {
                       <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
@@ -101,7 +215,7 @@
                     type="button"
                     (click)="cancelarAvatar()"
                     [disabled]="isUploadingAvatar()"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-all focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
                   </button>
@@ -110,47 +224,89 @@
             </div>
           </div>
 
-          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
-            <h3 class="text-lg font-semibold text-text-primary mb-4">Datos Personales</h3>
+          <!-- Personal Data -->
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-text-primary">Datos Personales</h3>
+              @if (!isEditing()) {
+                <button type="button" (click)="editarPerfil()"
+                  class="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-all hover:border-brand-500 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                  aria-label="Editar perfil">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+                  Editar
+                </button>
+              }
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="p-4 rounded-xl bg-background border border-border/50">
-                <p class="text-xs font-medium text-text-secondary mb-1">Nombre Completo</p>
-                <p class="text-sm font-semibold text-text-primary">{{ profile.full_name }}</p>
+              <div>
+                <label class="block text-xs font-medium text-text-subtle mb-1.5">Nombre Completo</label>
+                @if (isEditing()) {
+                  <input type="text" [(ngModel)]="nombreEdit"
+                    aria-label="Nombre completo"
+                    class="w-full px-4 py-2.5 text-sm rounded-xl border border-brand-500 bg-surface text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all" />
+                } @else {
+                  <input type="text" [value]="profile.full_name" readonly
+                    class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
+                }
               </div>
-              <div class="p-4 rounded-xl bg-background border border-border/50">
-                <p class="text-xs font-medium text-text-secondary mb-1">Correo Electrónico</p>
-                <p class="text-sm font-semibold text-text-primary">{{ profile.email }}</p>
+              <div>
+                <label class="block text-xs font-medium text-text-subtle mb-1.5">Correo Electrónico</label>
+                <input type="email" [value]="profile.email" readonly
+                  class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
+                <p class="mt-1 text-[11px] text-text-subtle">El email se gestiona desde la configuración de la cuenta.</p>
               </div>
-              <div class="p-4 rounded-xl bg-background border border-border/50">
-                <p class="text-xs font-medium text-text-secondary mb-1">Rol</p>
-                <p class="text-sm font-semibold text-text-primary capitalize">{{ profile.role }}</p>
+              <div>
+                <label class="block text-xs font-medium text-text-subtle mb-1.5">Rol</label>
+                <input type="text" [value]="profile.role" readonly disabled
+                  class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium capitalize cursor-not-allowed focus:outline-none opacity-70" />
               </div>
               @if (datosRol(); as datos) {
-                <div class="p-4 rounded-xl bg-background border border-border/50">
-                  <p class="text-xs font-medium text-text-secondary mb-1">DNI</p>
-                  <p class="text-sm font-semibold text-text-primary">{{ datos.dni | formatDni }}</p>
+                <div>
+                  <label class="block text-xs font-medium text-text-subtle mb-1.5">DNI</label>
+                  <input type="text" [value]="datos.dni | formatDni" readonly
+                    class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
                 </div>
-                <div class="p-4 rounded-xl bg-background border border-border/50">
-                  <p class="text-xs font-medium text-text-secondary mb-1">Edad</p>
-                  <p class="text-sm font-semibold text-text-primary">{{ datos.edad }} años</p>
+                <div>
+                  <label class="block text-xs font-medium text-text-subtle mb-1.5">Edad</label>
+                  <input type="text" [value]="datos.edad + ' años'" readonly
+                    class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
                 </div>
                 @if (datos.obra_social) {
-                  <div class="p-4 rounded-xl bg-background border border-border/50">
-                    <p class="text-xs font-medium text-text-secondary mb-1">Obra Social</p>
-                    <p class="text-sm font-semibold text-text-primary">{{ datos.obra_social }}</p>
+                  <div>
+                    <label class="block text-xs font-medium text-text-subtle mb-1.5">Obra Social</label>
+                    <input type="text" [value]="datos.obra_social" readonly
+                      class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
                   </div>
                 }
               }
             </div>
+            @if (isEditing()) {
+              <div class="mt-5 flex gap-3">
+                <button type="button" (click)="guardarPerfil()" [disabled]="isSavingProfile()"
+                  class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  @if (isSavingProfile()) {
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Guardando...
+                  } @else {
+                    Guardar cambios
+                  }
+                </button>
+                <button type="button" (click)="cancelarEdicion()" [disabled]="isSavingProfile()"
+                  class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-sunken transition-all focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  Cancelar
+                </button>
+              </div>
+            }
           </div>
         </div>
       }
 
+      <!-- Tab: Horarios (Especialista) -->
       @if (tabActiva() === 'horarios' && rol() === 'especialista') {
-        <div class="space-y-6">
+        <div id="panel-horarios" role="tabpanel" aria-labelledby="tab-horarios" class="space-y-6 tab-content-enter">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
-              <div class="bg-surface rounded-2xl border border-border p-6">
+              <div class="bg-surface rounded-2xl border border-divider p-6">
                 <h3 class="text-lg font-semibold text-text-primary mb-1">Configurar Horarios</h3>
                 <p class="text-sm text-text-secondary mb-4">
                   Definí los días y horarios en los que atendés.
@@ -166,13 +322,13 @@
                     type="button"
                     (click)="guardarDisponibilidad()"
                     [disabled]="isGuardando() || disponibilidadService.isLoading()"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     @if (isGuardando() || disponibilidadService.isLoading()) {
                       <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Guardando...
+                      Guardando horarios...
                     } @else {
-                      Guardar horarios
+                      Guardar disponibilidad
                     }
                   </button>
                 </div>
@@ -189,9 +345,10 @@
         </div>
       }
 
+      <!-- Tab: Historial Clínico (Paciente) -->
       @if (tabActiva() === 'historial' && rol() === 'paciente') {
-        <div class="space-y-6">
-          <div class="bg-surface rounded-2xl border border-border p-6 sm:p-8">
+        <div id="panel-historial" role="tabpanel" aria-labelledby="tab-historial" class="space-y-6 tab-content-enter">
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h3 class="text-lg font-semibold text-text-primary">Mi Historial Clínico</h3>
@@ -204,16 +361,13 @@
                   type="button"
                   (click)="exportarHistorialPDF()"
                   [disabled]="isExportingPDF()"
-                  class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   @if (isExportingPDF()) {
                     <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                     <span>Exportando...</span>
                   } @else {
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <svg lucideIcon="download" class="h-4 w-4"></svg>
                     <span>Descargar Historial Clínico (PDF)</span>
                   }
                 </button>
@@ -221,22 +375,34 @@
             </div>
 
             @if (isLoadingHistorial()) {
-              <div class="flex flex-col items-center justify-center py-16">
-                <div class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
-                <p class="text-sm text-text-secondary">Cargando historial clínico...</p>
+              <div class="space-y-4">
+                @for (i of [1,2,3]; track i) {
+                  <div class="rounded-2xl border border-slate-200/80 bg-surface p-5 space-y-4">
+                    <div class="flex items-center gap-3">
+                      <div class="h-10 w-10 rounded-xl animate-shimmer"></div>
+                      <div class="space-y-2 flex-1">
+                        <div class="h-4 w-40 rounded-full animate-shimmer"></div>
+                        <div class="h-3 w-28 rounded-full animate-shimmer"></div>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div class="h-16 rounded-xl animate-shimmer"></div>
+                      <div class="h-16 rounded-xl animate-shimmer"></div>
+                      <div class="h-16 rounded-xl animate-shimmer"></div>
+                      <div class="h-16 rounded-xl animate-shimmer"></div>
+                    </div>
+                  </div>
+                }
               </div>
             } @else if (historialClinico().length > 0) {
               <app-medical-history-list [records]="historialClinico()" />
             } @else {
               <div class="flex flex-col items-center justify-center py-16 px-4">
-                <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                <div class="w-16 h-16 mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <svg lucideIcon="file-text" class="h-8 w-8 text-slate-400"></svg>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-700 mb-1">Sin historial clínico</h3>
-                <p class="text-sm text-gray-500 text-center max-w-sm">
+                <h3 class="text-lg font-semibold text-text-primary mb-1">Sin historial clínico</h3>
+                <p class="text-sm text-text-subtle text-center max-w-sm">
                   Aún no tienes consultas médicas registradas en el sistema.
                 </p>
               </div>
@@ -244,6 +410,23 @@
           </div>
         </div>
       }
+
+      <!-- Tab: Seguridad -->
+      @if (tabActiva() === 'seguridad') {
+        <div id="panel-seguridad" role="tabpanel" aria-labelledby="tab-seguridad" class="tab-content-enter">
+          <app-password-change />
+        </div>
+      }
     }
   }
 </div>
+
+@if (mostrarCropper(); as mostrar) {
+  @if (cropperFile(); as file) {
+    <app-image-cropper
+      [imageFile]="file"
+      (cropped)="onCropperCropped($event)"
+      (cancelled)="onCropperCancelled()"
+    />
+  }
+}

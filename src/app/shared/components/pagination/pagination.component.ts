@@ -19,7 +19,7 @@ import type { PaginationRange } from './pagination.types';
  * cualquier grilla o listado del sistema.
  *
  * @example
- * // En una plantilla Angular:
+ * En una plantilla Angular:
  * <app-pagination
  *   [totalItems]="records().length"
  *   [currentPage]="paginaActual()"

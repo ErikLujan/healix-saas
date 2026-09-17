@@ -1,49 +1,14 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-/**
- * Estado posible de un turno en el sistema clinico.
- */
 type TurnoEstado = 'pendiente' | 'confirmado' | 'rechazado' | 'cancelado' | 'finalizado';
 
-/**
- * Objeto que contiene las clases de Tailwind para estilizar visualmente
- * un turno segun su estado actual.
- */
 export interface EstadoTurnoVisual {
   readonly badge: string;
   readonly dot: string;
   readonly label: string;
+  readonly icon: string;
 }
 
-/**
- * Pipe puro que resuelve la semantica visual de un turno a partir de su estado.
- *
- * Transforma un valor de tipo `TurnoEstado` en un objeto con clases de
- * Tailwind CSS predefinidas que determinan el aspecto visual del componente
- * tarjeta de turno (badge, indicador circular, etiqueta de texto).
- *
- * La logica es puramente declarativa: un mappping estatico que no depende
- * de servicios, estado global ni efectos secundarios.
- *
- * Colores por estado:
- * - **pendiente**: Amber (proceso en espera)
- * - **confirmado**: Emerald (accion confirmada/procesada)
- * - **finalizado**: Blue (proceso completado)
- * - **rechazado**: Red (accion rechazada)
- * - **cancelado**: Slate (accion cancelada)
- *
- * @example
- * // En una plantilla Angular:
- * // <div [class]="(turno.estado | estadoTurnoColor).badge">
- * //   {{ turno.estado }}
- * // </div>
- *
- * @example
- * // const visual = pipe.transform('confirmado');
- * // console.log(visual.badge);  // "bg-emerald-100 text-emerald-700"
- * // console.log(visual.dot);    // "bg-emerald-500"
- * // console.log(visual.label);  // "Confirmado"
- */
 @Pipe({
   name: 'estadoTurnoColor',
   standalone: true,
@@ -52,44 +17,44 @@ export interface EstadoTurnoVisual {
 export class EstadoTurnoColorPipe implements PipeTransform {
   private static readonly MAPA_VISUAL: Record<TurnoEstado, EstadoTurnoVisual> = {
     pendiente: {
-      badge: 'bg-amber-100 text-amber-700',
-      dot: 'bg-amber-500',
+      badge: 'bg-amber-50 text-amber-700 border-l-4 border-l-amber-500',
+      dot: 'bg-amber-500 animate-pulse-dot',
       label: 'Pendiente',
+      icon: 'clock',
     },
     confirmado: {
-      badge: 'bg-emerald-100 text-emerald-700',
-      dot: 'bg-emerald-500',
+      badge: 'bg-teal-50 text-teal-700 border-l-4 border-l-teal-500',
+      dot: 'bg-teal-500',
       label: 'Confirmado',
+      icon: 'check-circle',
     },
     finalizado: {
-      badge: 'bg-blue-100 text-blue-700',
-      dot: 'bg-blue-500',
+      badge: 'bg-emerald-50 text-emerald-700 border-l-4 border-l-emerald-500',
+      dot: 'bg-emerald-500',
       label: 'Finalizado',
+      icon: 'check-check',
     },
     rechazado: {
-      badge: 'bg-red-100 text-red-700',
-      dot: 'bg-red-500',
+      badge: 'bg-rose-50 text-rose-700 border-l-4 border-l-rose-500',
+      dot: 'bg-rose-500',
       label: 'Rechazado',
+      icon: 'alert-triangle',
     },
     cancelado: {
-      badge: 'bg-slate-100 text-slate-700',
-      dot: 'bg-slate-500',
+      badge: 'bg-slate-100 text-slate-600 border-l-4 border-l-slate-400',
+      dot: 'bg-slate-400',
       label: 'Cancelado',
+      icon: 'x-circle',
     },
   };
 
   private static readonly FALLBACK_VISUAL: EstadoTurnoVisual = {
-    badge: 'bg-gray-100 text-gray-700',
+    badge: 'bg-gray-100 text-gray-700 border-l-4 border-l-gray-400',
     dot: 'bg-gray-500',
     label: 'Desconocido',
+    icon: 'alert-circle',
   };
 
-  /**
-   * Resuelve el objeto visual para un estado de turno dado.
-   *
-   * @param value Estado del turno.
-   * @returns Objeto con clases de Tailwind y etiqueta legible.
-   */
   transform(value: TurnoEstado | string | null | undefined): EstadoTurnoVisual {
     if (!value) {
       return EstadoTurnoColorPipe.FALLBACK_VISUAL;

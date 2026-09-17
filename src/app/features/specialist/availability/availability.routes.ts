@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { specialistApprovalGuard } from '@core/guards/role.guard';
 
 const routes: Routes = [
   {
@@ -7,7 +8,8 @@ const routes: Routes = [
       import('./pages/availability-page/availability-page.component').then(
         (m) => m.AvailabilityPageComponent,
       ),
-    title: 'Clínica Online | Disponibilidad',
+    canActivate: [specialistApprovalGuard],
+    title: 'Healix | Disponibilidad',
     data: { animation: 'dashboard' },
   },
 ];

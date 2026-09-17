@@ -1,8 +1,9 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TitleCasePipe, NgClass } from '@angular/common';
-import { SupabaseService } from '@core/services/supabase.service';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { AuthService } from '@core/services/auth.service';
+import { ProfileService } from '../../services/profile.service';
 import { DisponibilidadService } from '@core/services/disponibilidad.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { PdfExportService } from '@features/medical-history/services/pdf-export.service';
@@ -13,33 +14,20 @@ import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.dire
 import { FormatDniPipe } from '@shared/pipes/format-dni.pipe';
 import { AvailabilityFormComponent } from '@features/specialist/availability/components/availability-form/availability-form.component';
 import { SlotsPreviewComponent } from '@features/specialist/availability/components/slots-preview/slots-preview.component';
+import { PasswordChangeComponent } from '../../components/password-change/password-change.component';
+import { ImageCropperComponent } from '@shared/components/image-cropper/image-cropper.component';
 import { toast } from 'ngx-sonner';
-import { Database } from '@core/models/database.types';
 import {
   ConfiguracionDia,
   DiaSemana,
   DisponibilidadEspecialistaInsert,
   NOMBRES_DIAS,
 } from '@core/models/disponibilidad.model';
-
-type TabId = 'informacion' | 'horarios' | 'historial';
-
-/** Datos extendidos cargados desde la tabla hija segun el rol del usuario. */
-interface DatosRol {
-  readonly dni: string;
-  readonly edad: number;
-  readonly obra_social?: string;
-}
-
-interface EspecialidadPerfil {
-  readonly id: string;
-  readonly name: string;
-}
-
-/** Configuracion extendida que incluye el ID de registro para edicion. */
-interface ConfiguracionDiaExtendida extends ConfiguracionDia {
-  readonly registrosIds?: readonly string[];
-}
+import {
+  TabId,
+  ConfiguracionDiaExtendida,
+  DiaInfo,
+} from '../../models/profile.model';
 
 @Component({
   selector: 'app-profile-page',
@@ -48,33 +36,37 @@ interface ConfiguracionDiaExtendida extends ConfiguracionDia {
     FormsModule,
     TitleCasePipe,
     NgClass,
+    LucideDynamicIcon,
     FileUploadComponent,
     AvailabilityFormComponent,
     SlotsPreviewComponent,
     MedicalHistoryListComponent,
     FallbackAvatarDirective,
     FormatDniPipe,
+    PasswordChangeComponent,
+    ImageCropperComponent,
   ],
   templateUrl: './profile-page.component.html',
+  styleUrl: './profile-page.component.scss',
 })
 export class ProfilePageComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
   private readonly authService = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   readonly disponibilidadService = inject(DisponibilidadService);
   private readonly medicalRecordsService = inject(MedicalRecordsService);
   private readonly pdfExportService = inject(PdfExportService);
 
-  /** Tab activa actualmente. */
+  /** Active tab identifier. */
   readonly tabActiva = signal<TabId>('informacion');
 
-  /** Datos del perfil del usuario. */
+  /** User profile from AuthService. */
   readonly perfil = this.authService.userProfile;
 
-  /** Rol del usuario. */
+  /** User role. */
   readonly rol = this.authService.userRole;
 
-  /** Dias de la semana disponibles para el formulario. */
-  readonly diasDisponibles: ReadonlyArray<{ readonly id: DiaSemana; readonly nombre: string }> = [
+  /** Days of the week for the availability form. */
+  readonly diasDisponibles: ReadonlyArray<DiaInfo> = [
     { id: 1, nombre: NOMBRES_DIAS[1] },
     { id: 2, nombre: NOMBRES_DIAS[2] },
     { id: 3, nombre: NOMBRES_DIAS[3] },
@@ -83,40 +75,70 @@ export class ProfilePageComponent implements OnInit {
     { id: 6, nombre: NOMBRES_DIAS[6] },
   ];
 
-  /** Datos extendidos del rol (DNI, edad, obra social). */
-  readonly datosRol = signal<DatosRol | null>(null);
+  /** Role-specific extended data (delegated to ProfileService). */
+  readonly datosRol = this.profileService.datosRol;
 
-  /** Indica si se esta cargando la informacion del perfil. */
+  /** Loading state for the initial profile fetch. */
   readonly isLoading = signal(true);
 
-  /** Indica si se esta subiendo el avatar. */
+  /** Loading state for the avatar upload. */
   readonly isUploadingAvatar = signal(false);
 
-  /** Preview local de la imagen seleccionada antes de subir. */
+  /** Local preview of the selected avatar before upload. */
   readonly avatarPreview = signal<string | null>(null);
 
-  /** Archivo de avatar pendiente de subir. */
+  /** Pending avatar file. */
   private archivoAvatar: File | null = null;
 
-  /** Especialidades del especialista (para el formulario de disponibilidad). */
-  readonly especialidades = signal<readonly EspecialidadPerfil[]>([]);
+  /** File waiting to be cropped before upload. */
+  readonly cropperFile = signal<File | null>(null);
 
-  /** Configuración semanal de disponibilidad. */
+  /** Whether the image cropper modal is visible. */
+  readonly mostrarCropper = signal(false);
+
+  /** Which patient avatar is currently active as primary — detected from actual URLs. */
+  readonly avatarActivo = computed(() => {
+    const perfil = this.perfil();
+    const datos = this.datosRol();
+    if (!perfil || !datos) return 'frontal';
+
+    const currentUrl = this.stripCacheBust(perfil.avatar_url ?? '');
+    const secundarioUrl = this.stripCacheBust(datos.avatar_url_secundario ?? '');
+
+    if (currentUrl && secundarioUrl && currentUrl === secundarioUrl) {
+      return 'secundario' as const;
+    }
+    return 'frontal' as const;
+  });
+
+  /** Specialist's linked specialties (delegated to ProfileService). */
+  readonly especialidades = this.profileService.especialidades;
+
+  /** Weekly availability configuration. */
   readonly configuracion = signal<Record<number, ConfiguracionDiaExtendida>>({});
 
-  /** Indica si la configuración está siendo guardada. */
+  /** Saving state for availability. */
   readonly isGuardando = signal(false);
 
-  /** Historial clínico del paciente (solo para rol paciente). */
+  /** Patient's medical history. */
   readonly historialClinico = signal<readonly MedicalRecordConRelaciones[]>([]);
 
-  /** Indica si se está cargando el historial clínico. */
+  /** Loading state for medical history. */
   readonly isLoadingHistorial = signal(false);
 
-  /** Indica si se está exportando el PDF del historial. */
+  /** Exporting state for PDF. */
   readonly isExportingPDF = signal(false);
 
-  /** Título de la pestaña actual. */
+  /** Edit mode toggle. */
+  readonly isEditing = signal(false);
+
+  /** Saving state for profile edits. */
+  readonly isSavingProfile = signal(false);
+
+  /** Editable full name. */
+  nombreEdit = '';
+
+  /** Tab title computed from active tab. */
   readonly tituloTab = computed(() => {
     switch (this.tabActiva()) {
       case 'informacion':
@@ -125,145 +147,49 @@ export class ProfilePageComponent implements OnInit {
         return 'Mis Horarios';
       case 'historial':
         return 'Mi Historial Clínico';
+      case 'seguridad':
+        return 'Seguridad';
     }
   });
 
-  /** Nombre de la tabla hija según el rol. */
-  private get tablaRol(): string {
-    const rol = this.rol();
-    if (rol === 'paciente') return 'pacientes';
-    if (rol === 'especialista') return 'especialistas';
-    return 'administradores';
-  }
-
   async ngOnInit(): Promise<void> {
-    await this.cargarDatosRol();
-    if (this.rol() === 'especialista') {
-      await Promise.all([
-        this.cargarEspecialidades(),
-        this.cargarDisponibilidad(),
-      ]);
-    }
-    if (this.rol() === 'paciente') {
-      await this.cargarHistorialClinico();
-    }
-    this.isLoading.set(false);
-  }
-
-  /** Carga los datos extendidos del rol (DNI, edad, etc.) desde la tabla hija. */
-  private async cargarDatosRol(): Promise<void> {
     const perfil = this.perfil();
     if (!perfil) return;
 
     try {
-      const { data, error } = await this.supabase.supabase
-        .from(this.tablaRol)
-        .select('*')
-        .eq('id', perfil.id)
-        .single();
+      await this.profileService.cargarDatosRol();
 
-      if (error || !data) return;
+      if (this.rol() === 'especialista') {
+        await Promise.all([
+          this.profileService.cargarEspecialidades(),
+          this.cargarDisponibilidad(),
+        ]);
+      }
 
-      const row = data as Record<string, unknown>;
-      this.datosRol.set({
-        dni: row['dni'] as string,
-        edad: row['edad'] as number,
-        obra_social: row['obra_social'] as string | undefined,
-      });
-    } catch {
-    }
-  }
-
-  /** Carga el historial clínico completo del paciente autenticado. */
-  private async cargarHistorialClinico(): Promise<void> {
-    const perfil = this.perfil();
-    if (!perfil) return;
-
-    this.isLoadingHistorial.set(true);
-
-    this.medicalRecordsService.getHistoryByPatientId(perfil.id).subscribe({
-      next: (records) => {
-        this.historialClinico.set(records);
-        this.isLoadingHistorial.set(false);
-      },
-      error: () => {
-        this.isLoadingHistorial.set(false);
-      },
-    });
-  }
-
-  /** Exporta el historial clínico del paciente a PDF con logo institucional. */
-  async exportarHistorialPDF(): Promise<void> {
-    const perfil = this.perfil();
-    if (!perfil || this.historialClinico().length === 0) return;
-
-    this.isExportingPDF.set(true);
-
-    try {
-      await this.pdfExportService.exportarHistorialPaciente(
-        this.historialClinico(),
-        perfil.full_name,
-        this.datosRol()?.dni ?? '',
-        perfil.email,
-        this.datosRol()?.edad,
-      );
+      if (this.rol() === 'paciente') {
+        await this.cargarHistorialClinico();
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al cargar el perfil.';
+      toast.error(message);
     } finally {
-      this.isExportingPDF.set(false);
+      this.isLoading.set(false);
     }
   }
 
-  /** Carga las especialidades asociadas al especialista (dos pasos). */
-  private async cargarEspecialidades(): Promise<void> {
-    const perfil = this.perfil();
-    if (!perfil) return;
-
-    try {
-      const { data: joinData } = await this.supabase.supabase
-        .from('especialista_especialidad')
-        .select('especialidad_id')
-        .eq('especialista_id', perfil.id);
-
-      if (!joinData?.length) return;
-
-      const ids = joinData.map((j: Record<string, unknown>) => j['especialidad_id'] as string);
-
-      const { data: especialidadesData } = await this.supabase.supabase
-        .from('specialties')
-        .select('id, name')
-        .in('id', ids)
-        .eq('is_active', true);
-
-      if (!especialidadesData) return;
-
-      this.especialidades.set(
-        Object.freeze(
-          especialidadesData.map((e: Record<string, unknown>) => ({
-            id: e['id'] as string,
-            name: e['name'] as string,
-          }))
-        )
-      );
-    } catch {
-    }
-  }
-
-  /** Carga la disponibilidad actual y construye la configuración semanal. */
+  /** Loads the specialist's availability from Supabase. */
   private async cargarDisponibilidad(): Promise<void> {
     const perfil = this.perfil();
     if (!perfil) return;
 
     await this.disponibilidadService.cargarDisponibilidadPorEspecialista(perfil.id);
-
     const registros = this.disponibilidadService.disponibilidades();
     this.construirConfiguracion(registros);
   }
 
-  /**
-   * Convierte los registros planos de disponibilidad en un diccionario
-   * indexado por dia_semana, compatible con el formulario de disponibilidad.
-   */
+  /** Converts flat availability records into the weekly config dictionary. */
   private construirConfiguracion(
-    registros: readonly { especialidad_id: string; dia_semana: DiaSemana; hora_inicio: string; hora_fin: string }[]
+    registros: readonly { especialidad_id: string; dia_semana: DiaSemana; hora_inicio: string; hora_fin: string }[],
   ): void {
     const config: Record<number, ConfiguracionDiaExtendida> = {};
 
@@ -299,81 +225,121 @@ export class ProfilePageComponent implements OnInit {
     this.configuracion.set(config);
   }
 
-  /** Cambia la pestaña activa. */
+  /** Loads the patient's medical history. */
+  private async cargarHistorialClinico(): Promise<void> {
+    const perfil = this.perfil();
+    if (!perfil) return;
+
+    this.isLoadingHistorial.set(true);
+
+    this.medicalRecordsService.getHistoryByPatientId(perfil.id).subscribe({
+      next: (records) => {
+        this.historialClinico.set(records);
+        this.isLoadingHistorial.set(false);
+      },
+      error: () => {
+        this.isLoadingHistorial.set(false);
+        toast.error('No se pudo cargar el historial clínico.');
+      },
+    });
+  }
+
+  /** Exports the patient's medical history to PDF. */
+  async exportarHistorialPDF(): Promise<void> {
+    const perfil = this.perfil();
+    if (!perfil || this.historialClinico().length === 0) return;
+
+    this.isExportingPDF.set(true);
+
+    try {
+      await this.pdfExportService.exportarHistorialPaciente(
+        this.historialClinico(),
+        perfil.full_name,
+        this.datosRol()?.dni ?? '',
+        perfil.email,
+        this.datosRol()?.edad,
+      );
+    } finally {
+      this.isExportingPDF.set(false);
+    }
+  }
+
+  /** Switches the active tab. */
   seleccionarTab(tab: TabId): void {
     this.tabActiva.set(tab);
   }
 
-  /** Maneja la seleccion de un archivo de avatar. */
+  /** Handles avatar file selection — opens the cropper modal. */
   onAvatarSeleccionado(file: File): void {
-    this.archivoAvatar = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.avatarPreview.set(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    this.cropperFile.set(file);
+    this.mostrarCropper.set(true);
   }
 
-  /** Sube el avatar a Supabase Storage y actualiza el perfil. */
+  /** Receives the cropped image data URL from the cropper and prepares it for upload. */
+  onCropperCropped(dataUrl: string): void {
+    this.avatarPreview.set(dataUrl);
+    this.mostrarCropper.set(false);
+
+    const file = this.cropperFile();
+    if (file) {
+      const ext = file.name.split('.').pop() ?? 'png';
+      const blob = this.dataUrlToBlob(dataUrl, ext);
+      this.archivoAvatar = new File([blob], `avatar_cropped.${ext}`, { type: blob.type });
+    }
+    this.cropperFile.set(null);
+  }
+
+  /** Closes the cropper modal without applying the crop. */
+  onCropperCancelled(): void {
+    this.mostrarCropper.set(false);
+    this.cropperFile.set(null);
+  }
+
+  /** Converts a data URL string into a Blob object. */
+  private dataUrlToBlob(dataUrl: string, ext: string): Blob {
+    const parts = dataUrl.split(',');
+    const mime = parts[0].match(/:(.*?);/)?.[1] ?? `image/${ext}`;
+    const byteString = atob(parts[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mime });
+  }
+
+  /** Uploads the avatar via ProfileService. */
   async subirAvatar(): Promise<void> {
-    const perfil = this.perfil();
     const archivo = this.archivoAvatar;
-    if (!perfil || !archivo) return;
+    if (!archivo) return;
 
     this.isUploadingAvatar.set(true);
 
     try {
-      const ext = archivo.name.split('.').pop() ?? 'jpg';
-      const ruta = `avatars/${perfil.id}/avatar.${ext}`;
+      await this.profileService.subirAvatar(archivo);
 
-      const { error: uploadError } = await this.supabase.supabase.storage
-        .from('avatars')
-        .upload(ruta, archivo, { upsert: true });
-
-      if (uploadError) {
-        toast.error('No se pudo subir la imagen. Intenta nuevamente.');
-        return;
+      if (this.rol() === 'paciente') {
+        await this.profileService.cargarDatosRol();
       }
-
-      const { data: urlData } = this.supabase.supabase.storage
-        .from('avatars')
-        .getPublicUrl(ruta);
-
-      const publicUrl = urlData.publicUrl;
-
-      const { error: updateError } = await this.supabase.supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', perfil.id);
-
-      if (updateError) {
-        toast.error('No se pudo actualizar la foto de perfil.');
-        return;
-      }
-
-      this.authService['userProfileSignal'].set({
-        ...perfil,
-        avatar_url: publicUrl,
-      });
 
       this.avatarPreview.set(null);
       this.archivoAvatar = null;
       toast.success('Foto de perfil actualizada correctamente.');
-    } catch {
-      toast.error('Error inesperado al subir la imagen.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error inesperado al subir la imagen.';
+      toast.error(message);
     } finally {
       this.isUploadingAvatar.set(false);
     }
   }
 
-  /** Cancela la seleccion de avatar pendiente. */
+  /** Cancels the pending avatar selection. */
   cancelarAvatar(): void {
     this.avatarPreview.set(null);
     this.archivoAvatar = null;
   }
 
-  /** Maneja cambios en la configuracion de disponibilidad desde el formulario. */
+  /** Handles availability config changes from the form. */
   onConfiguracionCambiada(evento: { readonly dia: DiaSemana; readonly config: ConfiguracionDia }): void {
     this.configuracion.update(actual => ({
       ...actual,
@@ -381,7 +347,7 @@ export class ProfilePageComponent implements OnInit {
     }));
   }
 
-  /** Persiste la configuracion de disponibilidad en Supabase. */
+  /** Persists the availability configuration. */
   async guardarDisponibilidad(): Promise<void> {
     const perfil = this.perfil();
     if (!perfil) return;
@@ -407,13 +373,15 @@ export class ProfilePageComponent implements OnInit {
       }
 
       await this.disponibilidadService.guardarDisponibilidadSemanal(perfil.id, registros);
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al guardar la disponibilidad.';
+      toast.error(message);
     } finally {
       this.isGuardando.set(false);
     }
   }
 
-  /** Obtiene las iniciales del usuario para fallback del avatar. */
+  /** Returns initials for the avatar fallback. */
   getInitials(name: string): string {
     return name
       .split(' ')
@@ -423,11 +391,81 @@ export class ProfilePageComponent implements OnInit {
       .toUpperCase();
   }
 
-  /** Obtiene la URL del avatar actual (incluyendo preview local). */
+  /** Strips query string parameters from a URL for cache-busting comparison. */
+  private stripCacheBust(url: string): string {
+    try {
+      const parsed = new URL(url);
+      parsed.search = '';
+      return parsed.toString();
+    } catch {
+      const idx = url.indexOf('?');
+      return idx >= 0 ? url.substring(0, idx) : url;
+    }
+  }
+
+  /** Returns the avatar URL, considering local preview and patient-specific URLs. */
   getAvatarUrl(): string | null {
     return this.avatarPreview() ?? this.perfil()?.avatar_url ?? null;
   }
 
-  /** Indica si hay cambios pendientes de guardar en el avatar. */
+  /** Whether there is a pending avatar to upload. */
   readonly tieneAvatarPendiente = computed(() => this.avatarPreview() !== null);
+
+  /** Sets a patient document photo as the active primary avatar. */
+  async establecerAvatarPrincipal(tipo: 'frontal' | 'secundario'): Promise<void> {
+    const datos = this.datosRol();
+    if (!datos) return;
+
+    const url = tipo === 'frontal' ? datos.avatar_url_frontal : datos.avatar_url_secundario;
+    if (!url) return;
+
+    try {
+      await this.profileService.actualizarAvatarPrincipal(url, tipo);
+      toast.success('Avatar principal actualizado.');
+    } catch {
+      toast.error('No se pudo actualizar el avatar principal.');
+    }
+  }
+
+  /** Activates profile edit mode. */
+  editarPerfil(): void {
+    const p = this.perfil();
+    if (p) {
+      this.nombreEdit = p.full_name;
+    }
+    this.isEditing.set(true);
+  }
+
+  /** Cancels profile edit mode. */
+  cancelarEdicion(): void {
+    this.isEditing.set(false);
+  }
+
+  /** Saves profile changes via ProfileService. */
+  async guardarPerfil(): Promise<void> {
+    const perfil = this.perfil();
+    if (!perfil) return;
+
+    const trimmedName = this.nombreEdit.trim();
+    if (!trimmedName) {
+      toast.error('El nombre no puede estar vacío.');
+      return;
+    }
+
+    this.isSavingProfile.set(true);
+
+    try {
+      await this.profileService.actualizarPerfil({
+        full_name: trimmedName,
+      });
+
+      this.isEditing.set(false);
+      toast.success('Perfil actualizado correctamente.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error inesperado al guardar el perfil.';
+      toast.error(message);
+    } finally {
+      this.isSavingProfile.set(false);
+    }
+  }
 }

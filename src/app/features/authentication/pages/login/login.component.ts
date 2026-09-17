@@ -2,21 +2,15 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@core/services/auth.service';
+import { NgClass } from '@angular/common';
 import { toast } from 'ngx-sonner';
-import { slideUp } from '@core/animations/route-animations';
 
-/**
- * Pantalla de inicio de sesion con formulario reactivo,
- * selector de rol y acceso rapido para usuarios de prueba.
- * Redirige al dashboard despues de una autenticacion exitosa.
- */
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, NgClass],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
-  animations: [slideUp],
 })
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
@@ -26,36 +20,7 @@ export class LoginComponent {
   readonly form: FormGroup;
   readonly isSubmitting = signal(false);
   readonly showPassword = signal(false);
-  readonly selectedRole = signal<'paciente' | 'especialista' | 'administrador'>('paciente');
-
-  readonly roleTabs: Array<{ value: 'paciente' | 'especialista' | 'administrador'; label: string }> = [
-    { value: 'paciente', label: 'Paciente' },
-    { value: 'especialista', label: 'Especialista' },
-    { value: 'administrador', label: 'Admin' },
-  ];
-
-  readonly quickAccessUsers = [
-    {
-      label: 'Administrador',
-      email: 'admin@clinica.com',
-      password: 'Admin123!',
-    },
-    {
-      label: 'Paciente',
-      email: 'bippogamer05@gmail.com',
-      password: 'Pepe123!',
-    },
-    {
-      label: 'Esp. Habilitado',
-      email: 'santysanchez245@gmail.com',
-      password: 'Especialista123!',
-    },
-    {
-      label: 'Esp. No Habilitado',
-      email: 'ricardotapia67@gmail.com',
-      password: 'Especialista123!',
-    },
-  ];
+  readonly loginError = signal<string | null>(null);
 
   constructor() {
     this.form = this.fb.group({
@@ -64,26 +29,23 @@ export class LoginComponent {
     });
   }
 
-  selectRole(role: 'paciente' | 'especialista' | 'administrador'): void {
-    this.selectedRole.set(role);
-  }
-
   togglePassword(): void {
     this.showPassword.update(v => !v);
   }
 
-  /**
-   * Valida el formulario y ejecuta la autenticacion contra Supabase.
-   * Muestra toast de error si las credenciales son invalidas o
-   * redirige al dashboard en caso de exito.
-   */
+  dismissError(): void {
+    this.loginError.set(null);
+  }
+
   async onSubmit(): Promise<void> {
     if (this.isSubmitting()) return;
 
+    this.loginError.set(null);
+
     if (this.form.invalid) {
       const missing: string[] = [];
-      if (this.form.get('email')?.invalid) missing.push('El correo electrónico');
-      if (this.form.get('password')?.invalid) missing.push('La contraseña');
+      if (this.form.get('email')?.invalid) missing.push('El correo electronico');
+      if (this.form.get('password')?.invalid) missing.push('La contrasena');
       toast.error(`Faltan completar: ${missing.join(', ')}`);
       this.form.markAllAsTouched();
       return;
@@ -94,23 +56,23 @@ export class LoginComponent {
     const { email, password } = this.form.value;
     const { error } = await this.authService.signIn(email, password);
 
-    if (!error) {
-      toast.success('Inicio de sesión exitoso');
-      this.router.navigate(['/panel-principal']);
+    if (error) {
+      this.loginError.set(this.mapLoginError(error.message));
+      this.isSubmitting.set(false);
+      return;
     }
 
+    toast.success('Inicio de sesion exitoso');
+    this.router.navigate(['/panel-principal']);
     this.isSubmitting.set(false);
   }
 
-  /**
-   * Rellena el formulario con las credenciales de un usuario de prueba
-   * y ejecuta el envio automatico para facilitar el testing.
-   *
-   * @param user Objeto con email y password del usuario de acceso rapido.
-   */
-  quickLogin(user: typeof this.quickAccessUsers[number]): void {
-    this.form.patchValue({ email: user.email, password: user.password });
-    this.form.markAsDirty();
-    this.onSubmit();
+  private mapLoginError(message: string): string {
+    const map: Record<string, string> = {
+      'Invalid login credentials': 'Correo o contrasena incorrectos',
+      'Email not confirmed': 'Por favor confirma tu correo electronico antes de iniciar sesion',
+      'Too many requests': 'Demasiados intentos. Intenta nuevamente en unos minutos',
+    };
+    return map[message] || 'Ocurrio un error inesperado. Intenta nuevamente';
   }
 }

@@ -7,8 +7,8 @@ const routes: Routes = [
       import('./pages/profile-page/profile-page.component').then(
         (m) => m.ProfilePageComponent,
       ),
-    title: 'Clínica Online | Mi Perfil',
-    data: { animation: 'dashboard' },
+    title: 'Healix | Mi Perfil',
+    data: { animation: 'perfil' },
   },
 ];
 

@@ -1,5 +1,14 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { EspecialidadInfo } from '@core/models/turno.model';
+import { AdminUsersService } from '@features/administration/services/admin-users.service';
+
+/** Informacion basica de un paciente para la seleccion del admin. */
+export interface PacienteWizard {
+  readonly id: string;
+  readonly full_name: string;
+  readonly email: string;
+  readonly avatar_url: string | null;
+}
 
 /** Informacion basica de un especialista para la seleccion. */
 export interface EspecialistaWizard {
@@ -18,6 +27,7 @@ export interface BloqueDisponible {
 /** Estado completo del asistente de solicitud de turnos. */
 export interface EstadoWizard {
   readonly pasoActual: number;
+  readonly pacienteSeleccionado: PacienteWizard | null;
   readonly especialidadSeleccionada: EspecialidadInfo | null;
   readonly especialistaSeleccionado: EspecialistaWizard | null;
   readonly fechaSeleccionada: string | null;
@@ -26,6 +36,7 @@ export interface EstadoWizard {
 
 const ESTADO_INICIAL: EstadoWizard = {
   pasoActual: 1,
+  pacienteSeleccionado: null,
   especialidadSeleccionada: null,
   especialistaSeleccionado: null,
   fechaSeleccionada: null,
@@ -46,9 +57,25 @@ const ESTADO_INICIAL: EstadoWizard = {
 })
 export class WizardTurnoService {
   private readonly _estado = signal<EstadoWizard>(ESTADO_INICIAL);
+  private readonly adminUsersService = inject(AdminUsersService);
 
   /** Estado actual completo del wizard. */
   readonly estado = this._estado.asReadonly();
+
+  /** Lista de pacientes disponibles para seleccion del admin. */
+  readonly pacientes = computed((): PacienteWizard[] => {
+    return this.adminUsersService.users()
+      .filter(u => u.role === 'paciente')
+      .map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        email: u.email,
+        avatar_url: u.avatar_url,
+      }));
+  });
+
+  /** Paciente seleccionado (solo admin). */
+  readonly pacienteSeleccionado = computed(() => this._estado().pacienteSeleccionado);
 
   /** Paso actual (1-5). */
   readonly pasoActual = computed(() => this._estado().pasoActual);
@@ -68,6 +95,17 @@ export class WizardTurnoService {
   /** Indica si se puede avanzar al siguiente paso. */
   readonly puedeAvanzar = computed(() => {
     const estado = this._estado();
+    const tienePaciente = estado.pacienteSeleccionado !== null;
+    if (tienePaciente) {
+      switch (estado.pasoActual) {
+        case 1: return estado.pacienteSeleccionado !== null;
+        case 2: return estado.especialidadSeleccionada !== null;
+        case 3: return estado.especialistaSeleccionado !== null;
+        case 4: return estado.fechaSeleccionada !== null;
+        case 5: return false;
+        default: return false;
+      }
+    }
     switch (estado.pasoActual) {
       case 1: return estado.especialidadSeleccionada !== null;
       case 2: return estado.especialistaSeleccionado !== null;
@@ -83,25 +121,27 @@ export class WizardTurnoService {
 
   /** Titulo del paso actual. */
   readonly tituloPasoActual = computed(() => {
+    const tienePaciente = this._estado().pacienteSeleccionado !== null;
     const titulos: Record<number, string> = {
-      1: 'Especialidad',
-      2: 'Especialista',
-      3: 'Fecha',
-      4: 'Horario',
+      1: tienePaciente ? 'Especialidad' : 'Paciente',
+      2: tienePaciente ? 'Especialista' : 'Especialidad',
+      3: tienePaciente ? 'Fecha' : 'Especialista',
+      4: tienePaciente ? 'Horario' : 'Fecha',
       5: 'Confirmar',
     };
     return titulos[this._estado().pasoActual] ?? '';
   });
 
   /**
-   * Selecciona la especialidad y avanza al paso 2.
+   * Selecciona el paciente y avanza al paso 2 (solo admin).
    * Reinicia las selecciones posteriores si las hubiera.
    */
-  seleccionarEspecialidad(especialidad: EspecialidadInfo): void {
+  seleccionarPaciente(paciente: PacienteWizard): void {
     this._estado.update(prev => ({
       ...prev,
-      especialidadSeleccionada: especialidad,
+      pacienteSeleccionado: paciente,
       pasoActual: 2,
+      especialidadSeleccionada: null,
       especialistaSeleccionado: null,
       fechaSeleccionada: null,
       horaSeleccionada: null,
@@ -109,28 +149,46 @@ export class WizardTurnoService {
   }
 
   /**
-   * Selecciona el especialista y avanza al paso 3.
-   * Reinicia fecha y hora si estuvieran seleccionadas.
+   * Selecciona la especialidad y avanza al siguiente paso.
+   * Reinicia las selecciones posteriores si las hubiera.
    */
-  seleccionarEspecialista(especialista: EspecialistaWizard): void {
+  seleccionarEspecialidad(especialidad: EspecialidadInfo): void {
+    const tienePaciente = this._estado().pacienteSeleccionado !== null;
     this._estado.update(prev => ({
       ...prev,
-      especialistaSeleccionado: especialista,
-      pasoActual: 3,
+      especialidadSeleccionada: especialidad,
+      pasoActual: tienePaciente ? 3 : 2,
+      especialistaSeleccionado: null,
       fechaSeleccionada: null,
       horaSeleccionada: null,
     }));
   }
 
   /**
-   * Selecciona la fecha y avanza al paso 4.
+   * Selecciona el especialista y avanza al siguiente paso.
+   * Reinicia fecha y hora si estuvieran seleccionadas.
+   */
+  seleccionarEspecialista(especialista: EspecialistaWizard): void {
+    const tienePaciente = this._estado().pacienteSeleccionado !== null;
+    this._estado.update(prev => ({
+      ...prev,
+      especialistaSeleccionado: especialista,
+      pasoActual: tienePaciente ? 4 : 3,
+      fechaSeleccionada: null,
+      horaSeleccionada: null,
+    }));
+  }
+
+  /**
+   * Selecciona la fecha y avanza al siguiente paso.
    * Reinicia la hora si estuviera seleccionada.
    */
   seleccionarFecha(fecha: string): void {
+    const tienePaciente = this._estado().pacienteSeleccionado !== null;
     this._estado.update(prev => ({
       ...prev,
       fechaSeleccionada: fecha,
-      pasoActual: 4,
+      pasoActual: tienePaciente ? 5 : 4,
       horaSeleccionada: null,
     }));
   }

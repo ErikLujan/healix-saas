@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '@core/guards/role.guard';
 
 const routes: Routes = [
   {
@@ -7,7 +8,8 @@ const routes: Routes = [
       import('./dashboard/pages/dashboard-page/dashboard-page.component').then(
         (m) => m.DashboardPageComponent,
       ),
-    title: 'Clínica Online | Mis turnos',
+    title: 'Healix | Mis turnos',
+    data: { animation: 'turnos' },
   },
   {
     path: 'solicitar',
@@ -15,7 +17,9 @@ const routes: Routes = [
       import('./request/pages/request-page/request-page.component').then(
         (m) => m.RequestPageComponent,
       ),
-    title: 'Clínica Online | Solicitar turno',
+    canActivate: [roleGuard],
+    title: 'Healix | Solicitar turno',
+    data: { roles: ['paciente', 'administrador'], animation: 'solicitar-turno' },
   },
 ];
 

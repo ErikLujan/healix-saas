@@ -1,202 +1,65 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, signal, HostListener, DestroyRef, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UpperCasePipe } from '@angular/common';
+import { LucideDynamicIcon } from '@lucide/angular';
+import { toast } from 'ngx-sonner';
 import { AuthService } from '@core/services/auth.service';
+import { TurnosService } from '@core/services/turnos.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
-import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
-import { filtrarHistoriasClinicas } from '@features/medical-history/utils/medical-record-filter';
+import { PacienteAtendido } from '../../models/patient-portfolio.model';
+import { FormatDniPipe } from '@shared/pipes/format-dni.pipe';
+import { PatientDrawerComponent } from '../../components/patient-drawer/patient-drawer.component';
 
-/**
- * Interfaz para el paciente atendido por el especialista.
- * Se extrae de las historias clinicas para evitar consultas adicionales.
- */
-interface PacienteAtendido {
-  readonly id: string;
-  readonly full_name: string;
-  readonly email: string;
-  readonly totalConsultas: number;
-}
-
-/**
- * Pagina de gestion de pacientes para el perfil de Especialista.
- *
- * Muestra unicamente los pacientes que el especialista autenticado
- * haya atendido al menos una vez. Al seleccionar un paciente de
- * la lista, despliega un panel con su historial clinico completo.
- *
- * Caracteristicas:
- * - Lista filtrada de pacientes atendidos
- * - Panel expandible con historial cronologico
- * - Diseño responsive con Tailwind CSS v4
- */
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [MedicalHistoryListComponent, UpperCasePipe],
-  template: `
-    <div class="min-h-full">
-      <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Mis Pacientes</h1>
-        <p class="text-sm text-gray-500 mt-1">
-          Pacientes que has atendido al menos una vez.
-        </p>
-      </div>
-
-      @if (isLoading()) {
-        <div class="flex flex-col items-center justify-center py-16">
-          <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-          <p class="text-sm text-gray-500">Cargando pacientes...</p>
-        </div>
-      } @else if (pacientes().length === 0) {
-        <div class="flex flex-col items-center justify-center py-16 px-4">
-          <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-700 mb-1">Sin pacientes atendidos</h3>
-          <p class="text-sm text-gray-500 text-center max-w-sm">
-            Aun no has realizado consultas medicas con ningun paciente.
-          </p>
-        </div>
-      } @else {
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-1 space-y-3">
-            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Pacientes ({{ pacientes().length }})
-            </h2>
-            @for (paciente of pacientes(); track paciente.id) {
-              <button
-                type="button"
-                (click)="seleccionarPaciente(paciente)"
-                [class]="pacienteSeleccionado()?.id === paciente.id
-                  ? 'w-full px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl text-left transition-all duration-200'
-                  : 'w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-left hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-200'">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                      <span class="text-sm font-semibold text-blue-600">
-                        {{ paciente.full_name.charAt(0) | uppercase }}
-                      </span>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-sm font-semibold text-gray-900 truncate">{{ paciente.full_name }}</p>
-                      <p class="text-xs text-gray-500 truncate">{{ paciente.email }}</p>
-                    </div>
-                  </div>
-                  <span class="flex-shrink-0 text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                    {{ paciente.totalConsultas }} consulta{{ paciente.totalConsultas > 1 ? 's' : '' }}
-                  </span>
-                </div>
-              </button>
-            }
-          </div>
-
-          <div class="lg:col-span-2">
-            @if (pacienteSeleccionado()) {
-              <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 class="text-lg font-semibold text-gray-900">
-                      Historial de {{ pacienteSeleccionado()!.full_name }}
-                    </h2>
-                    <p class="text-sm text-gray-500">{{ pacienteSeleccionado()!.email }}</p>
-                  </div>
-                  <button
-                    type="button"
-                    (click)="cerrarPanel()"
-                    class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Cerrar panel">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                @if (isLoadingHistorial()) {
-                  <div class="flex flex-col items-center justify-center py-12">
-                    <div class="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-                    <p class="text-sm text-gray-500">Cargando historial...</p>
-                  </div>
-                } @else {
-                  <div class="mb-4">
-                    <div class="relative">
-                      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <input
-                        type="text"
-                        [value]="terminoBusqueda()"
-                        (input)="onSearchInput($event)"
-                        placeholder="Buscar en historial clinico..."
-                        class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all duration-200" />
-                    </div>
-                    @if (terminoBusqueda()) {
-                      <p class="text-xs text-gray-500 mt-2">
-                        {{ historialFiltrado().length }} resultado{{ historialFiltrado().length !== 1 ? 's' : '' }}
-                        para "{{ terminoBusqueda() }}"
-                      </p>
-                    }
-                  </div>
-                  <app-medical-history-list [records]="historialFiltrado()" />
-                }
-              </div>
-            } @else {
-              <div class="flex flex-col items-center justify-center py-16 px-4 bg-white border border-gray-200 rounded-xl">
-                <div class="w-12 h-12 mb-3 rounded-full bg-blue-50 flex items-center justify-center">
-                  <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                      d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                  </svg>
-                </div>
-                <p class="text-sm text-gray-500 text-center">
-                  Selecciona un paciente de la izquierda para ver su historial clinico.
-                </p>
-              </div>
-            }
-          </div>
-        </div>
-      }
-    </div>
-  `,
+  imports: [UpperCasePipe, LucideDynamicIcon, FormatDniPipe, PatientDrawerComponent],
+  templateUrl: './patient-list.component.html',
+  styleUrls: ['./patient-list.component.scss'],
 })
 export class PatientListComponent implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly turnosService = inject(TurnosService);
   private readonly medicalRecordsService = inject(MedicalRecordsService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  /** Lista de pacientes atendidos por el especialista. */
   readonly pacientes = signal<readonly PacienteAtendido[]>([]);
-
-  /** Paciente actualmente seleccionado. */
-  readonly pacienteSeleccionado = signal<PacienteAtendido | null>(null);
-
-  /** Historial clinico del paciente seleccionado. */
-  readonly historialPaciente = signal<readonly MedicalRecordConRelaciones[]>([]);
-
-  /** Termino de busqueda libre sobre el historial clinico. */
-  readonly terminoBusqueda = signal('');
-
-  /** Historial clinico filtrado reactivamente por el termino de busqueda. */
-  readonly historialFiltrado = computed(() =>
-    filtrarHistoriasClinicas(this.historialPaciente(), this.terminoBusqueda()),
-  );
-
-  /** Estado de carga inicial. */
   readonly isLoading = signal(true);
-
-  /** Estado de carga del historial. */
-  readonly isLoadingHistorial = signal(false);
-
-  async ngOnInit(): Promise<void> {
-    await this.cargarPacientesAtendidos();
-  }
+  readonly searchQuery = signal('');
 
   /**
-   * Carga la lista de pacientes unicos atendidos por el especialista.
-   * Extrae pacientes unicos de las historias clinicas del especialista.
+   * Pacientes filtrados por busqueda libre.
+   * El correo es opcional tras el endurecimiento RLS (solo propietario
+   * y administrador pueden leerlo), por eso se protege con `?? ''`.
    */
-  private async cargarPacientesAtendidos(): Promise<void> {
+  readonly filteredPatients = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const list = this.pacientes();
+    if (!query) return list;
+    return list.filter(
+      (p) =>
+        p.full_name.toLowerCase().includes(query) ||
+        (p.email ?? '').toLowerCase().includes(query) ||
+        (p.dni && p.dni.includes(query)),
+    );
+  });
+
+  readonly isDrawerOpen = signal(false);
+  readonly drawerPaciente = signal<PacienteAtendido | null>(null);
+  readonly drawerRecords = signal<readonly MedicalRecordConRelaciones[]>([]);
+  readonly isDrawerLoading = signal(false);
+
+  ngOnInit(): void {
+    this.cargarPacientesAtendidos();
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    if (this.isDrawerOpen()) this.closeDrawer();
+  }
+
+  private cargarPacientesAtendidos(): void {
     this.isLoading.set(true);
     const perfil = this.authService.userProfile();
 
@@ -205,85 +68,133 @@ export class PatientListComponent implements OnInit {
       return;
     }
 
-    this.medicalRecordsService.getHistoryBySpecialistId(perfil.id).subscribe({
-      next: (records) => {
-        const pacientesMap = new Map<string, PacienteAtendido>();
+    const userRole = this.authService.userRole();
 
-        for (const record of records) {
-          if (!record.paciente) continue;
+    if (userRole === 'administrador') {
+      this.cargarPacientesAdmin(perfil.id);
+    } else {
+      this.cargarPacientesEspecialista(perfil.id);
+    }
+  }
 
-          const existing = pacientesMap.get(record.paciente_id);
-          if (existing) {
-            pacientesMap.set(record.paciente_id, {
-              ...existing,
-              totalConsultas: existing.totalConsultas + 1,
-            });
-          } else {
-            pacientesMap.set(record.paciente_id, {
-              id: record.paciente.id,
-              full_name: record.paciente.full_name,
-              email: record.paciente.email,
-              totalConsultas: 1,
-            });
+  private cargarPacientesEspecialista(especialistaId: string): void {
+    this.turnosService.obtenerTurnosPorEspecialista(especialistaId)
+      .then((turnos) => {
+        const turnosFinalizados = turnos.filter((t) => t.estado === 'finalizado');
+        this.pacientes.set(this.construirPortfolio(turnosFinalizados));
+        this.isLoading.set(false);
+      })
+      .catch(() => {
+        toast.error('No se pudo cargar el portafolio de pacientes. Intenta nuevamente.');
+        this.isLoading.set(false);
+      });
+  }
+
+  private cargarPacientesAdmin(adminId: string): void {
+    this.medicalRecordsService.getAllRecords()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (records) => {
+          const pacientesMap = new Map<string, PacienteAtendido>();
+
+          for (const record of records) {
+            if (!record.paciente) continue;
+
+            const existing = pacientesMap.get(record.paciente_id);
+            if (existing) {
+              pacientesMap.set(record.paciente_id, {
+                ...existing,
+                totalConsultas: existing.totalConsultas + 1,
+              });
+            } else {
+              pacientesMap.set(record.paciente_id, {
+                id: record.paciente.id,
+                full_name: record.paciente.full_name,
+                email: record.paciente.email,
+                dni: record.paciente.dni,
+                avatar_url: record.paciente.avatar_url ?? undefined,
+                totalConsultas: 1,
+              });
+            }
           }
-        }
 
-        this.pacientes.set(Array.from(pacientesMap.values()));
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-      },
-    });
+          this.pacientes.set(Array.from(pacientesMap.values()));
+          this.isLoading.set(false);
+        },
+        error: () => {
+          toast.error('No se pudieron cargar los pacientes. Intenta nuevamente.');
+          this.isLoading.set(false);
+        },
+      });
   }
 
   /**
-   * Selecciona un paciente y carga su historial clinico completo.
+   * Construye el portafolio deduplicado de pacientes desde turnos.
+   * El correo puede ausentarse tras el endurecimiento RLS de `profiles`.
    *
-   * @param paciente Paciente seleccionado de la lista.
+   * @param turnos Turnos finalizados con relacion de paciente resuelta.
+   * @returns Portafolio deduplicado con conteo de consultas.
    */
-  seleccionarPaciente(paciente: PacienteAtendido): void {
-    this.pacienteSeleccionado.set(paciente);
-    this.cargarHistorialPaciente(paciente.id);
+  private construirPortfolio(
+    turnos: readonly { paciente_id: string; paciente?: { id: string; full_name: string; email?: string; avatar_url?: string | null } }[],
+  ): PacienteAtendido[] {
+    const pacientesMap = new Map<string, PacienteAtendido>();
+
+    for (const turno of turnos) {
+      if (!turno.paciente) continue;
+
+      const existing = pacientesMap.get(turno.paciente_id);
+      if (existing) {
+        pacientesMap.set(turno.paciente_id, {
+          ...existing,
+          totalConsultas: existing.totalConsultas + 1,
+        });
+      } else {
+        pacientesMap.set(turno.paciente_id, {
+          id: turno.paciente.id,
+          full_name: turno.paciente.full_name,
+          email: turno.paciente.email,
+          avatar_url: turno.paciente.avatar_url ?? undefined,
+          totalConsultas: 1,
+        });
+      }
+    }
+
+    return Array.from(pacientesMap.values());
   }
 
-  /**
-   * Carga el historial clinico completo de un paciente.
-   *
-   * @param pacienteId UUID del paciente.
-   */
-  private cargarHistorialPaciente(pacienteId: string): void {
-    this.isLoadingHistorial.set(true);
-    this.historialPaciente.set([]);
+  openDrawer(paciente: PacienteAtendido): void {
+    this.drawerPaciente.set(paciente);
+    this.isDrawerOpen.set(true);
+    this.isDrawerLoading.set(true);
+    this.drawerRecords.set([]);
 
-    this.medicalRecordsService.getHistoryByPatientId(pacienteId).subscribe({
-      next: (records) => {
-        this.historialPaciente.set(records);
-        this.isLoadingHistorial.set(false);
-      },
-      error: () => {
-        this.isLoadingHistorial.set(false);
-      },
-    });
+    this.medicalRecordsService.getHistoryByPatientId(paciente.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (records) => {
+          this.drawerRecords.set(records);
+          this.isDrawerLoading.set(false);
+        },
+        error: () => {
+          toast.error('No se pudo cargar el historial clínico del paciente.');
+          this.isDrawerLoading.set(false);
+        },
+      });
   }
 
-  /**
-   * Maneja el evento input del campo de busqueda.
-   * Actualiza el signal del termino de busqueda para activar el filtrado reactivo.
-   *
-   * @param event Evento de input del campo de texto.
-   */
+  closeDrawer(): void {
+    this.isDrawerOpen.set(false);
+    this.drawerPaciente.set(null);
+    this.drawerRecords.set([]);
+  }
+
   onSearchInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.terminoBusqueda.set(input.value);
+    this.searchQuery.set(input.value);
   }
 
-  /**
-   * Cierra el panel de historial y deselecciona el paciente.
-   */
-  cerrarPanel(): void {
-    this.pacienteSeleccionado.set(null);
-    this.historialPaciente.set([]);
-    this.terminoBusqueda.set('');
+  clearSearch(): void {
+    this.searchQuery.set('');
   }
 }

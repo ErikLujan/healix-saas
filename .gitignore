@@ -64,4 +64,22 @@ coverage/
 *~
 
 # Archivos de configuración de OpenCode
-OpenCode
+.openCode
+opencode.json
+
+# Memoria local del agente y estados temporales (no se versionan).
+# Las reglas (.opencode/rules/), skills (.opencode/skills/) y
+# documentación (.opencode/*.md) SÍ se versionan: demuestran
+# orquestación LLM senior en el portfolio.
+.opencode/memory/
+.opencode/chats/
+.opencode/cache/
+.opencode/*.log
+
+prompt.md
+handoff.md
+
+.playwright-mcp/
+
+# Archivos de configuración de Supabase
+supabase

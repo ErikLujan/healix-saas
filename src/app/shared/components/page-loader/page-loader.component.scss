@@ -2,6 +2,7 @@
   display: block;
 }
 
+/* Contenedor fijo: solo se anima su opacidad (Angular), nunca el filtro. */
 .page-loader-backdrop {
   position: fixed;
   inset: 0;
@@ -9,77 +10,86 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(248, 250, 252, 0.85);
-  backdrop-filter: blur(8px);
-}
-
-.page-loader-shimmer {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(37, 99, 235, 0.03) 0%, transparent 50%);
-  animation: shimmerShift 3s ease-in-out infinite alternate;
+  background-color: rgba(250, 250, 247, 0.82);
+  /* Sin backdrop-filter: el blur a pantalla completa obliga a
+     repintar cada frame y hunde los FPS durante la carga del chunk. */
+  will-change: opacity;
+  contain: strict;
 }
 
 .page-loader-content {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
+  gap: 20px;
 }
 
-.page-loader-ring {
-  width: 100%;
+/* Logo: respiración sutil solo con transform + opacity (GPU). */
+.page-loader-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  animation: healix-breathe 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* Barra indeterminada corporativa: relleno sólido con velocidad constante. */
+.page-loader-bar-track {
+  position: relative;
+  width: 180px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.page-loader-bar-fill {
+  width: 40%;
   height: 100%;
-  animation: premiumSpin 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  border-radius: 9999px;
+  background: var(--color-brand-500);
+  animation: healix-indeterminate 1.4s linear infinite;
+  will-change: transform;
 }
 
-.page-loader-arc {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  border-top-color: #2563eb;
-  border-right-color: rgba(37, 99, 235, 0.3);
+.page-loader-caption {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
 }
 
-.page-loader-dot {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #2563eb;
-  animation: dotPulse 1.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
-}
-
-@keyframes premiumSpin {
-  0% {
-    transform: rotate(0deg);
-  }
+@keyframes healix-breathe {
+  0%,
   100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes dotPulse {
-  0%, 100% {
-    transform: scale(0.6);
-    opacity: 0.4;
+    transform: scale(0.97);
+    opacity: 0.85;
   }
   50% {
-    transform: scale(1);
+    transform: scale(1.02);
     opacity: 1;
   }
 }
 
-@keyframes shimmerShift {
+@keyframes healix-indeterminate {
   0% {
-    opacity: 0.5;
+    transform: translateX(-110%);
   }
   100% {
-    opacity: 1;
+    transform: translateX(280%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loader-logo,
+  .page-loader-bar-fill {
+    animation: none;
+  }
+
+  .page-loader-bar-fill {
+    width: 100%;
+    transform: none;
   }
 }

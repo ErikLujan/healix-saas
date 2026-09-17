@@ -57,12 +57,21 @@ export class AdminUsersService implements OnDestroy {
 
     const { data, error } = await this.supabase.supabase
       .from('profiles')
-      .select('*, pacientes(*), especialistas(*), administradores(*)')
+      .select(`
+        id,
+        email,
+        full_name,
+        avatar_url,
+        role,
+        created_at,
+        pacientes(dni, edad, obra_social),
+        especialistas(dni, edad, is_approved),
+        administradores(dni, edad)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('[AdminUsersService] loadUsers error:', error.message);
-      toast.error('Error al cargar los usuarios');
+      toast.error('No fue posible cargar los usuarios. Por favor, verifica los datos e intenta nuevamente.');
       this.isLoading.set(false);
       return;
     }
@@ -84,8 +93,7 @@ export class AdminUsersService implements OnDestroy {
       .eq('id', userId);
 
     if (error) {
-      console.error('[AdminUsersService] approve error:', error.message);
-      toast.error('Error al aprobar al especialista');
+      toast.error('No fue posible aprobar al especialista. Por favor, verifica los datos e intenta nuevamente.');
       return;
     }
 
@@ -112,8 +120,7 @@ export class AdminUsersService implements OnDestroy {
       .eq('id', userId);
 
     if (error) {
-      console.error('[AdminUsersService] reject error:', error.message);
-      toast.error('Error al rechazar al especialista');
+      toast.error('No fue posible rechazar al especialista. Por favor, verifica los datos e intenta nuevamente.');
       return;
     }
 
@@ -174,7 +181,7 @@ export class AdminUsersService implements OnDestroy {
     });
 
     if (signUpError || !data?.user?.id) {
-      throw new Error(signUpError?.message ?? 'No se pudo crear el usuario');
+      throw new Error('No fue posible crear el usuario. Por favor, verifica los datos e intenta nuevamente.');
     }
 
     const userId = data.user.id;
@@ -189,7 +196,7 @@ export class AdminUsersService implements OnDestroy {
         .upload(filePath, blob, { contentType: 'image/png', upsert: true });
 
       if (uploadError) {
-        throw new Error(uploadError.message);
+        throw new Error('No fue posible subir la imagen de perfil. Por favor, intenta nuevamente.');
       }
 
       const { data: urlData } = tempClient.storage
@@ -211,7 +218,7 @@ export class AdminUsersService implements OnDestroy {
       .eq('id', userId);
 
     if (updateError) {
-      throw new Error(updateError.message);
+      throw new Error('No fue posible guardar los datos del administrador. Por favor, verifica los datos e intenta nuevamente.');
     }
 
     toast.success('Administrador creado exitosamente');

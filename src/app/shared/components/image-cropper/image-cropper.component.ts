@@ -1,13 +1,16 @@
-import { Component, ElementRef, ViewChild, output, signal, input, effect } from '@angular/core';
+import { Component, ElementRef, ViewChild, output, signal, input, effect, HostListener } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'app-image-cropper',
   standalone: true,
+  imports: [DecimalPipe],
   templateUrl: './image-cropper.component.html',
   styleUrl: './image-cropper.component.scss',
 })
 export class ImageCropperComponent {
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('dialog') dialogRef!: ElementRef<HTMLDivElement>;
 
   imageFile = input.required<File>();
   cropped = output<string>();
@@ -22,6 +25,11 @@ export class ImageCropperComponent {
   private lastY = 0;
   private image: HTMLImageElement | null = null;
 
+  private readonly PAN_STEP = 10;
+  private readonly ZOOM_STEP = 0.1;
+  private readonly MIN_SCALE = 1;
+  private readonly MAX_SCALE = 3;
+
   constructor() {
     effect(() => {
       const file = this.imageFile();
@@ -29,6 +37,51 @@ export class ImageCropperComponent {
         this.loadImage(file);
       }
     });
+
+    setTimeout(() => this.dialogRef?.nativeElement?.focus(), 50);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    if (!this.dialogRef?.nativeElement?.contains(document.activeElement) &&
+        document.activeElement !== document.body) {
+      return;
+    }
+
+    let handled = false;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        this.offsetX.set(this.offsetX() + this.PAN_STEP);
+        handled = true;
+        break;
+      case 'ArrowRight':
+        this.offsetX.set(this.offsetX() - this.PAN_STEP);
+        handled = true;
+        break;
+      case 'ArrowUp':
+        this.offsetY.set(this.offsetY() + this.PAN_STEP);
+        handled = true;
+        break;
+      case 'ArrowDown':
+        this.offsetY.set(this.offsetY() - this.PAN_STEP);
+        handled = true;
+        break;
+      case '+':
+      case '=':
+        this.zoomIn();
+        handled = true;
+        break;
+      case '-':
+        this.zoomOut();
+        handled = true;
+        break;
+    }
+
+    if (handled) {
+      event.preventDefault();
+      this.drawImage();
+    }
   }
 
   private loadImage(file: File): void {
@@ -125,5 +178,15 @@ export class ImageCropperComponent {
 
   onCancel(): void {
     this.cancelled.emit();
+  }
+
+  private zoomIn(): void {
+    const next = Math.min(this.scale() + this.ZOOM_STEP, this.MAX_SCALE);
+    this.scale.set(next);
+  }
+
+  private zoomOut(): void {
+    const next = Math.max(this.scale() - this.ZOOM_STEP, this.MIN_SCALE);
+    this.scale.set(next);
   }
 }

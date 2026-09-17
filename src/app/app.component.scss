@@ -1,3 +1,15 @@
 :host {
   display: block;
 }
+
+/*
+ * Contención de las animaciones de ruta: el padre es el único
+ * posicionado, las vistas :enter/:leave se fijan en absolute
+ * dentro de él sin desplazar el layout ni provocar saltos.
+ * overflow: clip evita scrollbars durante el translateY(8px).
+ */
+.route-shell {
+  position: relative;
+  display: block;
+  overflow: clip;
+}

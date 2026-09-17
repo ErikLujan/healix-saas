@@ -1,48 +1,88 @@
-<div class="min-h-screen bg-background flex">
-  <section class="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-blue-50 via-white to-blue-50 relative overflow-hidden h-screen sticky top-0">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(37,99,235,0.08),transparent_60%)]"></div>
-    <div class="relative z-10 flex flex-col justify-between p-12 w-full">
-      <header class="flex items-center gap-3">
-        <img src="assets/images/icono.png" alt="Clínica Online" class="w-10 h-10 rounded-full object-cover" />
-        <div>
-          <p class="text-lg font-bold text-text-primary leading-tight">Clínica Online</p>
-          <p class="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">Health SaaS</p>
-        </div>
-      </header>
+<div class="h-screen w-full overflow-hidden flex flex-col lg:flex-row bg-background">
+  <!-- Left Branding Panel -->
+  <section class="hidden lg:flex lg:w-1/2 h-full overflow-hidden flex-col justify-between p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-teal-50/30 to-cyan-50/20 border-r border-slate-200/60 z-10">
+    <!-- Subtle background pattern -->
+    <div class="absolute inset-0 opacity-[0.03] pointer-events-none"
+         style="background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0); background-size: 32px 32px;">
+    </div>
 
-      <div class="max-w-lg">
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-          <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-          Plataforma médica integral
+    <!-- Logo -->
+    <header class="relative flex items-center gap-2.5 z-10">
+      <img src="assets/images/icono.png" alt="Healix" class="h-8 w-auto rounded-lg object-cover ring-2 ring-white/80 shadow-sm" />
+      <p class="text-base font-bold text-slate-800 font-display tracking-tight">Healix</p>
+    </header>
+
+    <!-- Headline & Copy -->
+    <div class="relative max-w-md z-10 -mt-2">
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200/60 text-teal-700 text-[11px] font-semibold tracking-wide uppercase mb-4">
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse"></span>
+        Plataforma medica integral
+      </div>
+      <h1 class="text-2xl xl:text-3xl font-bold text-slate-900 leading-tight mb-3 font-display tracking-tight">
+        La gestion clinica de tu equipo, <span class="text-teal-700">unificada y simple.</span>
+      </h1>
+      <p class="text-xs xl:text-sm text-slate-600 leading-relaxed font-medium max-w-md">
+        Turnos, historias clinicas, disponibilidad y estadisticas — todo en un solo lugar.
+      </p>
+    </div>
+
+    <!-- Feature Cards: elementos estáticos, sin flotación infinita. -->
+    <div class="relative z-10 space-y-2.5">
+      <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/70 backdrop-blur-md border border-slate-200/50 shadow-sm">
+        <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
-        <h1 class="text-4xl xl:text-5xl font-bold text-text-primary leading-tight mb-4">
-          La gestión clínica de tu equipo, <span class="text-primary">unificada y simple.</span>
-        </h1>
-        <p class="text-lg text-text-secondary leading-relaxed">
-          Turnos, historias clínicas, disponibilidad y estadísticas — todo en un solo lugar, con la experiencia de un producto SaaS moderno.
-        </p>
+        <div>
+          <p class="text-xs font-semibold text-slate-800">HIPAA Certified Security</p>
+          <p class="text-[11px] text-slate-500">Data protection & compliance</p>
+        </div>
       </div>
 
-      <footer class="flex items-center gap-8 text-sm text-text-secondary">
-        <div>
-          <span class="block text-2xl font-bold text-text-primary">1.2k+</span>
-          Pacientes
+      <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/70 backdrop-blur-md border border-slate-200/50 shadow-sm">
+        <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-cyan-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
         <div>
-          <span class="block text-2xl font-bold text-text-primary">89</span>
-          Especialistas
+          <p class="text-xs font-semibold text-slate-800">Instant EHR Sync</p>
+          <p class="text-[11px] text-slate-500">Real-time clinical records</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white/70 backdrop-blur-md border border-slate-200/50 shadow-sm">
+        <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div>
-          <span class="block text-2xl font-bold text-text-primary">4.8<span class="text-primary">&#9733;</span></span>
-          Satisfacción
+          <p class="text-xs font-semibold text-slate-800">Role-Based Access Control</p>
+          <p class="text-[11px] text-slate-500">Patient, specialist & admin</p>
         </div>
-      </footer>
+      </div>
+
+      <div class="flex items-center gap-6 pt-2">
+        <div class="text-center">
+          <span class="block text-lg font-bold text-slate-800 tabular-nums">1.2k+</span>
+          <span class="text-[11px] text-slate-500 font-medium">Pacientes</span>
+        </div>
+        <div class="text-center">
+          <span class="block text-lg font-bold text-slate-800 tabular-nums">89</span>
+          <span class="text-[11px] text-slate-500 font-medium">Especialistas</span>
+        </div>
+        <div class="text-center">
+          <span class="block text-lg font-bold text-slate-800 tabular-nums">4.8<span class="text-teal-500">&#9733;</span></span>
+          <span class="text-[11px] text-slate-500 font-medium">Satisfaccion</span>
+        </div>
+      </div>
     </div>
+
+    <p class="relative z-10 text-[11px] text-slate-400 font-medium">&copy; 2026 Healix</p>
   </section>
 
-  <section class="w-full lg:w-1/2 xl:w-[45%] min-h-screen overflow-y-auto p-6 sm:p-10">
-    <div class="flex items-center justify-center min-h-[calc(100vh-5rem)]">
-      <router-outlet />
+  <!-- Right Form Container -->
+  <section class="w-full lg:w-1/2 h-full overflow-y-auto flex flex-col items-center p-6 sm:p-10 bg-white custom-scrollbar">
+    <div class="w-full max-w-md my-auto py-6 sm:py-8 flex flex-col justify-center">
+      <div class="relative overflow-hidden min-h-[480px]" [@routeAnimations]="animationState()">
+        <router-outlet />
+      </div>
     </div>
   </section>
 </div>

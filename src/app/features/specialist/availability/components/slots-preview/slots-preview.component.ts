@@ -1,16 +1,12 @@
 import { Component, input, computed, inject } from '@angular/core';
 import { DisponibilidadService } from '@core/services/disponibilidad.service';
-import { ConfiguracionDia, DiaSemana } from '@core/models/disponibilidad.model';
-
-interface EspecialidadPerfil {
-  readonly id: string;
-  readonly name: string;
-}
-
-interface DiaInfo {
-  readonly id: DiaSemana;
-  readonly nombre: string;
-}
+import {
+  ConfiguracionDia,
+  DiaSemana,
+  EspecialidadPerfil,
+  DiaInfo,
+  DURACION_SLOT_MINUTOS,
+} from '@core/models/disponibilidad.model';
 
 @Component({
   selector: 'app-slots-preview',
@@ -55,7 +51,44 @@ export class SlotsPreviewComponent {
     this.diasConSlots().reduce((sum, d) => sum + d.slots.length, 0),
   );
 
+  readonly totalHorasSemanales = computed(() => {
+    const totalMinutos = this.totalSlots() * DURACION_SLOT_MINUTOS;
+    return totalMinutos / 60;
+  });
+
+  readonly horasPorEspecialidad = computed(() => {
+    const config = this.configuracion();
+    const acumulador = new Map<string, number>();
+
+    for (const diaConfig of Object.values(config)) {
+      if (!diaConfig.habilitado) continue;
+
+      for (const bloque of diaConfig.bloques) {
+        const minutosInicio = this.parsearAMinutos(bloque.hora_inicio);
+        const minutosFin = this.parsearAMinutos(bloque.hora_fin);
+        const minutos = minutosFin - minutosInicio;
+        const actual = acumulador.get(bloque.especialidad_id) ?? 0;
+        acumulador.set(bloque.especialidad_id, actual + minutos);
+      }
+    }
+
+    const resultado: { readonly nombre: string; readonly horas: number }[] = [];
+    for (const [id, minutos] of acumulador) {
+      const esp = this.especialidades().find(e => e.id === id);
+      if (esp) {
+        resultado.push({ nombre: esp.name, horas: minutos / 60 });
+      }
+    }
+
+    return resultado;
+  });
+
   getNombreEspecialidad(especialidadId: string): string {
     return this.especialidades().find(e => e.id === especialidadId)?.name ?? '';
+  }
+
+  private parsearAMinutos(hora: string): number {
+    const partes = hora.split(':');
+    return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
   }
 }

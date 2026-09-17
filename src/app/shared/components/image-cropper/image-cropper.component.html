@@ -1,12 +1,20 @@
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-  <div class="bg-surface rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden animate-in">
-    <div class="p-6">
+<div
+  #dialog
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Ajustar imagen"
+  tabindex="-1"
+  (keydown.escape)="onCancel()"
+>
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[85vh] flex flex-col overflow-hidden animate-in">
+    <div class="p-6 overflow-y-auto flex-1 min-h-0 flex flex-col items-center justify-center">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-text-primary">Ajustar imagen</h3>
+        <h3 class="text-lg font-semibold text-slate-900">Ajustar imagen</h3>
         <button
           type="button"
           (click)="onCancel()"
-          class="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-background transition-colors"
+          class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-150"
           aria-label="Cerrar"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -16,10 +24,11 @@
         </button>
       </div>
 
-      <div class="relative aspect-square rounded-xl overflow-hidden bg-background border border-border">
+      <div class="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 max-h-[50vh]">
         <canvas
           #canvas
-          class="w-full h-full cursor-move"
+          class="w-full h-full cursor-move object-contain"
+          tabindex="0"
           (mousedown)="startDrag($event)"
           (mousemove)="onDrag($event)"
           (mouseup)="endDrag()"
@@ -27,37 +36,47 @@
           (touchstart)="startDragTouch($event)"
           (touchmove)="onDragTouch($event)"
           (touchend)="endDrag()"
+          aria-label="Arrastra para mover la imagen. Usa las flechas para mover, +/- para zoom."
+          role="application"
         ></canvas>
       </div>
 
       <div class="mt-4 space-y-2">
-        <label class="block text-sm font-medium text-text-primary">Zoom</label>
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium text-slate-700" for="cropper-zoom">Zoom</label>
+          <span class="text-xs text-slate-400 tabular-nums">{{ (scale() * 100) | number:'1.0-0' }}%</span>
+        </div>
         <input
+          id="cropper-zoom"
           type="range"
           [min]="1"
           [max]="3"
           [step]="0.01"
           [value]="scale()"
           (input)="onZoom($event)"
-          class="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
+          class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+          aria-label="Nivel de zoom"
         />
+        <p class="text-xs text-slate-400 hidden sm:block">Flechas para mover &middot; +/- para zoom</p>
       </div>
     </div>
 
-    <div class="flex items-center justify-end gap-3 px-6 py-4 bg-background border-t border-border">
+    <div class="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200 flex-shrink-0">
       <button
         type="button"
         (click)="onCancel()"
-        class="px-4 py-2 text-sm font-medium text-text-secondary hover:text-text-primary
-               bg-surface border border-border rounded-xl hover:bg-background transition-colors"
+        class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800
+               bg-white border border-slate-200 rounded-xl hover:bg-slate-50
+               transition-all duration-150 active:scale-[0.98]"
       >
         Cancelar
       </button>
       <button
         type="button"
         (click)="onCrop()"
-        class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl
-               hover:opacity-90 transition-opacity"
+        class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl
+               shadow-sm shadow-teal-500/20 hover:shadow-md hover:shadow-teal-500/30
+               transition-all duration-150 active:scale-[0.98]"
       >
         Aplicar
       </button>

@@ -13,13 +13,10 @@ import { Pipe, PipeTransform } from '@angular/core';
  * servicios, base de datos ni realiza llamadas HTTP.
  *
  * @example
- * // En una plantilla Angular:
- * // {{ 'Cardiología' | especialidadIcon }}
- * // Salida: "heart-pulse"
+ * En una plantilla Angular, {{ 'Cardiología' | especialidadIcon }} produce "heart-pulse".
  *
  * @example
- * // {{ 'Especialidad Desconocida' | especialidadIcon }}
- * // Salida: "stethoscope"
+ * En una plantilla Angular, {{ 'Especialidad Desconocida' | especialidadIcon }} produce "stethoscope".
  */
 @Pipe({
   name: 'especialidadIcon',
@@ -27,50 +24,33 @@ import { Pipe, PipeTransform } from '@angular/core';
   pure: true,
 })
 export class EspecialidadIconPipe implements PipeTransform {
+  /**
+   * Catálogo normalizado sin tildes ni mayúsculas.
+   * La normalización del input elimina duplicados con y sin acento.
+   */
   private static readonly MAPA_ICONOS: Record<string, string> = {
     'cardiologia': 'heart-pulse',
-    'cardiología': 'heart-pulse',
     'dermatologia': 'scan-face',
-    'dermatología': 'scan-face',
     'pediatria': 'baby',
-    'pediatría': 'baby',
     'traumatologia': 'bone',
-    'traumatología': 'bone',
     'ginecologia': 'heart-handshake',
-    'ginecología': 'heart-handshake',
     'oftalmologia': 'eye',
-    'oftalmología': 'eye',
     'odontologia': 'smile',
-    'odontología': 'smile',
     'clinica': 'stethoscope',
-    'clínica': 'stethoscope',
     'clinica medica': 'stethoscope',
-    'clínica médica': 'stethoscope',
     'neurologia': 'brain',
-    'neurología': 'brain',
     'urologia': 'droplets',
-    'urología': 'droplets',
     'psiquiatria': 'brain',
-    'psiquiatría': 'brain',
     'otorrinolaringologia': 'ear',
-    'otorrinolaringología': 'ear',
     'endocrinologia': 'activity',
-    'endocrinología': 'activity',
     'gastroenterologia': 'pill',
-    'gastroenterología': 'pill',
     'neumologia': 'wind',
-    'neumología': 'wind',
     'reumatologia': 'hand',
-    'reumatología': 'hand',
     'nefrologia': 'droplet',
-    'nefrología': 'droplet',
     'oncologia': 'ribbon',
-    'oncología': 'ribbon',
     'cirugia general': 'scissors',
-    'cirugía general': 'scissors',
     'medicina general': 'stethoscope',
     'clinica general': 'stethoscope',
-    'clínica general': 'stethoscope',
   };
 
   private static readonly ICONO_POR_DEFECTO = 'stethoscope';
@@ -78,7 +58,10 @@ export class EspecialidadIconPipe implements PipeTransform {
   /**
    * Resuelve el identificador del icono Lucide para una especialidad dada.
    *
-   * @param value Nombre de la especialidad medica.
+   * Normaliza tildes y mayúsculas para que las variantes con y sin
+   * acento resuelvan el mismo icono sin duplicar el catálogo.
+   *
+   * @param value Nombre de la especialidad médica.
    * @returns Identificador del icono Lucide o el icono por defecto.
    */
   transform(value: string | null | undefined): string {
@@ -86,8 +69,18 @@ export class EspecialidadIconPipe implements PipeTransform {
       return EspecialidadIconPipe.ICONO_POR_DEFECTO;
     }
 
-    const clave = value.trim().toLowerCase();
+    const clave = EspecialidadIconPipe.normalizar(value);
 
     return EspecialidadIconPipe.MAPA_ICONOS[clave] ?? EspecialidadIconPipe.ICONO_POR_DEFECTO;
+  }
+
+  /**
+   * Normaliza un nombre a minúsculas sin tildes para la búsqueda.
+   *
+   * @param value Texto a normalizar.
+   * @returns Clave normalizada sin diacríticos.
+   */
+  private static normalizar(value: string): string {
+    return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 }

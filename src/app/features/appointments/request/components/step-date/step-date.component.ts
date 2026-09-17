@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { SupabaseService } from '@core/services/supabase.service';
 import { WizardTurnoService } from '../../services/wizard-turno.service';
+import { AppointmentRequestService } from '../../services/appointment-request.service';
 import { DiaSemana } from '@core/models/disponibilidad.model';
 
 interface FechaDisponible {
@@ -29,7 +29,7 @@ const NOMBRES_MESES: Record<number, string> = {
   templateUrl: './step-date.component.html',
 })
 export class StepDateComponent implements OnInit {
-  private readonly supabase = inject(SupabaseService);
+  private readonly requestService = inject(AppointmentRequestService);
   private readonly wizard = inject(WizardTurnoService);
 
   readonly fechasDisponibles = signal<readonly FechaDisponible[]>([]);
@@ -55,7 +55,6 @@ export class StepDateComponent implements OnInit {
   }
 
   async cargarFechasDisponibles(): Promise<void> {
-    this.isLoading.set(true);
     const especialista = this.especialista();
     if (!especialista) {
       this.isLoading.set(false);
@@ -63,35 +62,21 @@ export class StepDateComponent implements OnInit {
     }
 
     const hoy = new Date();
-    const fechas: FechaDisponible[] = [];
+    const fechasRaw = await this.requestService.cargarFechasDisponibles(especialista.id);
 
-    for (let i = 0; i < 15; i++) {
-      const fecha = new Date(hoy);
-      fecha.setDate(hoy.getDate() + i);
+    const fechas: FechaDisponible[] = fechasRaw.map((f, i) => {
+      const [anio, mes, dia] = f.fecha.split('-').map(Number);
+      const fechaDate = new Date(anio, mes - 1, dia);
 
-      const diaSemana = fecha.getDay();
-
-      if (diaSemana === 0) continue;
-
-      const fechaStr = this.formatearFecha(fecha);
-
-      const tieneDisponibilidad = await this.verificarDisponibilidadDia(
-        especialista.id,
-        diaSemana as DiaSemana,
-        fechaStr,
-      );
-
-      if (tieneDisponibilidad) {
-        fechas.push({
-          fecha: fechaStr,
-          diaSemana,
-          diaNombre: NOMBRES_DIAS_CORTOS[diaSemana],
-          diaNumero: fecha.getDate(),
-          mesNombre: NOMBRES_MESES[fecha.getMonth()],
-          esHoy: i === 0,
-        });
-      }
-    }
+      return {
+        fecha: f.fecha,
+        diaSemana: f.diaSemana,
+        diaNombre: NOMBRES_DIAS_CORTOS[f.diaSemana],
+        diaNumero: dia,
+        mesNombre: NOMBRES_MESES[fechaDate.getMonth()],
+        esHoy: i === 0,
+      };
+    });
 
     this.fechasDisponibles.set(Object.freeze(fechas));
     this.isLoading.set(false);
@@ -99,72 +84,5 @@ export class StepDateComponent implements OnInit {
 
   seleccionar(fecha: FechaDisponible): void {
     this.wizard.seleccionarFecha(fecha.fecha);
-  }
-
-  private async verificarDisponibilidadDia(
-    especialistaId: string,
-    diaSemana: DiaSemana,
-    fechaStr: string,
-  ): Promise<boolean> {
-    const { data } = await this.supabase.supabase
-      .from('disponibilidad_especialista')
-      .select('id')
-      .eq('especialista_id', especialistaId)
-      .eq('dia_semana', diaSemana)
-      .limit(1);
-
-    if (!data || data.length === 0) return false;
-
-    const startOfDay = `${fechaStr}T00:00:00.000Z`;
-    const endOfDay = `${fechaStr}T23:59:59.999Z`;
-
-    const { data: turnosOcupados } = await this.supabase.supabase
-      .from('turnos')
-      .select('id')
-      .eq('especialista_id', especialistaId)
-      .gte('fecha_hora', startOfDay)
-      .lte('fecha_hora', endOfDay)
-      .not('estado', 'in', '(cancelado,rechazado)');
-
-    if (turnosOcupados && turnosOcupados.length > 0) {
-      const { data: todosBloques } = await this.supabase.supabase
-        .from('disponibilidad_especialista')
-        .select('hora_inicio, hora_fin')
-        .eq('especialista_id', especialistaId)
-        .eq('dia_semana', diaSemana);
-
-      if (!todosBloques || todosBloques.length === 0) return false;
-
-      const totalSlots = this.calcularTotalSlots(todosBloques);
-      const slotsOcupados = turnosOcupados.length;
-
-      return slotsOcupados < totalSlots;
-    }
-
-    return true;
-  }
-
-  private calcularTotalSlots(bloques: Array<Record<string, string>>): number {
-    let total = 0;
-    for (const bloque of bloques) {
-      const inicio = bloque['hora_inicio'];
-      const fin = bloque['hora_fin'];
-      const minutosInicio = this.parsearMinutos(inicio);
-      const minutosFin = this.parsearMinutos(fin);
-      total += Math.floor((minutosFin - minutosInicio) / 30);
-    }
-    return total;
-  }
-
-  private parsearMinutos(hora: string): number {
-    const [horas, minutos] = hora.split(':').map(Number);
-    return horas * 60 + minutos;
-  }
-
-  private formatearFecha(fecha: Date): string {
-    const anio = fecha.getFullYear();
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    return `${anio}-${mes}-${dia}`;
   }
 }

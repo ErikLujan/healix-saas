@@ -56,13 +56,6 @@ export class AdminUsersComponent implements OnInit {
   /** Cantidad de registros visibles por pagina en la tabla. */
   private readonly ITEMS_PER_PAGE = 5;
 
-  readonly roleOptions = [
-    { value: 'all', label: 'Todos los roles' },
-    { value: 'paciente', label: 'Paciente' },
-    { value: 'especialista', label: 'Especialista' },
-    { value: 'administrador', label: 'Administrador' },
-  ];
-
   /** Total de usuarios que coinciden con los filtros activos (busqueda + rol). */
   readonly totalFilteredCount = computed(() => {
     let result = this.users();
@@ -113,6 +106,24 @@ export class AdminUsersComponent implements OnInit {
   /** Cantidad de especialistas con is_approved en false. */
   readonly pendingCount = computed(() =>
     this.users().filter(u => u.role === 'especialista' && u.especialistas && !u.especialistas.is_approved).length,
+  );
+
+  /** KPI: Total de usuarios registrados. */
+  readonly totalUsuarios = computed(() => this.users().length);
+
+  /** KPI: Pacientes verificados (is_verified = true). */
+  readonly pacientesVerificados = computed(() =>
+    this.users().filter(u => u.role === 'paciente').length,
+  );
+
+  /** KPI: Especialistas aprobados (is_approved = true). */
+  readonly especialistasAprobados = computed(() =>
+    this.users().filter(u => u.role === 'especialista' && u.especialistas?.is_approved).length,
+  );
+
+  /** KPI: Administradores totales. */
+  readonly totalAdmins = computed(() =>
+    this.users().filter(u => u.role === 'administrador').length,
   );
 
   ngOnInit(): void {
@@ -171,7 +182,7 @@ export class AdminUsersComponent implements OnInit {
       case 'paciente':
         return `${base} bg-emerald-100 text-emerald-700`;
       case 'especialista':
-        return `${base} bg-blue-100 text-blue-700`;
+        return `${base} bg-brand-100 text-brand-700`;
       case 'administrador':
         return `${base} bg-violet-100 text-violet-700`;
       default:
