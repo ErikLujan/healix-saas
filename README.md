@@ -1,6 +1,6 @@
-# Healix — Plataforma de Gestión Médica Integral
+# Healix — SaaS Clínico Reactivo (Portfolio de Ingeniería)
 
-> SaaS B2B para la operación diaria de centros de salud: agenda automatizada, historias clínicas dinámicas y control de acceso estricto por rol, todo en tiempo real.
+> Portfolio de ingeniería frontend: SaaS clínico funcional construido con Angular 19 standalone, reactividad basada en Signals y Supabase (Auth, PostgreSQL, RLS, Realtime, Storage).
 
 ![Angular 19](https://img.shields.io/badge/Angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
@@ -12,13 +12,13 @@
 
 ## Resumen
 
-**Healix** es una plataforma SaaS de gestión médica que digitaliza el ciclo completo de atención de una clínica: captación del paciente desde la landing pública, reserva de turnos con disponibilidad en tiempo real, atención del especialista con historia clínica electrónica y auditoría administrativa con reportes exportables.
+**Healix** es un SaaS clínico que digitaliza el ciclo completo de atención: captación desde la landing pública, reserva de turnos con disponibilidad en tiempo real, atención del especialista con historia clínica electrónica y auditoría administrativa con reportes exportables.
 
-El producto está diseñado con una arquitectura frontend modular y un modelo Backend-as-a-Service, lo que permite desplegar rápidamente, escalar por dominios funcionales y mantener costos operativos predecibles.
+El proyecto se presenta como pieza de portfolio de ingeniería: arquitectura frontend modular por dominios, modelo Backend-as-a-Service y decisiones explícitas de seguridad, rendimiento y SEO técnico.
 
 **Propuesta de valor:**
 
-- **Control de acceso basado en roles (RBAC):** Administrador, Especialista y Paciente, con permisos aplicados tanto en la interfaz como a nivel de base de datos.
+- **Control de acceso basado en roles (RBAC):** Administrador, Especialista y Paciente, con permisos aplicados en la interfaz y a nivel de base de datos.
 - **Agenda automatizada:** generación de bloques de atención de 30 minutos, verificación de conflictos y liberación automática de horarios.
 - **Historia clínica electrónica flexible:** signos vitales estructurados más datos clínicos dinámicos por especialidad (persistencia JSONB).
 - **Reportes ejecutivos:** tableros analíticos con exportación a PDF y Excel.
@@ -58,24 +58,45 @@ El producto está diseñado con una arquitectura frontend modular y un modelo Ba
 
 | Tecnología | Uso |
 |---|---|
-| Angular 19 (standalone, strict mode) | Framework SPA, componentes sin NgModules |
-| Angular Signals + `computed()` | Estado reactivo y derivaciones en memoria |
+| Angular 19 (Standalone API, strict mode) | SPA modular sin NgModules |
+| Signals (`signal`, `computed`) | Reactividad de grano fino y estado derivado |
+| Control Flow nativo (`@if`, `@for`, `@switch`) | Render condicional y listas con `track` estable |
 | Angular Router (lazy loading) | Carga diferida por dominio funcional |
 | Reactive Forms tipados | Registro multiperfil y formularios clínicos |
-| Tailwind CSS v4 + SCSS aislado | Utilidades + estilos específicos por componente |
-| Lucide Angular | Sistema único de iconografía |
 | Chart.js + ng2-charts | Tableros analíticos interactivos |
 | jsPDF + SheetJS (`xlsx`) | Exportación de reportes PDF/Excel |
 | ngx-sonner | Notificaciones semánticas |
 
-### Backend-as-a-Service (Supabase)
+```text
+Frontend: Angular 19 · Standalone API · Signals · Control Flow · Lazy Loading
+```
+
+### Backend y base de datos (Supabase)
 
 | Servicio | Uso |
 |---|---|
 | Supabase Auth | Identidad centralizada, sesiones y metadatos por rol |
 | Supabase PostgreSQL | Persistencia relacional con triggers de sincronización de perfiles |
 | Row Level Security (RLS) | Autorización a nivel de fila por propietario y rol |
+| Supabase Realtime | Sincronización en vivo (p. ej. grilla de administración) |
 | Supabase Storage | Avatares y documentos (`avatars/{UUID}/...`) |
+
+```text
+Backend: Supabase · PostgreSQL · RLS · Realtime · Storage · Auth
+```
+
+### Estilos e interfaz
+
+| Tecnología | Uso |
+|---|---|
+| Tailwind CSS v4 + SCSS aislado | Utilidades más estilos específicos por componente (`styleUrl`) |
+| Design tokens (CSS variables) | Colores, espaciados, radios, sombras y transiciones |
+| Lucide Icons (lucide-angular) | Sistema único de iconografía, sin emojis como iconos |
+| Animaciones CSS puras | Propiedades aceleradas por GPU (`transform`, `opacity`) con curvas `cubic-bezier` |
+
+```text
+UI: Tailwind v4 · SCSS por componente · Tokens · Lucide · CSS GPU-first
+```
 
 ### Calidad y pruebas
 
@@ -83,12 +104,12 @@ El producto está diseñado con una arquitectura frontend modular y un modelo Ba
 |---|---|
 | TypeScript en modo estricto | Prohibido `any`; tipos de dominio explícitos |
 | Suite E2E con Playwright | Cobertura de flujos críticos: autenticación, solicitud de turnos y reportes |
-| Filtrado in-memory reactivo | Búsqueda instantánea (< 1 ms) sin round-trips innecesarios |
+| Filtrado in-memory reactivo | Búsqueda instantánea sin round-trips innecesarios |
 | Paginación compartida | Componente genérico reutilizado en turnos y administración |
 
 ### Estructura del proyecto
 
-Arquitectura orientada a dominios (Domain-Driven Architecture) sobre Angular 19 en modo standalone: sin `NgModule`, con componentes autónomos, control flow nativo (`@if`, `@for`, `@switch`) y estado reactivo con Signals. Cada dominio de negocio vive aislado en su propia carpeta bajo `features/` y expone sus rutas mediante lazy loading, de modo que el bundle inicial solo contiene el shell y la landing.
+Arquitectura orientada a dominios sobre Angular 19 standalone: sin `NgModule`, con componentes autónomos, control flow nativo y estado reactivo con Signals. Cada dominio de negocio vive aislado en su propia carpeta bajo `features/` y expone sus rutas mediante lazy loading, de modo que el bundle inicial solo contiene el shell y la landing.
 
 ```text
 src/
@@ -125,7 +146,7 @@ src/
     │       └── route-animations.ts # Transiciones :enter/:leave por ruta
     ├── features/                # Dominios de negocio aislados (100 % lazy-loaded)
     │   ├── landing/             # Página pública de captación
-    │   ├── authentication/      # Login y registro multiperfil con captcha
+    │   ├── authentication/      # Login, registro multiperfil, captcha y recuperación aislada
     │   ├── approval-pending/    # Sala de espera de aprobación/verificación
     │   ├── dashboard/           # Panel principal según rol
     │   ├── appointments/        # Reserva (wizard en 5 pasos) y gestión de turnos
@@ -153,7 +174,7 @@ src/
     │   │   ├── file-upload/         # Subida de documentos a Storage
     │   │   ├── page-loader/         # Barra indeterminada corporativa global
     │   │   ├── pagination/          # Paginador genérico (turnos, admin)
-    │   │   └── clinical-controls/   # Controles clínicos del Sprint 5 (EVA, FC, alergias)
+    │   │   └── clinical-controls/   # Controles clínicos (EVA, FC, alergias)
     │   ├── pipes/
     │   │   ├── estado-turno-color.pipe.ts  # Color semántico por estado del turno
     │   │   ├── fecha-format.pipe.ts        # Formato es-AR de fechas clínicas
@@ -181,6 +202,32 @@ src/
 **`src/app/layouts/` — shells según sesión.** `auth-layout` envuelve las vistas públicas (landing, autenticación, registro, legales) y `dashboard-layout` envuelve el área privada (sidebar, barra superior y outlet donde se montan los dominios). El `app.routes.ts` decide el shell por estado de sesión combinado con `authGuard`.
 
 **`src/environments/` — aislamiento de configuración.** `environment.ts` (desarrollo) y `environment.prod.ts` (producción, con reemplazo automático en build) concentran las únicas credenciales que el frontend conoce: URL del proyecto y clave pública `anon`. La clave de servicio jamás llega al cliente; la autorización real vive en las políticas RLS de PostgreSQL.
+
+---
+
+## Preparación para producción y estabilización
+
+Fase final de endurecimiento: la aplicación se estabiliza como pieza de portfolio con criterios verificables de seguridad, indexabilidad y coherencia visual.
+
+### Seguridad avanzada de autenticación
+
+- **Flujo de recuperación aislado en lienzo en blanco:** las rutas `/recuperar-password` y `/actualizar-password` viven fuera de cualquier layout con encabezado para evitar fugas visuales de sesión.
+- **Política estricta unificada de 8 caracteres:** login, registro y actualización de contraseña exigen `Validators.minLength(8)` con confirmación de coincidencia exacta.
+- **Respuesta genérica anti-enumeración:** la solicitud de recuperación no revela si la cuenta existe.
+- **Cierre de sesión forzado tras el cambio:** la actualización válida cierra la sesión y redirige a `/autenticacion`.
+
+### SEO técnico e indexabilidad
+
+- **Metadatos Open Graph y Twitter Card:** título, descripción e imagen (`clinica-foto.webp`) definidos en `src/index.html`.
+- **Landmarks semánticos:** `<main>` con secciones etiquetadas mediante `aria-labelledby` en landing, legales y recuperación.
+- **Optimización de LCP:** imagen hero en formato WebP con dimensiones explícitas y `theme-color` corporativo (`#0f766e`).
+- **Control de rastreo:** `public/robots.txt` permite la zona pública (`/`, `/terminos`, `/privacidad`) y bloquea rutas privadas (`/autenticacion`, `/panel-principal`, `/turnos`, `/historial-clinico`, `/administracion`, `/estadisticas`, `/perfil`).
+
+### Código limpio y erradicación de AI-slop
+
+- **Sin métricas ficticias ni patrones robóticos:** se eliminan cifras inventadas y bloques genéricos en favor de contenido verificable del dominio.
+- **Sistema cohesivo sobrio con acento Deep Teal:** jerarquía contenida, espaciado consistente y `#0f766e` como color de acción y marca.
+- **Convenciones estrictas sostenidas:** componentes standalone con `templateUrl` y `styleUrl` aislados, `inject()` en lugar de inyección por constructor, `input()`/`output()` tipados y prohibición total de `any`.
 
 ---
 

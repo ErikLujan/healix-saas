@@ -60,9 +60,9 @@
     <div>
       <div class="flex items-center justify-between mb-1.5">
         <label for="password" class="text-sm font-medium text-slate-700">Contraseña <span class="text-red-500">*</span></label>
-        <button type="button" class="text-xs text-teal-600 font-medium hover:text-teal-700 transition-colors">
+        <a routerLink="/recuperar-password" class="text-xs text-teal-600 font-medium hover:text-teal-700 transition-colors">
           Olvidaste tu contraseña?
-        </button>
+        </a>
       </div>
       <div class="relative">
         <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
@@ -99,7 +99,7 @@
           @if (form.get('password')?.errors?.['required']) {
             La contraseña es requerida
           } @else if (form.get('password')?.errors?.['minlength']) {
-            La contraseña debe tener al menos 6 caracteres
+            La contraseña debe tener al menos 8 caracteres
           }
         </p>
       }

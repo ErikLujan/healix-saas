@@ -1,6 +1,6 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { User, AuthError } from '@supabase/supabase-js';
+import { User, AuthError, Session } from '@supabase/supabase-js';
 import { SupabaseService } from './supabase.service';
 import { toast } from 'ngx-sonner';
 import { Database } from '../models/database.types';
@@ -205,6 +205,48 @@ export class AuthService {
     }
 
     return { userId: data.user?.id ?? null, error: null };
+  }
+
+  /**
+   * Solicita el correo de recuperación de contraseña mediante Supabase Auth.
+   *
+   * Redirige el enlace del correo hacia la ruta aislada de actualización
+   * para evitar fugas visuales de sesión en layouts con encabezado.
+   * El mensaje de éxito es deliberadamente genérico para no revelar
+   * si la cuenta existe (prevención de enumeración de usuarios).
+   *
+   * @param email Correo electrónico donde enviar el enlace de recuperación.
+   * @returns Objeto con el error de autenticación o null si la solicitud fue aceptada.
+   */
+  async requestPasswordReset(email: string): Promise<{ error: AuthError | null }> {
+    const redirectTo = `${window.location.origin}/actualizar-password`;
+    const { error } = await this.supabase.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+
+    if (error) {
+      const message = this.mapAuthError(error.message);
+      toast.error(message);
+      return { error };
+    }
+
+    return { error: null };
+  }
+
+  /**
+   * Obtiene la sesión activa actual, útil para validar el enlace
+   * de recuperación antes de permitir el cambio de contraseña.
+   *
+   * Supabase establece la sesión automáticamente al abrir el enlace
+   * del correo, por lo que una sesión ausente indica un enlace
+   * inválido, expirado o ya utilizado.
+   *
+   * @returns Sesión activa o null cuando no existe.
+   */
+  async getRecoverySession(): Promise<Session | null> {
+    await this.sessionReady;
+    const { data: { session } } = await this.supabase.supabase.auth.getSession();
+    return session;
   }
 
   /**

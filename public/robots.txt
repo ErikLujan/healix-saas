@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /terminos
+Allow: /privacidad
+
+Disallow: /autenticacion
+Disallow: /aprobacion-pendiente
+Disallow: /panel-principal
+Disallow: /pacientes
+Disallow: /especialistas
+Disallow: /disponibilidad
+Disallow: /turnos
+Disallow: /historial-clinico
+Disallow: /administracion
+Disallow: /estadisticas
+Disallow: /perfil

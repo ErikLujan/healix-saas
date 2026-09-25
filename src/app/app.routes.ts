@@ -28,6 +28,24 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'recuperar-password',
+    loadComponent: () =>
+      import('@features/authentication/pages/recovery-request/recovery-request.component').then(
+        (m) => m.RecoveryRequestComponent,
+      ),
+    title: 'Healix | Recuperar contraseña',
+    data: { animation: 'recovery-request' },
+  },
+  {
+    path: 'actualizar-password',
+    loadComponent: () =>
+      import('@features/authentication/pages/recovery-update/recovery-update.component').then(
+        (m) => m.RecoveryUpdateComponent,
+      ),
+    title: 'Healix | Actualizar contraseña',
+    data: { animation: 'recovery-update' },
+  },
+  {
     path: 'aprobacion-pendiente',
     loadComponent: () =>
       import('@features/approval-pending/approval-pending.component').then(

@@ -148,7 +148,7 @@
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
                     @if (user.avatar_url) {
-                      <img [src]="user.avatar_url" [alt]="user.full_name" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
+                      <img [src]="user.avatar_url" [alt]="user.full_name" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
                     } @else {
                       <span class="text-xs font-bold text-brand-700">{{ getInitials(user.full_name) }}</span>
                     }
