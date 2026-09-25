@@ -3,7 +3,7 @@
        (click)="onBackdropClick($event)"
        role="dialog" aria-modal="true" aria-label="Reseña médica">
     <div class="w-full max-w-lg bg-surface rounded-2xl shadow-2xl border border-divider overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-divider">
+      <div class="flex items-center justify-between px-4 py-4 sm:px-6 border-b border-divider">
         <h3 class="text-lg font-bold text-text-primary">Reseña Médica</h3>
         <button type="button" (click)="cerrar()"
           class="p-1.5 rounded-xl text-text-subtle hover:text-danger hover:bg-danger/10 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/20 active:scale-95"
@@ -11,10 +11,10 @@
           <svg lucideIcon="x" class="w-5 h-5"></svg>
         </button>
       </div>
-      <div class="px-6 py-5">
+      <div class="px-4 py-5 sm:px-6">
         <p class="text-sm text-text-primary leading-relaxed tracking-wide whitespace-pre-wrap">{{ resenaTexto() }}</p>
       </div>
-      <div class="px-6 py-3 border-t border-divider bg-background/50 flex justify-end">
+      <div class="px-4 py-3 sm:px-6 border-t border-divider bg-background/50 flex justify-end">
         <button type="button" (click)="cerrar()"
           class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-brand-700/90 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:ring-offset-2">
           Cerrar

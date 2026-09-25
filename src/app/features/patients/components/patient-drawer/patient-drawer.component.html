@@ -9,7 +9,7 @@
     role="dialog" aria-modal="true" [attr.aria-label]="'Historia clínica de ' + (paciente()?.full_name ?? '')">
 
     <!-- Header -->
-    <div class="flex items-center justify-between border-b border-divider px-6 py-4 flex-shrink-0">
+    <div class="flex items-center justify-between border-b border-divider px-4 py-4 sm:px-6 flex-shrink-0">
       <div class="flex items-center gap-3 min-w-0">
         @if (paciente()?.avatar_url) {
           <img [src]="paciente()!.avatar_url" [alt]="paciente()!.full_name" width="40" height="40" loading="lazy" decoding="async"
@@ -38,7 +38,7 @@
     </div>
 
     <!-- Body -->
-    <div class="flex-1 overflow-y-auto px-6 py-5">
+    <div class="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
       @if (isLoading()) {
         <div class="space-y-4">
           @for (i of [1,2,3]; track i) {

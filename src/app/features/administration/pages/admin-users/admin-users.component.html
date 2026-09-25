@@ -57,13 +57,13 @@
   </div>
 
   <!-- Role Filter Tabs -->
-  <div class="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit" role="tablist" aria-label="Filtrar por rol">
+  <div class="flex max-w-full items-center gap-1 overflow-x-auto p-1 bg-slate-100 rounded-xl w-fit" role="tablist" aria-label="Filtrar por rol">
     <button
       type="button"
       role="tab"
       [attr.aria-selected]="selectedRole() === 'all'"
       (click)="onRoleChange('all')"
-      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
       [class]="selectedRole() === 'all'
         ? 'bg-white text-text-primary shadow-sm'
         : 'text-text-secondary hover:text-text-primary'"
@@ -75,7 +75,7 @@
       role="tab"
       [attr.aria-selected]="selectedRole() === 'paciente'"
       (click)="onRoleChange('paciente')"
-      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
       [class]="selectedRole() === 'paciente'
         ? 'bg-white text-text-primary shadow-sm'
         : 'text-text-secondary hover:text-text-primary'"
@@ -87,7 +87,7 @@
       role="tab"
       [attr.aria-selected]="selectedRole() === 'especialista'"
       (click)="onRoleChange('especialista')"
-      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
       [class]="selectedRole() === 'especialista'
         ? 'bg-white text-text-primary shadow-sm'
         : 'text-text-secondary hover:text-text-primary'"
@@ -99,7 +99,7 @@
       role="tab"
       [attr.aria-selected]="selectedRole() === 'administrador'"
       (click)="onRoleChange('administrador')"
-      class="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+      class="shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
       [class]="selectedRole() === 'administrador'
         ? 'bg-white text-text-primary shadow-sm'
         : 'text-text-secondary hover:text-text-primary'"

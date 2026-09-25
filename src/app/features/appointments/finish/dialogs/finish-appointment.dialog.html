@@ -156,7 +156,7 @@
                 @for (dato of datosDinamicos.controls; track $index; let i = $index) {
                   <div [formGroup]="datoDinamicoEn(i)"
                     class="flex items-start gap-2 p-3 rounded-lg border border-divider bg-background/50">
-                    <div class="flex-1 grid grid-cols-2 gap-2">
+                    <div class="flex-1 grid grid-cols-1 min-[400px]:grid-cols-2 gap-2">
                       <div>
                         <input type="text" formControlName="clave" placeholder="Clave (ej: Colesterol)"
                           [ngClass]="{

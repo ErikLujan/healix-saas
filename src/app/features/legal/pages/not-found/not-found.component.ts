@@ -9,7 +9,7 @@ import { Location } from '@angular/common';
   template: `
     <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
       <div class="text-center max-w-md">
-        <p class="text-[8rem] font-bold text-brand-700 leading-none font-display tabular-nums">404</p>
+        <p class="text-7xl sm:text-8xl font-bold text-brand-700 leading-none font-display tabular-nums">404</p>
         <h1 class="text-xl font-semibold text-fg mt-4 mb-2">Página no encontrada</h1>
         <p class="text-sm text-fg-muted mb-8">
           La página que está buscando no existe o ha sido movida.

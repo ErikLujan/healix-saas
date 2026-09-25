@@ -255,29 +255,29 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
               </button>
             </div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse" role="table" aria-label="Log de accesos al sistema">
+          <div class="w-full overflow-x-auto -mx-5 px-5">
+            <table class="w-full min-w-[640px] text-left border-collapse" role="table" aria-label="Log de accesos al sistema">
               <caption class="sr-only">Registro de ingresos recientes al sistema</caption>
               <thead>
                 <tr class="border-b border-slate-200">
-                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider">Usuario</th>
-                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider">Email</th>
-                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider">Rol</th>
-                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider">Fecha/Hora</th>
+                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Usuario</th>
+                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Email</th>
+                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Rol</th>
+                  <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Fecha/Hora</th>
                 </tr>
               </thead>
               <tbody>
                 @for (entry of paginatedAccessLogs(); track entry.userId) {
                   <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-                    <td class="py-3 px-3 text-text-primary font-medium">{{ entry.fullName }}</td>
-                    <td class="py-3 px-3 text-text-secondary">{{ entry.email }}</td>
-                    <td class="py-3 px-3">
+                    <td class="py-3 px-3 text-text-primary font-medium whitespace-nowrap">{{ entry.fullName }}</td>
+                    <td class="py-3 px-3 text-text-secondary max-w-[220px] truncate">{{ entry.email }}</td>
+                    <td class="py-3 px-3 whitespace-nowrap">
                       <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full"
                         [class]="getRoleBadgeClass(entry.role)">
                         {{ entry.role | titlecase }}
                       </span>
                     </td>
-                    <td class="py-3 px-3 text-text-secondary tabular-nums text-sm">{{ formatDate(entry.loginAt) }}</td>
+                    <td class="py-3 px-3 text-text-secondary tabular-nums text-sm whitespace-nowrap">{{ formatDate(entry.loginAt) }}</td>
                   </tr>
                 } @empty {
                   <tr>
@@ -289,8 +289,8 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </div>
           @if (stats.accessLogs().length > logsPageSize()) {
             <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100">
-              <p class="text-xs text-text-subtle tabular-nums">{{ logsRangeText() }}</p>
-              <div class="flex items-center gap-1">
+              <p class="text-center text-xs text-text-subtle tabular-nums sm:text-left">{{ logsRangeText() }}</p>
+              <div class="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-x-auto">
                 <button type="button" (click)="prevLogsPage()" [disabled]="logsPage() === 1"
                   class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-text-secondary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                   Anterior

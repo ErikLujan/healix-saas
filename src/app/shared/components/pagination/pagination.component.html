@@ -1,10 +1,10 @@
 @if (totalPages() > 1) {
   <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-divider">
-    <p class="text-sm text-text-secondary">
+    <p class="text-center text-sm text-text-secondary sm:text-left">
       Mostrando del {{ paginationRange().start }} al {{ paginationRange().end }} de {{ paginationRange().total }}
     </p>
 
-    <div class="flex items-center gap-1.5">
+    <div class="flex max-w-full flex-wrap items-center justify-center gap-1.5 overflow-x-auto">
       <button
         type="button"
         (click)="goToPreviousPage()"
