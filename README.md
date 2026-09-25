@@ -28,7 +28,7 @@ El proyecto se presenta como pieza de portfolio de ingeniería: arquitectura fro
 ## Showcase visual
 
 ### Landing page de Healix
-<img width="1920" height="1080" alt="01-landing" src="https://github.com/user-attachments/assets/7dcc7cf7-48b4-40a8-835b-c1efc7358dce" />
+<img width="1896" height="879" alt="image" src="https://github.com/user-attachments/assets/1a31310f-c864-4829-a368-b86fe929422a" />
 
 | Panel de administración | Agenda del especialista |
 |---|---|
