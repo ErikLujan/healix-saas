@@ -4,30 +4,26 @@
      ══════════════════════════════════════════════════════════════════════ -->
 
 <!-- ─── NAVIGATION ─────────────────────────────────────────────────────── -->
-<header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" [ngClass]="headerClass()">
-  <nav class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+<header class="fixed top-0 left-0 right-0 z-50 transition-colors duration-300" [ngClass]="headerClass()">
+  <nav aria-label="Navegación principal" class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
     <!-- Brand -->
-    <a routerLink="/" class="flex items-center gap-2.5">
-      <img src="assets/images/icono.png" alt="Healix"
+    <a routerLink="/" class="flex items-center gap-2.5" aria-label="Healix, inicio">
+      <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async"
         class="h-9 w-auto object-contain transition-transform duration-200 hover:scale-105" />
-      <span class="text-lg font-bold tracking-tight text-slate-900">Healix</span>
+      <span class="brand-logo-text text-xl transition-colors duration-300" [ngClass]="brandTextClass()">Healix</span>
     </a>
 
     <!-- Desktop nav — Unauthenticated -->
     @if (!isAuthenticated()) {
     <div class="hidden items-center gap-6 md:flex">
-      <a (click)="scrollToSection($event, 'especialidades')"
-        class="cursor-pointer text-sm font-medium text-slate-700 transition-colors hover:text-teal-600">
+      <button type="button" (click)="scrollToSection($event, 'especialidades')"
+        class="cursor-pointer bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" [ngClass]="navLinkClass()">
         Especialidades
-      </a>
-      <a (click)="scrollToSection($event, 'servicios')"
-        class="cursor-pointer text-sm font-medium text-slate-700 transition-colors hover:text-teal-600">
+      </button>
+      <button type="button" (click)="scrollToSection($event, 'servicios')"
+        class="cursor-pointer bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600" [ngClass]="navLinkClass()">
         Servicios
-      </a>
-      <a (click)="scrollToSection($event, 'seguridad')"
-        class="cursor-pointer text-sm font-medium text-slate-700 transition-colors hover:text-teal-600">
-        Seguridad
-      </a>
+      </button>
       <a routerLink="/autenticacion"
         class="rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-teal-700 active:scale-95">
         Iniciar sesión
@@ -44,28 +40,28 @@
       </a>
       <div class="flex items-center gap-2">
         @if (userProfile()?.avatar_url) {
-        <img [src]="userProfile()!.avatar_url" [alt]="userProfile()!.full_name"
+        <img [src]="userProfile()!.avatar_url" [alt]="userProfile()!.full_name" width="32" height="32" loading="lazy" decoding="async"
           class="h-8 w-8 rounded-full object-cover ring-2 ring-slate-200" />
         } @else {
         <div class="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">
           {{ getInitials(userProfile()?.full_name ?? 'U') }}
         </div>
         }
-        <span class="text-sm font-medium text-slate-700">
+        <span class="text-sm font-medium transition-colors duration-300" [ngClass]="userNameClass()">
           {{ userProfile()?.full_name }}
         </span>
       </div>
       <button (click)="signOut()"
-        class="cursor-pointer rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-        title="Cerrar sesión">
+        class="cursor-pointer rounded-lg p-2 transition-colors duration-300" [ngClass]="iconButtonClass()"
+        title="Cerrar sesión" aria-label="Cerrar sesión">
         <svg lucideLogOut class="h-4 w-4"></svg>
       </button>
     </div>
     }
 
     <!-- Mobile toggle -->
-    <button (click)="toggleMobileMenu()" aria-label="Abrir menú"
-      class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 md:hidden">
+    <button (click)="toggleMobileMenu()" [attr.aria-label]="isMobileMenuOpen() ? 'Cerrar menú' : 'Abrir menú'" [attr.aria-expanded]="isMobileMenuOpen()"
+      class="inline-flex h-10 w-10 items-center justify-center rounded-lg border shadow-sm transition-colors duration-300 md:hidden" [ngClass]="mobileToggleClass()">
       @if (isMobileMenuOpen()) {
       <svg lucideX class="h-5 w-5"></svg>
       } @else {
@@ -79,18 +75,14 @@
   <div class="border-t border-slate-200 bg-white/95 backdrop-blur-xl px-6 py-4 md:hidden" (click)="closeMobileMenu()">
     <div class="flex flex-col gap-3">
       @if (!isAuthenticated()) {
-      <a (click)="scrollToSection($event, 'especialidades')"
-        class="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+      <button type="button" (click)="scrollToSection($event, 'especialidades')"
+        class="w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
         Especialidades
-      </a>
-      <a (click)="scrollToSection($event, 'servicios')"
-        class="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+      </button>
+      <button type="button" (click)="scrollToSection($event, 'servicios')"
+        class="w-full cursor-pointer rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">
         Servicios
-      </a>
-      <a (click)="scrollToSection($event, 'seguridad')"
-        class="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-        Seguridad
-      </a>
+      </button>
       <hr class="border-slate-200" />
       <a routerLink="/autenticacion"
         class="rounded-xl bg-teal-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm">
@@ -111,235 +103,78 @@
   }
 </header>
 
-<!-- ─── HERO SECTION — Light Clinical Mode ─────────────────────────────── -->
-<section id="hero"
-  class="relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-50/60 via-slate-50 to-white pt-24 pb-16 lg:pt-28 lg:pb-20">
+<main id="contenido-principal">
+<!-- ─── HERO SECTION — Editorial con imagen semántica ─────────────────── -->
+<section id="hero" aria-labelledby="hero-heading" class="relative overflow-hidden bg-slate-950 scroll-mt-24">
 
-  <!-- Ambient background accents -->
-  <div class="pointer-events-none absolute inset-0 overflow-hidden">
-    <div class="absolute -top-24 right-0 h-96 w-96 rounded-full bg-teal-100/40 blur-3xl"></div>
-    <div class="absolute top-1/2 -left-32 h-72 w-72 rounded-full bg-cyan-100/30 blur-3xl"></div>
-  </div>
+  <!-- Respaldo clínico bajo la fotografía -->
+  <div class="absolute inset-0 bg-gradient-to-br from-brand-900 via-slate-900 to-slate-950" aria-hidden="true"></div>
 
-  <div class="relative mx-auto max-w-7xl px-6">
-    <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+  <!-- Fotografía semántica de las instalaciones -->
+  <img src="assets/images/clinica-foto.webp" alt="Instalaciones de la clínica Healix"
+    class="absolute inset-0 z-0 h-full w-full object-cover"
+    loading="eager" fetchpriority="high" decoding="async" (error)="onHeroImageError($event)" />
 
-      <!-- LEFT — Copy -->
-      <div>
-        <!-- Trust badges — light translucent pills -->
-        <div class="mb-6 flex flex-wrap gap-2">
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-            <svg lucideShieldCheck class="h-3.5 w-3.5 text-teal-600"></svg>
-            HIPAA Compliant
-          </span>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-            <svg lucideActivity class="h-3.5 w-3.5 text-teal-600"></svg>
-            Live Specialist Network
-          </span>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
-            <svg lucideZap class="h-3.5 w-3.5 text-teal-600"></svg>
-            Instant Medical Records
-          </span>
-        </div>
+  <!-- Overlay teal de marca para legibilidad AA (texto blanco sobre foto) -->
+  <div class="absolute inset-0 z-10 bg-brand-900/75" aria-hidden="true"></div>
+  <div class="absolute inset-0 z-10 bg-gradient-to-b from-brand-900/80 via-brand-700/35 to-slate-950/70" aria-hidden="true"></div>
 
-        <h1 class="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 lg:text-5xl xl:text-6xl">
-          Gestión clínica
-          <span class="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">inteligente</span>
-          <br class="hidden lg:block" />
-          para profesionales de la salud
-        </h1>
+  <div class="relative z-20 mx-auto flex max-w-7xl flex-col items-center px-6 pt-28 pb-16 text-center lg:pt-36 lg:pb-24">
+    <div class="mx-auto flex max-w-2xl flex-col items-center">
+      <!-- Eyebrow editorial -->
+      <p style="--hero-delay: 80ms"
+        class="hero-enter mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-100 backdrop-blur-sm">
+        <svg lucideShieldCheck class="h-3.5 w-3.5 text-teal-200"></svg>
+        Gestión clínica digital
+      </p>
 
-        <p class="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
-          Agenda citas, consulta historiales médicos y gestiona disponibilidad de especialistas — todo en una plataforma
-          segura y digital.
-        </p>
+      <h1 id="hero-heading" style="--hero-delay: 160ms" class="hero-enter text-4xl font-bold leading-[1.1] tracking-tight text-white md:text-5xl">
+        Gestión clínica clara para equipos de salud
+      </h1>
 
-        <!-- CTAs -->
-        <div class="mt-8 flex flex-wrap items-center gap-4">
-          <a routerLink="/autenticacion/registro"
-            class="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal-600/25 transition-all duration-200 hover:bg-teal-700 hover:shadow-xl hover:shadow-teal-600/30 active:scale-[0.97]">
-            Comenzar ahora
-            <svg lucideArrowRight class="h-4 w-4"></svg>
-          </a>
-          <span class="text-sm text-slate-400">o</span>
-          <div class="flex gap-2">
-            <a routerLink="/autenticacion"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50">
-              <svg lucideUsers class="h-3.5 w-3.5 text-teal-600"></svg>
-              Soy paciente
-            </a>
-            <a routerLink="/autenticacion"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50">
-              <svg lucideStethoscope class="h-3.5 w-3.5 text-teal-600"></svg>
-              Soy especialista
-            </a>
-          </div>
-        </div>
+      <p style="--hero-delay: 240ms" class="hero-enter mt-5 max-w-xl text-lg leading-relaxed text-slate-100">
+        Agenda turnos, consulta la historia clínica y coordina la disponibilidad
+        de tu equipo desde una plataforma sobria y segura.
+      </p>
+
+      <!-- CTAs -->
+      <div style="--hero-delay: 320ms" class="hero-enter mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a routerLink="/autenticacion/registro"
+          class="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal-950/40 transition-colors duration-200 hover:bg-teal-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-200 active:scale-[0.98]">
+          Comenzar ahora
+          <svg lucideArrowRight class="h-4 w-4" aria-hidden="true"></svg>
+        </a>
+        <a routerLink="/autenticacion"
+          class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors duration-200 hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+          Iniciar sesión
+        </a>
       </div>
 
-      <!-- RIGHT — Clinical Composition -->
-      <div class="relative flex flex-col gap-5">
-
-        <!-- Clinical Dashboard Preview Card -->
-        <div class="relative w-full max-w-lg mx-auto lg:mr-4 rounded-2xl border border-slate-200/80 bg-white/95 p-5 shadow-xl shadow-slate-900/8 backdrop-blur-md transition-all duration-300 hover:shadow-slate-900/12">
-
-          <!-- Dashboard header -->
-          <div class="mb-4 flex items-center justify-between">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Panel Clínico</p>
-              <p class="text-sm font-bold text-slate-800">Resumen del día</p>
-            </div>
-            <div class="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1">
-              <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse-dot"></span>
-              <span class="text-[11px] font-semibold text-emerald-700">En línea</span>
-            </div>
-          </div>
-
-          <!-- Appointment rows -->
-          <div class="space-y-2.5">
-            <div class="flex items-center gap-3 rounded-xl bg-slate-50/80 p-3 transition-colors hover:bg-slate-100/80">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-600">
-                <svg lucideCalendar class="h-4 w-4"></svg>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-slate-800">María López</p>
-                <p class="text-xs text-slate-500">Cardiología · 09:30</p>
-              </div>
-              <span class="shrink-0 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-700">Confirmada</span>
-            </div>
-
-            <div class="flex items-center gap-3 rounded-xl bg-slate-50/80 p-3 transition-colors hover:bg-slate-100/80">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-cyan-600">
-                <svg lucideCalendar class="h-4 w-4"></svg>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-slate-800">Carlos Ruiz</p>
-                <p class="text-xs text-slate-500">Clínica General · 10:15</p>
-              </div>
-              <span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pendiente</span>
-            </div>
-
-            <div class="flex items-center gap-3 rounded-xl bg-slate-50/80 p-3 transition-colors hover:bg-slate-100/80">
-              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                <svg lucideFileText class="h-4 w-4"></svg>
-              </div>
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-slate-800">Ana Torres</p>
-                <p class="text-xs text-slate-500">Dermatología · 11:00</p>
-              </div>
-              <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">En cola</span>
-            </div>
-          </div>
-
-          <!-- Vital signs bar -->
-          <div class="mt-4 flex gap-2">
-            <div class="flex flex-1 items-center gap-2 rounded-lg bg-slate-50/80 p-2.5">
-              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
-                <svg lucideHeartPulse class="h-4 w-4"></svg>
-              </div>
-              <div>
-                <p class="text-[10px] font-medium text-slate-400">FC Media</p>
-                <p class="text-xs font-bold text-slate-700">72 bpm</p>
-              </div>
-            </div>
-            <div class="flex flex-1 items-center gap-2 rounded-lg bg-slate-50/80 p-2.5">
-              <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                <svg lucideTrendingUp class="h-4 w-4"></svg>
-              </div>
-              <div>
-                <p class="text-[10px] font-medium text-slate-400">PA Promedio</p>
-                <p class="text-xs font-bold text-slate-700">120/80</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- FLOATING LAYER: Top-Right Stat Badge -->
-          <div class="absolute -top-4 right-0 sm:-right-3 lg:-right-4 z-20 rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-lg backdrop-blur-md transition-transform duration-200 hover:-translate-y-0.5">
-            <div class="flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100">
-                <svg lucideUsers class="h-4 w-4 text-teal-600"></svg>
-              </div>
-              <div>
-                <p class="text-[10px] text-slate-400">Pacientes hoy</p>
-                <p class="text-sm font-bold text-slate-800">24</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- FLOATING LAYER: Bottom-Left Stat Badge -->
-          <div class="absolute -bottom-4 left-0 sm:-left-3 lg:-left-4 z-20 rounded-2xl border border-slate-200/80 bg-white/95 p-3.5 shadow-lg backdrop-blur-md transition-transform duration-200 hover:translate-y-0.5">
-            <div class="flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-100">
-                <svg lucideAward class="h-4 w-4 text-cyan-600"></svg>
-              </div>
-              <div>
-                <p class="text-[10px] text-slate-400">Especialistas</p>
-                <p class="text-sm font-bold text-slate-800">12</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── STATS & TRUST BANNER ───────────────────────────────────────────── -->
-<section id="seguridad" class="border-y border-slate-200 bg-white scroll-mt-24">
-  <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-12 md:grid-cols-4">
-
-    <div class="flex items-start gap-4">
-      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-100">
-        <svg lucideShieldCheck class="h-6 w-6 text-teal-600"></svg>
-      </div>
-      <div>
-        <p class="text-2xl font-extrabold text-slate-900">100%</p>
-        <p class="mt-0.5 text-sm text-slate-500">Historial digital seguro</p>
-      </div>
-    </div>
-
-    <div class="flex items-start gap-4">
-      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-100">
-        <svg lucideClock class="h-6 w-6 text-cyan-600"></svg>
-      </div>
-      <div>
-        <p class="text-2xl font-extrabold text-slate-900">24/7</p>
-        <p class="mt-0.5 text-sm text-slate-500">Disponibilidad de especialistas</p>
-      </div>
-    </div>
-
-    <div class="flex items-start gap-4">
-      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100">
-        <svg lucideActivity class="h-6 w-6 text-emerald-600"></svg>
-      </div>
-      <div>
-        <p class="text-2xl font-extrabold text-slate-900">&lt; 15 min</p>
-        <p class="mt-0.5 text-sm text-slate-500">Tiempo promedio de espera</p>
-      </div>
-    </div>
-
-    <div class="flex items-start gap-4">
-      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-100">
-        <svg lucideAward class="h-6 w-6 text-violet-600"></svg>
-      </div>
-      <div>
-        <p class="text-2xl font-extrabold text-slate-900">4.9 ★</p>
-        <p class="mt-0.5 text-sm text-slate-500">Satisfacción de pacientes</p>
-      </div>
+      <!-- Garantías sobrias, sin métricas inventadas -->
+      <ul style="--hero-delay: 400ms" class="hero-enter mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-200">
+        <li class="inline-flex items-center gap-1.5">
+          <svg lucideShieldCheck class="h-4 w-4 text-teal-300" aria-hidden="true"></svg>
+          Acceso por roles
+        </li>
+        <li class="inline-flex items-center gap-1.5">
+          <svg lucideFileText class="h-4 w-4 text-teal-300" aria-hidden="true"></svg>
+          Historia clínica centralizada
+        </li>
+        <li class="inline-flex items-center gap-1.5">
+          <svg lucideClock class="h-4 w-4 text-teal-300" aria-hidden="true"></svg>
+          Agenda en tiempo real
+        </li>
+      </ul>
     </div>
   </div>
 </section>
 
 <!-- ─── SPECIALTIES GRID ───────────────────────────────────────────────── -->
-<section id="especialidades" class="bg-slate-50 py-20 scroll-mt-24">
+<section id="especialidades" aria-labelledby="especialidades-heading" class="bg-slate-50 py-20 scroll-mt-24">
   <div class="mx-auto max-w-7xl px-6">
     <div class="mb-12 max-w-2xl">
       <p class="text-sm font-semibold uppercase tracking-wider text-teal-600">Especialidades</p>
-      <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Acceso a la red de especialistas</h2>
+      <h2 id="especialidades-heading" class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Acceso a la red de especialistas</h2>
       <p class="mt-3 text-lg text-slate-500">Navega por nuestras especialidades médicas y encuentra el profesional
         adecuado.</p>
     </div>
@@ -354,7 +189,7 @@
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       @for (specialty of specialties(); track specialty.id) {
       <a routerLink="/autenticacion"
-        class="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-200 hover:shadow-lg hover:shadow-teal-900/5 active:scale-[0.98]">
+        class="reveal group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-200 hover:shadow-lg hover:shadow-teal-900/5 active:scale-[0.98]">
         <div
           class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-colors group-hover:bg-teal-600 group-hover:text-white">
           <svg lucideStethoscope class="h-5 w-5"></svg>
@@ -383,11 +218,11 @@
 </section>
 
 <!-- ─── FEATURE BENTO SHOWCASE ─────────────────────────────────────────── -->
-<section id="servicios" class="bg-white py-20 scroll-mt-24">
+<section id="servicios" aria-labelledby="servicios-heading" class="bg-white py-20 scroll-mt-24">
   <div class="mx-auto max-w-7xl px-6">
     <div class="mb-12 text-center">
       <p class="text-sm font-semibold uppercase tracking-wider text-teal-600">Funcionalidades</p>
-      <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Todo lo que necesitas, en un solo lugar
+      <h2 id="servicios-heading" class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">Todo lo que necesitas, en un solo lugar
       </h2>
     </div>
 
@@ -396,7 +231,7 @@
 
       <!-- Large feature: Calendar -->
       <div
-        class="group rounded-2xl border border-slate-200 bg-gradient-to-br from-teal-50 to-white p-6 transition-all hover:shadow-lg hover:shadow-teal-900/5 lg:col-span-2 lg:row-span-2">
+        class="reveal group rounded-2xl border border-slate-200 bg-gradient-to-br from-teal-50 to-white p-6 transition-all hover:shadow-lg hover:shadow-teal-900/5 lg:col-span-2 lg:row-span-2">
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-100 text-teal-600 transition-colors group-hover:bg-teal-600 group-hover:text-white">
           <svg lucideCalendar class="h-6 w-6"></svg>
@@ -407,8 +242,9 @@
           su panel.
         </p>
 
-        <!-- Mockup: appointment timeline -->
-        <div class="mt-6 space-y-3">
+        <!-- Ejemplo ilustrativo de agenda (sin datos reales de pacientes) -->
+        <p class="mt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ejemplo ilustrativo</p>
+        <div class="mt-2 space-y-3" aria-hidden="true">
           <div class="flex items-center gap-3 rounded-xl bg-white/80 p-3 backdrop-blur-sm">
             <div class="text-center">
               <p class="text-xs font-bold text-teal-600">09:30</p>
@@ -416,11 +252,11 @@
             </div>
             <div class="h-8 w-px bg-slate-200"></div>
             <div class="flex-1">
-              <p class="text-sm font-semibold text-slate-800">María López — Cardiología</p>
-              <p class="text-xs text-slate-500">Control de presión arterial</p>
+              <p class="text-sm font-semibold text-slate-800">Cardiología · Turno de ejemplo</p>
+              <p class="text-xs text-slate-500">Control programado</p>
             </div>
             <span
-              class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Confirmada</span>
+              class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Confirmado</span>
           </div>
           <div class="flex items-center gap-3 rounded-xl bg-white/80 p-3 backdrop-blur-sm">
             <div class="text-center">
@@ -429,8 +265,8 @@
             </div>
             <div class="h-8 w-px bg-slate-200"></div>
             <div class="flex-1">
-              <p class="text-sm font-semibold text-slate-800">Carlos Ruiz — Clínica General</p>
-              <p class="text-xs text-slate-500">Revisión anual</p>
+              <p class="text-sm font-semibold text-slate-800">Clínica general · Turno de ejemplo</p>
+              <p class="text-xs text-slate-500">Revisión programada</p>
             </div>
             <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pendiente</span>
           </div>
@@ -515,7 +351,7 @@
 
       <!-- Small feature: Medical History -->
       <div
-        class="group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5">
+        class="reveal group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5">
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-100 text-cyan-600 transition-colors group-hover:bg-cyan-600 group-hover:text-white">
           <svg lucideFileText class="h-6 w-6"></svg>
@@ -524,8 +360,9 @@
         <p class="mt-1.5 text-sm text-slate-500">Acceso instantáneo a registros médicos completos y resultados de
           laboratorio.</p>
 
-        <!-- Timeline micro-UI -->
-        <div class="mt-4 space-y-0">
+        <!-- Estructura ilustrativa de historia clínica (sin datos reales) -->
+        <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ejemplo de estructura</p>
+        <div class="mt-2 space-y-0" aria-hidden="true">
           <div class="flex gap-3">
             <div class="flex flex-col items-center">
               <div class="h-2.5 w-2.5 rounded-full bg-cyan-500 ring-2 ring-cyan-100"></div>
@@ -533,7 +370,7 @@
             </div>
             <div class="pb-3">
               <p class="text-xs font-semibold text-slate-700">Consulta general</p>
-              <p class="text-[11px] text-slate-400">15 Jul 2026 · Dr. Ruiz</p>
+              <p class="text-[11px] text-slate-400">Registro de ejemplo</p>
             </div>
           </div>
           <div class="flex gap-3">
@@ -542,8 +379,8 @@
               <div class="w-px flex-1 bg-slate-200"></div>
             </div>
             <div class="pb-3">
-              <p class="text-xs font-semibold text-slate-700">Análisis de sangre</p>
-              <p class="text-[11px] text-slate-400">10 Jul 2026 · Laboratorio</p>
+              <p class="text-xs font-semibold text-slate-700">Estudio de laboratorio</p>
+              <p class="text-[11px] text-slate-400">Registro de ejemplo</p>
             </div>
           </div>
           <div class="flex gap-3">
@@ -551,8 +388,8 @@
               <div class="h-2.5 w-2.5 rounded-full bg-teal-500 ring-2 ring-teal-100"></div>
             </div>
             <div>
-              <p class="text-xs font-semibold text-slate-700">Control cardiológico</p>
-              <p class="text-[11px] text-slate-400">02 Jul 2026 · Dra. López</p>
+              <p class="text-xs font-semibold text-slate-700">Control programado</p>
+              <p class="text-[11px] text-slate-400">Registro de ejemplo</p>
             </div>
           </div>
         </div>
@@ -560,7 +397,7 @@
 
       <!-- Small feature: Specialist Network -->
       <div
-        class="group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5">
+        class="reveal group rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5">
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600 transition-colors group-hover:bg-violet-600 group-hover:text-white">
           <svg lucideUsers class="h-6 w-6"></svg>
@@ -575,6 +412,7 @@
             @if (specialist.avatar_url) {
               <img [src]="specialist.avatar_url"
                    [alt]="specialist.full_name"
+                   width="36" height="36" loading="lazy" decoding="async"
                    class="h-9 w-9 shrink-0 rounded-full object-cover border border-violet-200" />
             } @else {
               <div
@@ -607,17 +445,18 @@
 
       <!-- Medium feature: Analytics -->
       <div
-        class="group rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5 lg:col-span-2">
+        class="reveal group rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 transition-all hover:shadow-lg hover:shadow-slate-900/5 lg:col-span-2">
         <div
           class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-600 group-hover:text-white">
           <svg lucideBarChart3 class="h-6 w-6"></svg>
         </div>
-        <h3 class="mt-4 text-lg font-bold text-slate-900">Reportes y métricas</h3>
-        <p class="mt-1.5 max-w-md text-sm text-slate-500">Dashboards clínicos con métricas de ocupación, tiempos de
-          espera y satisfacción del paciente.</p>
+        <h3 class="mt-4 text-lg font-bold text-slate-900">Reportes y actividad</h3>
+        <p class="mt-1.5 max-w-md text-sm text-slate-500">Paneles para seguir la actividad de la agenda
+          y el estado de los turnos del equipo.</p>
 
-        <!-- Micro bar-chart mockup -->
-        <div class="mt-4 flex items-end gap-2 rounded-xl bg-white/80 p-4 backdrop-blur-sm">
+        <!-- Ilustración estructural semanal (sin porcentajes inventados) -->
+        <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Vista semanal · Ejemplo</p>
+        <div class="mt-2 flex items-end gap-2 rounded-xl bg-white/80 p-4 backdrop-blur-sm" aria-hidden="true">
           <div class="flex flex-1 flex-col items-center gap-1.5">
             <div class="w-full rounded-t bg-amber-400/80 transition-all duration-300 group-hover:bg-amber-500"
               style="height: 48px;"></div>
@@ -644,8 +483,8 @@
             <span class="text-[10px] font-medium text-slate-400">Vie</span>
           </div>
           <div class="ml-2 border-l border-slate-200 pl-3">
-            <p class="text-lg font-extrabold text-slate-800">87%</p>
-            <p class="text-[10px] text-slate-400">Ocupación</p>
+            <p class="text-sm font-bold text-slate-700">Semana</p>
+            <p class="text-[10px] text-slate-400"> Lun–Vie</p>
           </div>
         </div>
       </div>
@@ -655,19 +494,19 @@
 </section>
 
 <!-- ─── CTA SECTION ────────────────────────────────────────────────────── -->
-<section class="bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-700 py-20">
-  <div class="mx-auto max-w-4xl px-6 text-center">
+<section aria-labelledby="cta-heading" class="bg-gradient-to-br from-teal-600 via-teal-700 to-cyan-700 py-20">
+  <div class="reveal mx-auto max-w-4xl px-6 text-center">
     <div class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-6">
       <span class="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse-dot"></span>
       <span class="text-xs font-medium text-white/70">Plataforma activa — Únete hoy</span>
     </div>
 
-    <h2 class="text-3xl font-extrabold tracking-tight text-white lg:text-4xl">
+    <h2 id="cta-heading" class="text-3xl font-extrabold tracking-tight text-white lg:text-4xl">
       Transforma tu práctica clínica
     </h2>
     <p class="mt-4 text-lg text-white/70">
-      Únete a la red de profesionales de la salud que ya usan Healix para gestionar su clínica de forma digital y
-      segura.
+      Gestiona turnos, historias clínicas y disponibilidad del equipo
+      desde una plataforma digital y segura.
     </p>
 
     <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -683,9 +522,46 @@
       </a>
     </div>
 
-    <p class="mt-6 text-xs text-white/50">Sin tarjeta de crédito · Configuración en 2 minutos · Soporte en español</p>
+    <p class="mt-6 text-xs text-white/50">Acceso por roles · Soporte en español</p>
   </div>
 </section>
+
+<!-- ─── TECH STACK — Portfolio de ingeniería ───────────────────────────── -->
+<section id="stack-tecnologico" aria-labelledby="stack-heading" class="bg-slate-950 py-20 scroll-mt-24">
+  <div class="mx-auto max-w-7xl px-6">
+    <div class="mb-12 max-w-2xl">
+      <p class="text-sm font-semibold uppercase tracking-wider text-teal-400">Stack técnico</p>
+      <h2 id="stack-heading" class="mt-2 text-3xl font-extrabold tracking-tight text-white">Construido como pieza de ingeniería</h2>
+      <p class="mt-3 text-lg text-slate-400">Healix es un portfolio técnico. Cada decisión, del modelo de datos a los guards de ruta, está implementada con estándares de producción.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <p class="font-mono text-xs font-semibold uppercase tracking-wider text-teal-300">Angular 19</p>
+        <p class="mt-3 text-sm font-bold text-white">Standalone y lazy-loading</p>
+        <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Componentes standalone, control flow con <code class="font-mono text-[13px] text-slate-200">&#64;if</code> / <code class="font-mono text-[13px] text-slate-200">&#64;for</code>, rutas diferidas y formularios reactivos tipados.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <p class="font-mono text-xs font-semibold uppercase tracking-wider text-teal-300">Supabase</p>
+        <p class="mt-3 text-sm font-bold text-white">Auth, Postgres y RLS</p>
+        <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Autenticación, base Postgres y Storage con Row Level Security por rol: paciente, especialista y administrador.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <p class="font-mono text-xs font-semibold uppercase tracking-wider text-teal-300">Signals</p>
+        <p class="mt-3 text-sm font-bold text-white">Estado predecible</p>
+        <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Estado local con <code class="font-mono text-[13px] text-slate-200">signal()</code> y derivados con <code class="font-mono text-[13px] text-slate-200">computed()</code>; RxJS solo para streams y realtime.</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
+        <p class="font-mono text-xs font-semibold uppercase tracking-wider text-teal-300">Tailwind v4</p>
+        <p class="mt-3 text-sm font-bold text-white">Tokens e iconos Lucide</p>
+        <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Design tokens en variables CSS, estilos aislados por componente e iconografía Lucide en toda la interfaz.</p>
+      </div>
+    </div>
+
+    <p class="mt-6 text-sm text-slate-400">Arquitectura por roles con <code class="font-mono text-[13px] text-slate-200">authGuard</code>, <code class="font-mono text-[13px] text-slate-200">roleGuard</code> y aprobación de especialistas en el router.</p>
+  </div>
+</section>
+</main>
 
 <!-- ─── FOOTER ─────────────────────────────────────────────────────────── -->
 <footer class="border-t border-slate-200 bg-white">
@@ -694,9 +570,9 @@
 
       <!-- Brand -->
       <div>
-        <a routerLink="/" class="inline-flex items-center gap-2">
-          <img src="assets/images/icono.png" alt="Healix" class="h-8 w-auto object-contain" />
-          <span class="text-base font-bold text-slate-900">Healix</span>
+        <a routerLink="/" class="inline-flex items-center gap-2" aria-label="Healix, inicio">
+          <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="lazy" decoding="async" class="h-8 w-auto object-contain" />
+          <span class="brand-logo-text text-lg text-slate-900">Healix</span>
         </a>
         <p class="mt-3 text-sm leading-relaxed text-slate-500">
           Plataforma de gestión clínica digital para profesionales de la salud.
@@ -705,10 +581,10 @@
 
       <!-- Pacientes -->
       <div>
-        <h4 class="mb-3 text-sm font-bold text-slate-900">Pacientes</h4>
+        <h2 class="mb-3 text-sm font-bold text-slate-900">Pacientes</h2>
         <ul class="space-y-2">
-          <li><a (click)="scrollToSection($event, 'especialidades')"
-              class="cursor-pointer text-sm text-slate-500 transition-colors hover:text-teal-600">Ver especialidades</a>
+          <li><button type="button" (click)="scrollToSection($event, 'especialidades')"
+              class="cursor-pointer text-sm text-slate-500 transition-colors hover:text-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Ver especialidades</button>
           </li>
           <li><a routerLink="/autenticacion"
               class="text-sm text-slate-500 transition-colors hover:text-teal-600">Agendar turno</a></li>
@@ -719,12 +595,12 @@
 
       <!-- Especialistas -->
       <div>
-        <h4 class="mb-3 text-sm font-bold text-slate-900">Especialistas</h4>
+        <h2 class="mb-3 text-sm font-bold text-slate-900">Especialistas</h2>
         <ul class="space-y-2">
           <li><a routerLink="/autenticacion" class="text-sm text-slate-500 transition-colors hover:text-teal-600">Portal
               de especialista</a></li>
-          <li><a (click)="scrollToSection($event, 'especialidades')"
-              class="cursor-pointer text-sm text-slate-500 transition-colors hover:text-teal-600">Gestionar agenda</a>
+          <li><button type="button" (click)="scrollToSection($event, 'especialidades')"
+              class="cursor-pointer text-sm text-slate-500 transition-colors hover:text-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600">Gestionar agenda</button>
           </li>
           <li><a routerLink="/autenticacion/registro"
               class="text-sm text-slate-500 transition-colors hover:text-teal-600">Registro</a></li>
@@ -733,9 +609,8 @@
 
       <!-- Soporte -->
       <div>
-        <h4 class="mb-3 text-sm font-bold text-slate-900">Soporte</h4>
+        <h2 class="mb-3 text-sm font-bold text-slate-900">Soporte</h2>
         <ul class="space-y-2">
-          <li><a routerLink="/" class="text-sm text-slate-500 transition-colors hover:text-teal-600">Contacto</a></li>
           <li><a routerLink="/privacidad"
               class="text-sm text-slate-500 transition-colors hover:text-teal-600">Privacidad</a></li>
           <li><a routerLink="/terminos"

@@ -192,7 +192,7 @@
         @if (frontalCroppedData()) {
           <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
             <div class="relative group flex-shrink-0">
-              <img [src]="frontalCroppedData()" alt="Avatar" class="w-14 h-14 rounded-full object-cover border-2 border-teal-400" />
+              <img [src]="frontalCroppedData()" alt="Vista previa del avatar" width="56" height="56" decoding="async" class="w-14 h-14 rounded-full object-cover border-2 border-teal-400" />
               <button
                 type="button"
                 (click)="frontalCroppedData.set(null); frontalImageFile.set(null); frontalImagePreview.set(null)"

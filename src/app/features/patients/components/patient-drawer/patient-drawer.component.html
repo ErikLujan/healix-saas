@@ -12,7 +12,7 @@
     <div class="flex items-center justify-between border-b border-divider px-6 py-4 flex-shrink-0">
       <div class="flex items-center gap-3 min-w-0">
         @if (paciente()?.avatar_url) {
-          <img [src]="paciente()!.avatar_url" [alt]="paciente()!.full_name"
+          <img [src]="paciente()!.avatar_url" [alt]="paciente()!.full_name" width="40" height="40" loading="lazy" decoding="async"
             class="h-10 w-10 rounded-2xl object-cover ring-2 ring-slate-100 flex-shrink-0" />
         } @else {
           <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 ring-2 ring-brand-100/50 flex-shrink-0">

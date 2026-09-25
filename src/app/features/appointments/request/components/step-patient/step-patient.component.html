@@ -35,7 +35,7 @@
           class="group relative flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left hover:border-brand-500 hover:shadow-md hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 active:scale-[0.97]"
           [ngClass]="{'border-brand-500 bg-brand-50 shadow-md': seleccionado()?.id === paciente.id, 'border-divider bg-surface': seleccionado()?.id !== paciente.id}">
           @if (paciente.avatar_url) {
-            <img [src]="paciente.avatar_url" [alt]="paciente.full_name"
+            <img [src]="paciente.avatar_url" [alt]="paciente.full_name" width="40" height="40" loading="lazy" decoding="async"
               class="h-10 w-10 rounded-full object-cover border border-border" fallbackAvatar />
           } @else {
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-semibold text-sm">

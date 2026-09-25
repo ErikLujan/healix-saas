@@ -58,7 +58,7 @@
           class="group rounded-2xl border border-slate-200/80 bg-surface p-5 text-left transition-all duration-200 hover:shadow-md hover:border-brand-200/80 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
           <div class="flex items-center gap-3 mb-3">
             @if (paciente.avatar_url) {
-              <img [src]="paciente.avatar_url" [alt]="paciente.full_name"
+              <img [src]="paciente.avatar_url" [alt]="paciente.full_name" width="44" height="44" loading="lazy" decoding="async"
                 class="h-11 w-11 rounded-2xl object-cover ring-2 ring-slate-100" />
             } @else {
               <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 ring-2 ring-brand-100/50 flex-shrink-0">

@@ -72,6 +72,19 @@ body {
   font-family: var(--font-display);
 }
 
+/**
+ * Wordmark de Healix, deliberadamente distinto de la fuente de UI.
+ *
+ * Serif moderna con peso alto y tracking agresivo para separar
+ * la marca del texto funcional en Inter.
+ */
+.brand-logo-text {
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -140,25 +153,5 @@ body {
 @media (hover: hover) and (pointer: fine) {
   .pressable:active {
     transform: scale(0.97);
-  }
-}
-
-/* Movimiento reducido: conserva fades de comprensión, elimina desplazamientos. */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .animate-shimmer,
-  .animate-pulse-dot,
-  .animate-step-in {
-    animation: none;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
   }
 }

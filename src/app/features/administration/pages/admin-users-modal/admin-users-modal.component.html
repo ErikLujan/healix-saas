@@ -27,7 +27,7 @@
       <div class="flex justify-center">
         @if (croppedDataUrl()) {
           <div class="relative group">
-            <img [src]="croppedDataUrl()" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-brand-500" />
+            <img [src]="croppedDataUrl()" alt="Vista previa del avatar" width="80" height="80" decoding="async" class="w-20 h-20 rounded-full object-cover border-2 border-brand-500" />
             <button
               type="button"
               (click)="removeImage()"

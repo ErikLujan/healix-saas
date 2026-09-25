@@ -14,7 +14,7 @@
       </button>
       <div class="hidden sm:flex items-center gap-2 text-sm text-fg-muted">
         <a routerLink="/panel-principal" class="hover:text-fg transition-colors flex items-center gap-1.5">
-          <img src="assets/images/icono.png" alt="Healix" class="w-5 h-5 rounded object-contain" />
+          <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="w-5 h-5 rounded object-contain" />
           <span class="font-medium">Healix</span>
         </a>
         <svg lucideIcon="chevron-right" class="w-3.5 h-3.5 text-fg-subtle"></svg>
@@ -86,7 +86,7 @@
             [attr.aria-expanded]="showDropdown()"
           >
             @if (getAvatarUrl(); as avatarUrl) {
-              <img [src]="avatarUrl" [alt]="profile.full_name" class="w-8 h-8 rounded-full object-cover" fallbackAvatar />
+              <img [src]="avatarUrl" [alt]="profile.full_name" width="32" height="32" loading="lazy" decoding="async" class="w-8 h-8 rounded-full object-cover" fallbackAvatar />
             } @else {
               <span class="text-xs font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
             }
@@ -101,7 +101,7 @@
               <div class="px-4 py-3 border-b border-divider flex items-center gap-3">
                 <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden shrink-0">
                   @if (getAvatarUrl(); as avatarUrl) {
-                    <img [src]="avatarUrl" [alt]="profile.full_name" class="w-10 h-10 rounded-full object-cover" fallbackAvatar />
+                    <img [src]="avatarUrl" [alt]="profile.full_name" width="40" height="40" loading="lazy" decoding="async" class="w-10 h-10 rounded-full object-cover" fallbackAvatar />
                   } @else {
                     <span class="text-sm font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
                   }
@@ -163,7 +163,7 @@
       <!-- Drawer Header -->
       <div class="h-14 flex items-center justify-between px-4 border-b border-divider shrink-0">
         <div class="flex items-center gap-2.5">
-          <img src="assets/images/icono.png" alt="Healix" class="w-8 h-8 rounded-lg object-cover" />
+          <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="w-8 h-8 rounded-lg object-cover" />
           <span class="text-sm font-semibold text-fg font-display">Healix</span>
         </div>
         <button
@@ -217,7 +217,7 @@
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden shrink-0">
               @if (getAvatarUrl(); as avatarUrl) {
-                <img [src]="avatarUrl" [alt]="profile.full_name" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
+                <img [src]="avatarUrl" [alt]="profile.full_name" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
               } @else {
                 <span class="text-xs font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
               }
@@ -285,7 +285,7 @@
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden shrink-0">
               @if (getAvatarUrl(); as avatarUrl) {
-                <img [src]="avatarUrl" [alt]="profile.full_name" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
+                <img [src]="avatarUrl" [alt]="profile.full_name" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
               } @else {
                 <span class="text-xs font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
               }

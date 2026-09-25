@@ -1,3 +1,49 @@
 :host {
   display: block;
 }
+
+/**
+ * Revelado sobrio de tarjetas al entrar en el visor.
+ *
+ * Desplazamiento corto de 16 px con opacidad durante 400 ms y
+ * curva de salida enfática. Sin escalados, retardos en cascada
+ * ni animaciones infinitas. Se observa cada tarjeta individual,
+ * no la sección completa.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/**
+ * Entrada escalonada del Hero tras la carga inicial.
+ *
+ * Cada elemento declara su retardo con `--hero-delay` para componer
+ * la secuencia título, subtítulo y llamadas a la acción.
+ */
+.hero-enter {
+  opacity: 0;
+  animation: hero-rise 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--hero-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
