@@ -1,7 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
 import { AuthService } from '@core/services/auth.service';
 import { toast } from 'ngx-sonner';
 
@@ -26,9 +27,11 @@ interface RecoveryRequestForm {
   templateUrl: './recovery-request.component.html',
   styleUrl: './recovery-request.component.scss',
 })
-export class RecoveryRequestComponent {
+export class RecoveryRequestComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
 
   readonly form: FormGroup<RecoveryRequestForm>;
   readonly isSubmitting = signal(false);
@@ -42,6 +45,14 @@ export class RecoveryRequestComponent {
         validators: [Validators.required, Validators.email],
       }),
     });
+  }
+
+  /**
+   * Fija título no indexable para la ruta privada de recuperación.
+   */
+  ngOnInit(): void {
+    this.title.setTitle('Healix | Recuperar contraseña');
+    this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
   }
 
   /**

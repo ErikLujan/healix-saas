@@ -4,6 +4,8 @@ Allow: /terminos
 Allow: /privacidad
 
 Disallow: /autenticacion
+Disallow: /recuperar-password
+Disallow: /actualizar-password
 Disallow: /aprobacion-pendiente
 Disallow: /panel-principal
 Disallow: /pacientes
@@ -14,3 +16,5 @@ Disallow: /historial-clinico
 Disallow: /administracion
 Disallow: /estadisticas
 Disallow: /perfil
+
+Sitemap: https://healix-clinica-online.vercel.app/sitemap.xml

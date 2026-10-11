@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, computed, ElementRef, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Meta, Title } from '@angular/platform-browser';
 import { AuthService } from '@core/services/auth.service';
 import { LandingService } from './landing.service';
 import {
@@ -48,6 +49,8 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly landingService = inject(LandingService);
   private readonly host = inject(ElementRef);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
   private revealObserver: IntersectionObserver | null = null;
 
   readonly isMobileMenuOpen = signal(false);
@@ -193,6 +196,9 @@ export class LandingComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    this.title.setTitle('Healix | Inicio');
+    this.meta.updateTag({ name: 'description', content: 'Healix: gestión clínica clara para equipos de salud. Agenda turnos, historia clínica y disponibilidad con Angular 19 y Supabase.' });
+    this.meta.updateTag({ name: 'robots', content: 'index, follow' });
     await Promise.all([
       this.landingService.loadSpecialties(),
       this.landingService.loadSpecialists(),

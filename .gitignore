@@ -66,6 +66,7 @@ coverage/
 # Archivos de configuración de OpenCode
 .openCode
 opencode.json
+OPENCODE.md
 
 # Memoria local del agente y estados temporales (no se versionan).
 # Las reglas (.opencode/rules/), skills (.opencode/skills/) y
@@ -83,3 +84,5 @@ handoff.md
 
 # Archivos de configuración de Supabase
 supabase
+
+repomix-output.xml

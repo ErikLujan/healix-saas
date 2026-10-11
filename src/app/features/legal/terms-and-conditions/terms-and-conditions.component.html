@@ -1,36 +1,32 @@
 <div @fadeIn class="min-h-screen bg-background">
   <header class="bg-surface border-b border-border sticky top-0 z-40">
     <div class="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2c0 1.1.9 2 2 2h5v5c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/>
-          </svg>
-        </div>
-        <span class="text-sm font-semibold text-text-primary">Clínica Online</span>
-      </div>
+      <a routerLink="/" class="flex items-center gap-3" aria-label="Healix, inicio">
+        <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="h-8 w-auto object-contain" />
+        <span class="text-sm font-semibold text-text-primary">Healix</span>
+      </a>
       <a routerLink="/" class="text-sm text-text-secondary hover:text-text-primary transition-colors">
         Volver al inicio
       </a>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-6 py-12">
-    <h1 class="text-3xl font-bold text-text-primary mb-2">Términos y Condiciones</h1>
+  <main class="max-w-4xl mx-auto px-6 py-12" aria-labelledby="terminos-heading">
+    <h1 id="terminos-heading" class="text-3xl font-bold text-text-primary mb-2">Términos y Condiciones</h1>
     <p class="text-sm text-text-secondary mb-8">Última actualización: 1 de julio de 2026</p>
 
     <div class="prose prose-slate max-w-none space-y-8">
       <section>
         <h2 class="text-xl font-semibold text-text-primary mb-3">1. Aceptación de los Términos</h2>
         <p class="text-text-secondary leading-relaxed">
-          Al acceder y utilizar la plataforma Clínica Online ("el Servicio"), usted acepta estar sujeto a estos Términos y Condiciones de uso. Si no está de acuerdo con alguno de estos términos, no deberá utilizar el Servicio.
+          Al acceder y utilizar la plataforma Healix ("el Servicio"), usted acepta estar sujeto a estos Términos y Condiciones de uso. Si no está de acuerdo con alguno de estos términos, no deberá utilizar el Servicio.
         </p>
       </section>
 
       <section>
         <h2 class="text-xl font-semibold text-text-primary mb-3">2. Descripción del Servicio</h2>
         <p class="text-text-secondary leading-relaxed">
-          Clínica Online es una plataforma SaaS diseñada para la administración integral de centros médicos. El Servicio permite la gestión de pacientes, especialistas, turnos, historias clínicas, estadísticas e información administrativa.
+          Healix es una plataforma SaaS diseñada para la administración integral de centros médicos. El Servicio permite la gestión de pacientes, especialistas, turnos, historias clínicas, estadísticas e información administrativa.
         </p>
         <p class="text-text-secondary leading-relaxed mt-2">
           La plataforma está destinada a tres tipos de usuarios: pacientes, especialistas médicos y administradores. Cada perfil posee diferentes funcionalidades y niveles de acceso.
@@ -66,7 +62,7 @@
       <section>
         <h2 class="text-xl font-semibold text-text-primary mb-3">5. Propiedad Intelectual</h2>
         <p class="text-text-secondary leading-relaxed">
-          Todo el contenido, diseño, código fuente, marca, logotipos y demás elementos del Servicio son propiedad de Clínica Online o de sus licenciantes. Queda prohibida su reproducción, distribución o modificación sin autorización expresa.
+          Todo el contenido, diseño, código fuente, marca, logotipos y demás elementos del Servicio son propiedad de Healix o de sus licenciantes. Queda prohibida su reproducción, distribución o modificación sin autorización expresa.
         </p>
       </section>
 
@@ -90,7 +86,7 @@
       <section>
         <h2 class="text-xl font-semibold text-text-primary mb-3">8. Limitación de Responsabilidad</h2>
         <p class="text-text-secondary leading-relaxed">
-          Clínica Online no será responsable por daños indirectos, incidentales, consecuentes o punitivos derivados del uso del Servicio. La plataforma no reemplaza el criterio médico profesional ni constituye asesoramiento médico.
+          Healix no será responsable por daños indirectos, incidentales, consecuentes o punitivos derivados del uso del Servicio. La plataforma no reemplaza el criterio médico profesional ni constituye asesoramiento médico.
         </p>
       </section>
 

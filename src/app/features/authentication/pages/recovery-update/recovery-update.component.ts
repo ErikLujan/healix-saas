@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
 import { AuthService } from '@core/services/auth.service';
 import { toast } from 'ngx-sonner';
 
@@ -52,6 +53,8 @@ export class RecoveryUpdateComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
 
   readonly form: FormGroup<RecoveryUpdateForm>;
   readonly isVerifying = signal(true);
@@ -89,6 +92,8 @@ export class RecoveryUpdateComponent implements OnInit {
    * Una sesión ausente indica un enlace inválido, expirado o reutilizado.
    */
   async ngOnInit(): Promise<void> {
+    this.title.setTitle('Healix | Actualizar contraseña');
+    this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
     try {
       const session = await this.authService.getRecoverySession();
       this.sessionValid.set(!!session);

@@ -1,5 +1,5 @@
 <!-- THESIS: blank-canvas de recuperación que hereda el mundo Healix sin copiar AuthLayout. OWN-WORLD: superficie background, tarjeta surface con borde divider, acento teal-700, tipografía Inter Tight. STORY: el visitante entiende en segundos que debe pedir un enlace y qué sigue. FIRST VIEWPORT: lienzo centrado min-h-100dvh, tarjeta max-w-md con logo, kicker, H1, formulario y retorno. FORM: extensión local de la superficie de autenticación, sin torneo de conceptos por pedido preciso. -->
-<main class="recovery-canvas">
+<main class="recovery-canvas" aria-labelledby="recovery-request-heading">
   <div class="recovery-card animate-step-in">
     <div class="flex items-center gap-2.5 mb-6">
       <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="h-9 w-auto rounded-lg object-cover ring-2 ring-white shadow-sm" />
@@ -10,7 +10,7 @@
       <span class="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse-dot" aria-hidden="true"></span>
       Recuperación de acceso
     </p>
-    <h1 class="text-[1.75rem] font-bold text-slate-900 font-display tracking-tight mb-1">Recupera tu contraseña</h1>
+    <h1 id="recovery-request-heading" class="text-[1.75rem] font-bold text-slate-900 font-display tracking-tight mb-1">Recupera tu contraseña</h1>
     <p class="text-sm text-slate-500 mb-6">Ingresa tu correo y te enviaremos un enlace seguro para crear una nueva contraseña.</p>
 
     <div aria-live="polite">

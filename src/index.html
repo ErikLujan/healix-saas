@@ -1,27 +1,58 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-AR">
 <head>
   <meta charset="utf-8">
-  <title>Healix | Angular 19 &amp; Supabase Portfolio</title>
+  <title>Healix | Gestión clínica con Angular 19 y Supabase</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Healix, portfolio de ingeniería frontend: SaaS clínico construido con Angular 19 standalone, Signals, Supabase (Auth, Postgres, RLS, Storage) y Tailwind CSS v4 por Erik Lujan.">
+  <meta name="description" content="Healix: SaaS clínico demo con Angular 19 standalone, Signals, Supabase Auth Postgres RLS y Tailwind v4. Turnos, roles e historia clínica por Erik Lujan.">
   <meta name="author" content="Erik Lujan">
   <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://healix-saas.vercel.app/">
   <meta name="theme-color" content="#0f766e">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Healix | Angular 19 & Supabase Portfolio">
-  <meta property="og:description" content="SaaS clínico demo construido con Angular 19 standalone, Signals, Supabase y Tailwind CSS v4. Arquitectura por roles, turnos en tiempo real e historia clínica centralizada.">
-  <meta property="og:image" content="assets/images/clinica-foto.webp">
-  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="Healix">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:title" content="Healix | Gestión clínica con Angular 19 y Supabase">
+  <meta property="og:description" content="Healix: SaaS clínico demo con Angular 19 standalone, Signals, Supabase Auth Postgres RLS y Tailwind v4. Turnos, roles e historia clínica por Erik Lujan.">
+  <meta property="og:url" content="https://healix-saas.vercel.app/">
+  <meta property="og:image" content="https://healix-saas.vercel.app/og-cover.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Vista previa de la plataforma clínica Healix">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Healix | Angular 19 & Supabase Portfolio">
-  <meta name="twitter:description" content="Portfolio técnico: Angular 19, Signals, Supabase (RLS) y Tailwind CSS v4 en un SaaS clínico funcional.">
-  <meta name="twitter:image" content="assets/images/clinica-foto.webp">
+  <meta name="twitter:title" content="Healix | Gestión clínica con Angular 19 y Supabase">
+  <meta name="twitter:description" content="Healix: SaaS clínico demo con Angular 19 standalone, Signals, Supabase Auth Postgres RLS y Tailwind v4. Turnos, roles e historia clínica por Erik Lujan.">
+  <meta name="twitter:image" content="https://healix-saas.vercel.app/og-cover.png">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/og-cover.png">
+  <link rel="apple-touch-icon" href="/og-cover.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MedicalClinic",
+        "@id": "https://healix-saas.vercel.app/#clinica",
+        "name": "Healix",
+        "url": "https://healix-saas.vercel.app/",
+        "logo": "https://healix-saas.vercel.app/og-cover.png",
+        "description": "Healix: SaaS clínico demo con Angular 19 standalone, Signals, Supabase Auth Postgres RLS y Tailwind v4.",
+        "inLanguage": "es-AR"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://healix-saas.vercel.app/#sitio",
+        "name": "Healix",
+        "url": "https://healix-saas.vercel.app/",
+        "inLanguage": "es-AR"
+      }
+    ]
+  }
+  </script>
   <style>
     .healix-preloader {
       position: fixed; inset: 0; z-index: 99999;
