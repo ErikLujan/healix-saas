@@ -30,12 +30,10 @@ export class RequestPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly pasoActual = this.wizard.pasoActual;
-  readonly tituloPaso = this.wizard.tituloPasoActual;
   readonly puedeAvanzar = this.wizard.puedeAvanzar;
   readonly puedeRetroceder = this.wizard.puedeRetroceder;
 
   readonly isAdmin = computed(() => this.authService.userRole() === 'administrador');
-  readonly tienePaciente = computed(() => this.wizard.pacienteSeleccionado() !== null);
 
   readonly pasos = computed(() => {
     if (this.isAdmin()) {
@@ -55,6 +53,10 @@ export class RequestPageComponent implements OnInit {
       { numero: 5, titulo: 'Confirmar' },
     ];
   });
+
+  readonly tituloPaso = computed(
+    () => this.pasos().find(p => p.numero === this.pasoActual())?.titulo ?? '',
+  );
 
   ngOnInit(): void {
     this.wizard.reiniciar();

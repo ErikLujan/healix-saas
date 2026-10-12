@@ -49,6 +49,16 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             </div>
           </div>
         </div>
+      } @else if (errorCarga()) {
+        <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
+          <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+          <p class="text-sm font-medium text-fg">No se pudo cargar el panel.</p>
+          <p class="text-xs text-fg-muted mt-1">{{ errorCarga() }}</p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+            Reintentar
+          </button>
+        </div>
       } @else {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (card of kpiCards(); track card.label) {
@@ -172,6 +182,7 @@ export class AdminDashboardComponent implements OnInit {
   private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
 
   readonly totalUsuarios = signal(0);
   readonly especialistasPendientes = signal(0);
@@ -274,26 +285,50 @@ export class AdminDashboardComponent implements OnInit {
   readonly hasChartData = computed(() => this.barChartData().datasets[0].data.length > 0);
 
   async ngOnInit(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  async recargar(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  private async cargarPanel(): Promise<void> {
     this.isLoading.set(true);
+    this.errorCarga.set(null);
 
-    await this.adminUsersService.loadUsers();
+    try {
+      await this.adminUsersService.loadUsers();
 
-    const users = this.adminUsersService.users();
-    this.totalUsuarios.set(users.length);
-    this.especialistasPendientes.set(
-      users.filter(u => u.especialistas && !u.especialistas.is_approved).length,
-    );
-    this.especialistasAprobados.set(
-      users.filter(u => u.especialistas && u.especialistas.is_approved).length,
-    );
+      const cargaUsuariosError = this.adminUsersService.lastError();
+      if (cargaUsuariosError) {
+        this.errorCarga.set(cargaUsuariosError);
+        return;
+      }
 
-    const turnos = await this.turnosService.obtenerTodosLosTurnosAdmin();
-    this.totalTurnos.set(turnos.length);
-    this.turnosData.set(turnos);
+      const users = this.adminUsersService.users();
+      this.totalUsuarios.set(users.length);
+      this.especialistasPendientes.set(
+        users.filter(u => u.especialistas && !u.especialistas.is_approved).length,
+      );
+      this.especialistasAprobados.set(
+        users.filter(u => u.especialistas && u.especialistas.is_approved).length,
+      );
 
-    const historias = await this.medicalRecordsService.getAllRecords().toPromise();
-    this.totalHistorias.set(historias?.length ?? 0);
+      const turnos = await this.turnosService.obtenerTodosLosTurnosAdmin();
+      const cargaTurnosError = this.turnosService.lastError();
+      if (cargaTurnosError) {
+        this.errorCarga.set(cargaTurnosError);
+        return;
+      }
+      this.totalTurnos.set(turnos.length);
+      this.turnosData.set(turnos);
 
-    this.isLoading.set(false);
+      const historias = await this.medicalRecordsService.getAllRecords().toPromise();
+      this.totalHistorias.set(historias?.length ?? 0);
+    } catch {
+      this.errorCarga.set('No se pudo cargar el panel. Revisá tu conexión.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 }

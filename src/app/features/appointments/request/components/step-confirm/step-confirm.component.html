@@ -83,6 +83,15 @@
     <div appCaptcha (captchaResolved)="onCaptchaSolved($event)"></div>
   </div>
 
+  @if (errorCrear()) {
+    <div class="rounded-2xl bg-danger/5 border border-danger/20 p-4" role="alert">
+      <div class="flex gap-3">
+        <svg lucideIcon="alert-triangle" class="h-5 w-5 text-danger flex-shrink-0 mt-0.5"></svg>
+        <p class="text-sm text-danger">{{ errorCrear() }}</p>
+      </div>
+    </div>
+  }
+
   <button
     type="button"
     (click)="confirmar()"

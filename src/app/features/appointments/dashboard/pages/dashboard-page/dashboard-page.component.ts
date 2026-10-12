@@ -18,7 +18,7 @@ import { DEFAULT_PAGE_SIZE } from '@shared/components/pagination/pagination.conf
 import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
 import { FechaFormatPipe } from '@shared/pipes/fecha-format.pipe';
 import { EmptyValuePipe } from '@shared/pipes/empty-value.pipe';
-import { extraerFechaCorta, extraerHora, formatearFechaLegibleEsAR, nombreMesEsAR } from '@shared/utils/date-locale.utils';
+import { extraerFechaCorta, extraerHora, formatearFechaCortaLegibleEsAR, formatearFechaLegibleEsAR, nombreMesEsAR } from '@shared/utils/date-locale.utils';
 import { MedicalRecordsService } from '@core/services/medical-records.service';
 import { MedicalRecordConRelaciones } from '@core/models/medical-record.model';
 import { RegistrationService, Specialty } from '@core/services/registration.service';
@@ -112,6 +112,9 @@ export class DashboardPageComponent implements OnInit {
   /** Indica si está cargando los turnos iniciales. */
   readonly isLoading = signal(true);
 
+  /** Error de carga con reintento cuando falla la lectura inicial. */
+  readonly errorCarga = signal<string | null>(null);
+
   /** Turno seleccionado para alguna operacion. */
   readonly turnoSeleccionado = signal<TurnoConRelaciones | null>(null);
 
@@ -171,6 +174,7 @@ export class DashboardPageComponent implements OnInit {
       const fechaISO = `${anio}-${mes}-${dia}`;
       const fechaBarra = `${dia}/${mes}/${anio}`;
       const fechaLegible = `${dia} de ${nombreMesEsAR(mes)} de ${anio}`;
+      const fechaCortaLegible = formatearFechaCortaLegibleEsAR(t.fecha_hora).toLowerCase();
       const hora = extraerHora(t.fecha_hora);
 
       const coincideBasico = especialidad.includes(query)
@@ -182,6 +186,7 @@ export class DashboardPageComponent implements OnInit {
         || fechaISO.includes(query)
         || fechaBarra.includes(query)
         || fechaLegible.toLowerCase().includes(query)
+        || fechaCortaLegible.includes(query)
         || hora.includes(query);
 
       if (coincideBasico) return true;
@@ -244,6 +249,13 @@ export class DashboardPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    await this.recargar();
+  }
+
+  /** Recarga turnos y especialidades tras un error o por reintento explícito. */
+  async recargar(): Promise<void> {
+    this.errorCarga.set(null);
+    this.currentPage.set(1);
     await Promise.all([
       this.fetchTurnosByRole(true),
       this.cargarEspecialidades(),
@@ -288,7 +300,13 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._turnos.set(turnos as TurnoConRelaciones[]);
-    await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
+    const historialOk = await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
+    const turnosError = this.turnosService.lastError();
+    if (turnosError) {
+      this.errorCarga.set(turnosError);
+    } else if (!historialOk) {
+      this.errorCarga.set('No se pudo cargar el historial clínico para la búsqueda.');
+    }
     if (mostrarLoading) this.isLoading.set(false);
   }
 
@@ -304,8 +322,9 @@ export class DashboardPageComponent implements OnInit {
     turnos: readonly TurnoConRelaciones[],
     rol: UserRole,
     perfilId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const historiasMap = new Map<string, MedicalRecordConRelaciones>();
+    let sinErrores = true;
 
     const loadHistory = (observable$: Observable<readonly MedicalRecordConRelaciones[]>) =>
       new Promise<void>((resolve) => {
@@ -316,7 +335,10 @@ export class DashboardPageComponent implements OnInit {
             }
             resolve();
           },
-          error: () => resolve(),
+          error: () => {
+            sinErrores = false;
+            resolve();
+          },
         });
       });
 
@@ -333,6 +355,7 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._historiasClinicas.set(historiasMap);
+    return sinErrores;
   }
 
   /** Actualiza el termino de busqueda y resetea la paginacion. */
@@ -355,8 +378,12 @@ export class DashboardPageComponent implements OnInit {
 
   /** Carga las especialidades activas para el filtro dropdown. */
   private async cargarEspecialidades(): Promise<void> {
-    const data = await this.registrationService.getActiveSpecialties();
-    this.especialidades.set(data);
+    try {
+      const data = await this.registrationService.getActiveSpecialties();
+      this.especialidades.set(data);
+    } catch {
+      this.errorCarga.set('No se pudieron cargar las especialidades del filtro.');
+    }
   }
 
   /** Maneja el cambio de pagina desde el componente de paginacion. */
@@ -416,21 +443,24 @@ export class DashboardPageComponent implements OnInit {
 
     const accion = this.accionPendiente();
 
-    switch (accion) {
-      case 'rechazar':
-        await this.turnosService.rechazarTurno(turno.id, comentario);
-        break;
-      case 'confirmar':
-        await this.turnosService.confirmarTurno(turno.id);
-        break;
-      case 'cancelar':
-      default:
-        await this.turnosService.cancelarTurno(turno.id, comentario);
-        break;
-    }
+    try {
+      switch (accion) {
+        case 'rechazar':
+          await this.turnosService.rechazarTurno(turno.id, comentario);
+          break;
+        case 'confirmar':
+          await this.turnosService.confirmarTurno(turno.id);
+          break;
+        case 'cancelar':
+        default:
+          await this.turnosService.cancelarTurno(turno.id, comentario);
+          break;
+      }
 
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   /** Abre el modal de resena medica para un turno. */
@@ -453,11 +483,18 @@ export class DashboardPageComponent implements OnInit {
   /** Confirma la calificacion de un turno. */
   async confirmarCalificar(datos: { comentario: string; estrellas: number }): Promise<void> {
     const turno = this.turnoSeleccionado();
-    if (!turno) return;
+    if (!turno) {
+      this.dialogCalificar()?.finalizarEnvio();
+      return;
+    }
 
-    await this.turnosService.calificarTurno(turno.id, datos.comentario, datos.estrellas);
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+    try {
+      await this.turnosService.calificarTurno(turno.id, datos.comentario, datos.estrellas);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.dialogCalificar()?.finalizarEnvio();
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   /** Abre el dialogo de encuesta de satisfaccion para un turno. */
@@ -477,11 +514,18 @@ export class DashboardPageComponent implements OnInit {
   /** Confirma el envio de la encuesta de satisfaccion. */
   async confirmarEncuesta(encuesta: EncuestaSatisfaccion): Promise<void> {
     const turno = this.turnoSeleccionado();
-    if (!turno) return;
+    if (!turno) {
+      this.dialogEncuesta()?.finalizarEnvio();
+      return;
+    }
 
-    await this.turnosService.guardarEncuesta(turno.id, encuesta);
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+    try {
+      await this.turnosService.guardarEncuesta(turno.id, encuesta);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.dialogEncuesta()?.finalizarEnvio();
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   formatearHora(fechaHora: string): string {

@@ -7,6 +7,7 @@ import { AuthService } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
+import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, formatearFechaLegibleEsAR } from '@shared/utils/date-locale.utils';
 
 @Component({
   selector: 'app-patient-dashboard',
@@ -51,6 +52,16 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
             </div>
           }
         </div>
+      } @else if (errorCarga()) {
+        <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
+          <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+          <p class="text-sm font-medium text-fg">No se pudo cargar tu panel.</p>
+          <p class="text-xs text-fg-muted mt-1">{{ errorCarga() }}</p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+            Reintentar
+          </button>
+        </div>
       } @else {
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mb-6">
           @if (nextAppointment()) {
@@ -77,12 +88,6 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                   <a routerLink="/turnos" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                     Ver mis turnos
                   </a>
-                  <button class="inline-flex items-center gap-1.5 border border-divider text-fg text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-surface-sunken transition-colors">
-                    Reagendar
-                  </button>
-                  <button class="inline-flex items-center gap-1.5 text-red-600 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors">
-                    Cancelar
-                  </button>
                 </div>
               </div>
             </div>
@@ -205,9 +210,12 @@ export class PatientDashboardComponent implements OnInit {
   private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
 
   readonly turnosDelPaciente = signal(0);
   readonly historialPaciente = signal(0);
+  readonly turnosDelMes = signal(0);
+  readonly especialidadesConsultadas = signal(0);
 
   readonly nextAppointment = signal<TurnoConRelaciones | null>(null);
   readonly upcomingTurnos = signal<readonly TurnoConRelaciones[]>([]);
@@ -221,27 +229,36 @@ export class PatientDashboardComponent implements OnInit {
       link: '/turnos',
     },
     {
-      label: 'Consultas 2026',
+      label: `Consultas ${anioActual()}`,
       value: this.historialPaciente(),
       color: 'text-emerald-600',
       subtext: `${this.historialPaciente()} realizadas`,
     },
     {
-      label: 'Solicitar turno',
-      value: '+',
+      label: 'Turnos este mes',
+      value: this.turnosDelMes(),
       color: 'text-purple-600',
-      link: '/turnos/solicitar',
+      link: '/turnos',
     },
     {
-      label: 'Mi perfil',
-      value: '\u2192',
+      label: 'Especialidades',
+      value: this.especialidadesConsultadas(),
       color: 'text-slate-600',
-      link: '/perfil',
+      subtext: 'Distintas consultadas',
     },
   ]);
 
   async ngOnInit(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  async recargar(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  private async cargarPanel(): Promise<void> {
     this.isLoading.set(true);
+    this.errorCarga.set(null);
     const perfil = this.authService.userProfile();
 
     if (!perfil) {
@@ -249,33 +266,46 @@ export class PatientDashboardComponent implements OnInit {
       return;
     }
 
-    const [turnos, historial] = await Promise.all([
-      this.turnosService.obtenerTurnosPorPaciente(perfil.id),
-      this.medicalRecordsService.getHistoryByPatientId(perfil.id).toPromise(),
-    ]);
+    try {
+      const [turnos, historial] = await Promise.all([
+        this.turnosService.obtenerTurnosPorPaciente(perfil.id),
+        this.medicalRecordsService.getHistoryByPatientId(perfil.id).toPromise(),
+      ]);
 
-    const now = new Date();
-    const upcoming = turnos
-      .filter(t => new Date(t.fecha_hora) > now && t.estado !== 'cancelado' && t.estado !== 'rechazado')
-      .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime());
+      const cargaError = this.turnosService.lastError();
+      if (cargaError) {
+        this.errorCarga.set(cargaError);
+        return;
+      }
 
-    this.turnosDelPaciente.set(upcoming.length);
-    this.historialPaciente.set(historial?.length ?? 0);
-    this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
-    this.upcomingTurnos.set(upcoming.slice(0, 3));
-    this.recentHistory.set(historial?.slice(0, 3) ?? []);
+      const ahoraLocal = fechaHoraLocalActual();
+      const marcaLocal = (fechaHora: string): string =>
+        `${extraerFechaCorta(fechaHora)}T${extraerHora(fechaHora)}`;
+      const upcoming = turnos
+        .filter(t => marcaLocal(t.fecha_hora) > ahoraLocal && t.estado !== 'cancelado' && t.estado !== 'rechazado')
+        .sort((a, b) => marcaLocal(a.fecha_hora).localeCompare(marcaLocal(b.fecha_hora)));
 
-    this.isLoading.set(false);
+      const mesActual = ahoraLocal.substring(0, 7);
+      this.turnosDelPaciente.set(upcoming.length);
+      this.historialPaciente.set(historial?.length ?? 0);
+      this.turnosDelMes.set(turnos.filter(t => extraerFechaCorta(t.fecha_hora).substring(0, 7) === mesActual).length);
+      this.especialidadesConsultadas.set(new Set(turnos.map(t => t.especialidad_id)).size);
+      this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
+      this.upcomingTurnos.set(upcoming.slice(0, 3));
+      this.recentHistory.set(historial?.slice(0, 3) ?? []);
+    } catch {
+      this.errorCarga.set('No se pudo cargar tu panel. Revisá tu conexión.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   formatDate(fechaHora: string): string {
-    const date = new Date(fechaHora);
-    return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return formatearFechaLegibleEsAR(fechaHora);
   }
 
   formatTime(fechaHora: string): string {
-    const date = new Date(fechaHora);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return extraerHora(fechaHora);
   }
 
   getStatusClass(estado: string): string {

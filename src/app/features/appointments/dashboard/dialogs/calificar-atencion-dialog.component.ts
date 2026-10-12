@@ -74,10 +74,21 @@ export class CalificarAtencionDialogComponent {
 
   confirmar(): void {
     if (this.botonDeshabilitado()) return;
-    this.isVisible.set(false);
+    this.isEnviando.set(true);
     this.onConfirmar.emit({
       comentario: this.comentario().trim(),
       estrellas: this.estrellas(),
     });
+  }
+
+  /**
+   * Cierra el diálogo tras completar el envío.
+   *
+   * Lo invoca el contenedor cuando la persistencia concluye,
+   * con éxito o con error ya notificado por el servicio.
+   */
+  finalizarEnvio(): void {
+    this.isEnviando.set(false);
+    this.isVisible.set(false);
   }
 }

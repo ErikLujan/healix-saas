@@ -5,6 +5,7 @@ import { TurnosService } from '@core/services/turnos.service';
 import { AuthService } from '@core/services/auth.service';
 import { Router } from '@angular/router';
 import { CaptchaDirective } from '@shared/directives/captcha.directive';
+import { construirFechaHoraISO, formatearFechaLargaEsAR } from '@shared/utils/date-locale.utils';
 import { toast } from 'ngx-sonner';
 
 @Component({
@@ -22,6 +23,7 @@ export class StepConfirmComponent {
   readonly estado = this.wizard.estado;
   readonly isCreando = signal(false);
   readonly captchaSolved = signal(false);
+  readonly errorCrear = signal<string | null>(null);
 
   readonly especialidad = this.wizard.especialidadSeleccionada;
   readonly especialista = this.wizard.especialistaSeleccionado;
@@ -30,16 +32,7 @@ export class StepConfirmComponent {
   readonly paciente = this.wizard.pacienteSeleccionado;
 
   get fechaFormateada(): string {
-    const fecha = this.fecha();
-    if (!fecha) return '';
-    const [anio, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(anio, mes - 1, dia);
-    return fechaObj.toLocaleDateString('es-AR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatearFechaLargaEsAR(this.fecha());
   }
 
   onCaptchaSolved(solved: boolean): void {
@@ -68,14 +61,23 @@ export class StepConfirmComponent {
     const perfil = this.authService.userProfile();
     const paciente = this.paciente();
 
-    if (!especialista || !especialidad || !fecha || !hora || !perfil) return;
+    if (!especialista || !especialidad || !fecha || !hora || !perfil) {
+      toast.warning('Faltan datos para crear el turno. Revisá cada paso del asistente.');
+      return;
+    }
+
+    if (this.authService.userRole() === 'administrador' && !paciente) {
+      toast.warning('Seleccioná un paciente antes de confirmar la solicitud.');
+      return;
+    }
 
     const pacienteId = paciente?.id ?? perfil.id;
 
     this.isCreando.set(true);
+    this.errorCrear.set(null);
 
     try {
-      const fechaHoraISO = `${fecha}T${hora}:00.000Z`;
+      const fechaHoraISO = construirFechaHoraISO(fecha, hora);
 
       await this.turnosService.crearTurnoPendiente({
         paciente_id: pacienteId,
@@ -90,6 +92,7 @@ export class StepConfirmComponent {
         this.wizard.reiniciar();
       }
     } catch {
+      this.errorCrear.set('No se pudo registrar el turno. Podés reintentarlo.');
       this.isCreando.set(false);
     }
   }

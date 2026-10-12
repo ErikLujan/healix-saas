@@ -5,6 +5,7 @@ import { AdminUsersService } from '../../services/admin-users.service';
 import { ImageCropperComponent } from '@shared/components/image-cropper/image-cropper.component';
 import { FileUploadComponent } from '@shared/components/file-upload/file-upload.component';
 import { modalBackdrop, modalContent } from '../../animations/admin-animations';
+import { LONGITUD_MINIMA_PASSWORD_ADMIN } from '@shared/utils/auth-policy.constants';
 import { toast } from 'ngx-sonner';
 
 /**
@@ -42,7 +43,7 @@ export class AdminUsersModalComponent {
     dni: ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
     edad: ['', [Validators.required, Validators.min(1), Validators.max(120)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.minLength(LONGITUD_MINIMA_PASSWORD_ADMIN)]],
   });
 
   get f() {

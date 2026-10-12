@@ -6,15 +6,13 @@ import {
   EspecialidadPerfil,
   ProfileUpdatePayload,
 } from '../models/profile.model';
+import { TAMANO_MAXIMO_AVATAR_PERFIL_BYTES } from '@shared/utils/auth-policy.constants';
 
 /**
  * Tipos MIME de imagen permitidos para avatares de perfil.
  * Se excluye SVG por su capacidad de portar scripts ejecutables.
  */
 const TIPOS_AVATAR_PERMITIDOS: readonly string[] = ['image/jpeg', 'image/png', 'image/webp'];
-
-/** Tamaño máximo de avatar permitido (2 MB). */
-const TAMANO_MAXIMO_AVATAR_BYTES = 2 * 1024 * 1024;
 
 /**
  * Extensiones de archivo permitidas para avatares, como segunda
@@ -261,7 +259,7 @@ export class ProfileService {
       throw new Error('Formato de imagen no soportado. Use JPG, PNG o WEBP.');
     }
 
-    if (file.size === 0 || file.size > TAMANO_MAXIMO_AVATAR_BYTES) {
+    if (file.size === 0 || file.size > TAMANO_MAXIMO_AVATAR_PERFIL_BYTES) {
       throw new Error('La imagen debe pesar entre 1 byte y 2MB.');
     }
   }

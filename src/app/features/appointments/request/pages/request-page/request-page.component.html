@@ -32,7 +32,7 @@
   </nav>
   <div class="rounded-2xl border border-divider bg-surface p-6 sm:p-8">
     <h2 class="text-lg font-semibold text-text-primary mb-6">Paso {{ pasoActual() }}: {{ tituloPaso() }}</h2>
-    @if (tienePaciente()) {
+    @if (isAdmin()) {
       @if (pasoActual() === 1) {
         <div class="wizard-step-content animate-step-in"><app-step-patient /></div>
       } @else if (pasoActual() === 2) {

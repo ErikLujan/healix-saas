@@ -7,6 +7,7 @@ import { AuthService } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
+import { extraerFechaCorta, extraerHora, fechaLocalHoy, nombreDiaEsAR } from '@shared/utils/date-locale.utils';
 
 @Component({
   selector: 'app-specialist-dashboard',
@@ -51,6 +52,16 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
               }
             </div>
           </div>
+        </div>
+      } @else if (errorCarga()) {
+        <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
+          <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+          <p class="text-sm font-medium text-fg">No se pudo cargar tu panel.</p>
+          <p class="text-xs text-fg-muted mt-1">{{ errorCarga() }}</p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+            Reintentar
+          </button>
         </div>
       } @else {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -107,9 +118,9 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                     >
                       {{ turno.estado | titlecase }}
                     </span>
-                    <button class="text-sm font-semibold text-brand-700 hover:text-brand-600 transition-colors shrink-0">
+                    <a routerLink="/turnos" class="text-sm font-semibold text-brand-700 hover:text-brand-600 transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none rounded">
                       Abrir
-                    </button>
+                    </a>
                   </div>
                 }
               </div>
@@ -135,9 +146,9 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                     <span class="text-sm font-bold text-fg">{{ formatTime(nextPatient()!.fecha_hora) }}</span>
                   </div>
                 </div>
-                <button class="w-full inline-flex items-center justify-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors">
+                <a routerLink="/turnos" class="w-full inline-flex items-center justify-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                   Abrir consulta
-                </button>
+                </a>
               } @else {
                 <div class="text-center py-6">
                   <p class="text-sm text-fg-muted">No hay pacientes en cola.</p>
@@ -161,6 +172,7 @@ export class SpecialistDashboardComponent implements OnInit {
   private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
 
   readonly turnosDelDia = signal(0);
   readonly turnosPendientes = signal(0);
@@ -202,7 +214,16 @@ export class SpecialistDashboardComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  async recargar(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  private async cargarPanel(): Promise<void> {
     this.isLoading.set(true);
+    this.errorCarga.set(null);
     const perfil = this.authService.userProfile();
 
     if (!perfil) {
@@ -210,32 +231,41 @@ export class SpecialistDashboardComponent implements OnInit {
       return;
     }
 
-    const [turnosAll, historial] = await Promise.all([
-      this.turnosService.obtenerTurnosPorEspecialista(perfil.id),
-      this.medicalRecordsService.getHistoryBySpecialistId(perfil.id).toPromise(),
-    ]);
+    try {
+      const [turnosAll, historial] = await Promise.all([
+        this.turnosService.obtenerTurnosPorEspecialista(perfil.id),
+        this.medicalRecordsService.getHistoryBySpecialistId(perfil.id).toPromise(),
+      ]);
 
-    const hoy = new Date().toISOString().split('T')[0];
-    const todayTurnos = turnosAll.filter(t => t.fecha_hora.startsWith(hoy));
+      const cargaError = this.turnosService.lastError();
+      if (cargaError) {
+        this.errorCarga.set(cargaError);
+        return;
+      }
 
-    this.turnosDelDia.set(todayTurnos.length);
-    this.turnosPendientes.set(
-      turnosAll.filter(t => t.estado === 'pendiente').length,
-    );
-    this.pacientesAtendidos.set(
-      new Set(turnosAll.map(t => t.paciente_id)).size,
-    );
-    this.pendingRecords.set(
-      (historial?.length ?? 0) - turnosAll.filter(t => t.estado === 'finalizado').length,
-    );
-    this.todayTurnos.set(todayTurnos);
+      const hoy = fechaLocalHoy();
+      const todayTurnos = turnosAll.filter(t => extraerFechaCorta(t.fecha_hora) === hoy);
 
-    this.isLoading.set(false);
+      this.turnosDelDia.set(todayTurnos.length);
+      this.turnosPendientes.set(
+        turnosAll.filter(t => t.estado === 'pendiente').length,
+      );
+      this.pacientesAtendidos.set(
+        new Set(turnosAll.map(t => t.paciente_id)).size,
+      );
+      this.pendingRecords.set(
+        Math.max(0, (historial?.length ?? 0) - turnosAll.filter(t => t.estado === 'finalizado').length),
+      );
+      this.todayTurnos.set(todayTurnos);
+    } catch {
+      this.errorCarga.set('No se pudo cargar tu panel. Revisá tu conexión.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   formatTime(fechaHora: string): string {
-    const date = new Date(fechaHora);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return extraerHora(fechaHora);
   }
 
   getStatusClass(estado: string): string {
@@ -250,7 +280,6 @@ export class SpecialistDashboardComponent implements OnInit {
   }
 
   private getDayName(): string {
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
-    return days[new Date().getDay()];
+    return nombreDiaEsAR(new Date());
   }
 }

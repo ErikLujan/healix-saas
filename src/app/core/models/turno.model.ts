@@ -136,6 +136,29 @@ export const ESTADOS_TURNO = {
 } as const;
 
 /**
+ * Aspecto destacable de la encuesta de satisfacción.
+ */
+export interface AspectoEncuesta {
+  readonly id: string;
+  readonly label: string;
+}
+
+/**
+ * Catálogo vigente de aspectos de la encuesta, versión 1.
+ *
+ * Copia de producto versionada cuyos identificadores se persisten en
+ * `encuesta_satisfaccion.aspectos_destacados`. Fuente requerida para
+ * reemplazarlo por datos reales: tabla `encuesta_aspectos` con lectura
+ * pública y administración restringida.
+ */
+export const ASPECTOS_ENCUESTA: readonly AspectoEncuesta[] = [
+  { id: 'profesionalismo', label: 'Profesionalismo del especialista' },
+  { id: 'puntualidad', label: 'Puntualidad' },
+  { id: 'instalaciones', label: 'Instalaciones' },
+  { id: 'atencion', label: 'Calidad de atención' },
+];
+
+/**
  * Orden canónico de estados para pestañas y filtros de turnos.
  */
 export const ORDEN_ESTADOS_TURNO: readonly TurnoEstado[] = [

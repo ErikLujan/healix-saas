@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
-import { EncuestaSatisfaccion } from '@core/models/turno.model';
+import { ASPECTOS_ENCUESTA, EncuestaSatisfaccion } from '@core/models/turno.model';
+import { NOMBRE_CLINICA } from '@shared/utils/app.constants';
 
 @Component({
   selector: 'app-encuesta-satisfaccion-dialog',
@@ -26,12 +27,8 @@ export class EncuestaSatisfaccionDialogComponent {
   readonly onConfirmar = output<EncuestaSatisfaccion>();
   readonly onCerrar = output<void>();
 
-  readonly aspectosDisponibles = [
-    { id: 'profesionalismo', label: 'Profesionalismo del especialista' },
-    { id: 'puntualidad', label: 'Puntualidad' },
-    { id: 'instalaciones', label: 'Instalaciones' },
-    { id: 'atencion', label: 'Calidad de atención' },
-  ];
+  readonly nombreClinica = NOMBRE_CLINICA;
+  readonly aspectosDisponibles = ASPECTOS_ENCUESTA;
 
   readonly puntuacionArray = [1, 2, 3, 4, 5];
 
@@ -117,7 +114,7 @@ export class EncuestaSatisfaccionDialogComponent {
 
   confirmar(): void {
     if (this.botonDeshabilitado()) return;
-    this.isVisible.set(false);
+    this.isEnviando.set(true);
     this.onConfirmar.emit({
       nivel_satisfaccion: this.nivelSatisfaccion(),
       puntuacion_plataforma: this.puntuacionPlataforma(),
@@ -125,5 +122,16 @@ export class EncuestaSatisfaccionDialogComponent {
       aspectos_destacados: this.aspectosSeleccionados(),
       comentarios: this.comentarios().trim(),
     });
+  }
+
+  /**
+   * Cierra el diálogo tras completar el envío.
+   *
+   * Lo invoca el contenedor cuando la persistencia concluye,
+   * con éxito o con error ya notificado por el servicio.
+   */
+  finalizarEnvio(): void {
+    this.isEnviando.set(false);
+    this.isVisible.set(false);
   }
 }

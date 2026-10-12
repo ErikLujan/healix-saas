@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '@core/services/auth.service';
+import { LONGITUD_MINIMA_PASSWORD_PERFIL } from '@shared/utils/auth-policy.constants';
 import { toast } from 'ngx-sonner';
 
 @Component({
@@ -82,7 +83,7 @@ export class PasswordChangeComponent {
 
   readonly form: FormGroup = this.fb.group(
     {
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      newPassword: ['', [Validators.required, Validators.minLength(LONGITUD_MINIMA_PASSWORD_PERFIL)]],
       confirmPassword: ['', [Validators.required]],
     },
     { validators: this.passwordMatchValidator },

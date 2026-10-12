@@ -1,15 +1,16 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { extraerFechaCorta, extraerHora, formatearFechaLegibleEsAR } from '@shared/utils/date-locale.utils';
+import { extraerFechaCorta, extraerHora, formatearFechaCortaLegibleEsAR, formatearFechaLegibleEsAR } from '@shared/utils/date-locale.utils';
 
-type FormatoFecha = 'corta' | 'hora' | 'legible';
+type FormatoFecha = 'corta' | 'cortaLegible' | 'hora' | 'legible';
 
 /**
  * Pipe puro para formatear marcas de tiempo ISO del dominio de turnos.
  *
  * Formatos soportados:
- * - `corta`  → "YYYY-MM-DD"
- * - `hora`   → "HH:mm"
- * - `legible` → "1 de enero de 2026"
+ * - `corta`        → "2026-10-12"
+ * - `cortaLegible` → "12 oct 2026" (es-AR)
+ * - `hora`         → "HH:mm"
+ * - `legible`      → "12 de octubre de 2026"
  */
 @Pipe({
   name: 'fechaFormat',
@@ -23,6 +24,8 @@ export class FechaFormatPipe implements PipeTransform {
     switch (formato) {
       case 'corta':
         return extraerFechaCorta(value);
+      case 'cortaLegible':
+        return formatearFechaCortaLegibleEsAR(value);
       case 'hora':
         return extraerHora(value);
       case 'legible': {

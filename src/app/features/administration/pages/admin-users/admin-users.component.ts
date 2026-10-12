@@ -10,6 +10,7 @@ import { MedicalRecordsService } from '@features/medical-history/services/medica
 import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
+import { toast } from 'ngx-sonner';
 
 /**
  * Panel unificado de administracion de usuarios.
@@ -306,6 +307,7 @@ export class AdminUsersComponent implements OnInit {
         this.isLoadingHistorial.set(false);
       },
       error: () => {
+        toast.error('No se pudo cargar el historial del paciente. Intenta nuevamente.');
         this.isLoadingHistorial.set(false);
       },
     });

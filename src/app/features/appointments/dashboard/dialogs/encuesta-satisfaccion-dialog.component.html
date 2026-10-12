@@ -41,11 +41,10 @@
                 [class.active:scale-95]="!esLectura()"
                 [attr.aria-label]="i + ' estrella' + (i > 1 ? 's' : '')"
                 [attr.aria-checked]="puntuacionPlataforma() === i" role="radio">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 transition-colors duration-150"
-                     [ngClass]="(puntuacionHover() || puntuacionPlataforma()) >= i ? 'text-amber-400' : 'text-gray-200'"
-                     viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
+                <svg lucideIcon="star" class="w-7 h-7 transition-colors duration-150"
+                     [ngClass]="(puntuacionHover() || puntuacionPlataforma()) >= i ? 'text-warning' : 'text-border'"
+                     fill="currentColor" stroke="none"
+                     aria-hidden="true"></svg>
               </button>
             }
           </div>
@@ -56,7 +55,7 @@
 
         <!-- Recomendaría (radio 3 opciones) -->
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-2">{{ esLectura() ? 'Recomendaría Healia' : '¿Recomendarías Healia a otros?' }}</label>
+          <label class="block text-sm font-medium text-text-primary mb-2">{{ esLectura() ? 'Recomendaría ' + nombreClinica : '¿Recomendarías ' + nombreClinica + ' a otros?' }}</label>
           <div class="flex gap-2">
             <button type="button" (click)="seleccionarRecomendaria('si')"
               class="flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
@@ -112,7 +111,7 @@
         <div>
           <label for="comentarios-encuesta" class="block text-sm font-medium text-text-primary mb-1.5">Comentarios adicionales{{ esLectura() ? '' : ' (opcional)' }}</label>
           <textarea id="comentarios-encuesta" rows="3" [ngModel]="comentarios()" (ngModelChange)="actualizarComentarios($event)"
-            [placeholder]="esLectura() ? '' : 'Contanos tu experiencia con Healia...'"
+            [placeholder]="esLectura() ? '' : 'Contanos tu experiencia con ' + nombreClinica + '...'"
             [readonly]="esLectura()"
             class="w-full px-3 py-2 text-sm rounded-xl border border-divider bg-background text-text-primary placeholder:text-text-secondary/50 resize-none focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
             [class.cursor-default]="esLectura()"></textarea>

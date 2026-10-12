@@ -123,10 +123,10 @@ export class WizardTurnoService {
   readonly tituloPasoActual = computed(() => {
     const tienePaciente = this._estado().pacienteSeleccionado !== null;
     const titulos: Record<number, string> = {
-      1: tienePaciente ? 'Especialidad' : 'Paciente',
-      2: tienePaciente ? 'Especialista' : 'Especialidad',
-      3: tienePaciente ? 'Fecha' : 'Especialista',
-      4: tienePaciente ? 'Horario' : 'Fecha',
+      1: tienePaciente ? 'Paciente' : 'Especialidad',
+      2: tienePaciente ? 'Especialidad' : 'Especialista',
+      3: tienePaciente ? 'Especialista' : 'Fecha',
+      4: tienePaciente ? 'Fecha' : 'Horario',
       5: 'Confirmar',
     };
     return titulos[this._estado().pasoActual] ?? '';

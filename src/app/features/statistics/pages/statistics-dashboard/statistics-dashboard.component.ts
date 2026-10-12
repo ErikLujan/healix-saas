@@ -5,6 +5,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { fadeIn, slideUp } from '@core/animations/route-animations';
 import { StatisticsService, DateRangeFilter } from '../../services/statistics.service';
+import { fechaLocalHoy, formatearFechaCorta } from '@shared/utils/date-locale.utils';
 import {
   exportarTurnosPorEspecialidadExcel,
   exportarTurnosPorEspecialidadPDF,
@@ -80,6 +81,20 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
               <div class="h-12 animate-shimmer rounded-lg"></div>
             }
           </div>
+        </div>
+      } @else if (stats.lastError()) {
+        <div class="flex flex-col items-center justify-center py-20 bg-white border border-danger/20 rounded-2xl shadow-xs" role="alert">
+          <div class="w-16 h-16 mb-4 rounded-full bg-danger/5 flex items-center justify-center">
+            <svg lucideIcon="alert-triangle" class="w-8 h-8 text-danger/60"></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-text-primary mb-1">No se pudieron cargar las estadísticas</h3>
+          <p class="text-sm text-text-secondary text-center max-w-md">
+            {{ stats.lastError() }} Revisá tu conexión.
+          </p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-700/90 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+            Reintentar
+          </button>
         </div>
       } @else if (isDataEmpty()) {
         <div class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
@@ -357,6 +372,7 @@ export class StatisticsDashboardComponent implements OnInit {
 
   readonly isDataEmpty = computed(() =>
     !this.stats.isLoading() &&
+    !this.stats.lastError() &&
     this.stats.accessLogs().length === 0 &&
     this.stats.turnosPorEspecialidad().length === 0 &&
     this.stats.turnosPorDia().length === 0 &&
@@ -523,6 +539,10 @@ export class StatisticsDashboardComponent implements OnInit {
   };
 
   ngOnInit(): void {
+    this.recargar();
+  }
+
+  recargar(): void {
     this.stats.loadAllStats();
     this.stats.loadTurnosPorMedico(this.filtroFecha());
   }
@@ -538,17 +558,17 @@ export class StatisticsDashboardComponent implements OnInit {
   }
 
   applyPreset(preset: '7d' | 'month' | 'all'): void {
-    const hasta = new Date().toISOString().split('T')[0];
+    const hasta = fechaLocalHoy();
     let desde = this.getDefaultDesde();
 
     if (preset === '7d') {
       const d = new Date();
       d.setDate(d.getDate() - 7);
-      desde = d.toISOString().split('T')[0];
+      desde = formatearFechaCorta(d);
     } else if (preset === 'month') {
       const d = new Date();
       d.setDate(1);
-      desde = d.toISOString().split('T')[0];
+      desde = formatearFechaCorta(d);
     } else if (preset === 'all') {
       desde = '2020-01-01';
     }
@@ -577,11 +597,11 @@ export class StatisticsDashboardComponent implements OnInit {
   private getDefaultDesde(): string {
     const d = new Date();
     d.setMonth(d.getMonth() - 1);
-    return d.toISOString().split('T')[0];
+    return formatearFechaCorta(d);
   }
 
   private getDefaultHasta(): string {
-    return new Date().toISOString().split('T')[0];
+    return fechaLocalHoy();
   }
 
   exportarEspecialidadExcel(): void { exportarTurnosPorEspecialidadExcel(this.stats.turnosPorEspecialidad()); }

@@ -74,6 +74,9 @@ export class TurnosService {
   /** Indica si una operacion de carga o escritura esta en curso. */
   readonly isLoading = this._isLoading.asReadonly();
 
+  /** Último error de carga de listados, expuesto para estados de error con reintento. */
+  readonly lastError = signal<string | null>(null);
+
   /**
    * Obtiene los turnos ocupados para un especialista en una fecha especifica.
    *
@@ -130,6 +133,7 @@ export class TurnosService {
    */
   async obtenerTurnosPorPaciente(pacienteId: string): Promise<readonly TurnoConRelaciones[]> {
     this._isLoading.set(true);
+    this.lastError.set(null);
 
     try {
       const { data, error } = await this.supabase.supabase
@@ -140,6 +144,7 @@ export class TurnosService {
 
       if (error) {
         toast.error('No se pudieron cargar tus turnos.');
+        this.lastError.set('No se pudieron cargar tus turnos.');
         return [];
       }
 
@@ -147,6 +152,7 @@ export class TurnosService {
       return Object.freeze(turnos);
     } catch {
       toast.error('Error de conexión al cargar turnos.');
+      this.lastError.set('Error de conexión al cargar turnos.');
       return [];
     } finally {
       this._isLoading.set(false);
@@ -164,6 +170,7 @@ export class TurnosService {
    */
   async obtenerTurnosPorEspecialista(especialistaId: string): Promise<readonly TurnoConRelaciones[]> {
     this._isLoading.set(true);
+    this.lastError.set(null);
 
     try {
       const { data, error } = await this.supabase.supabase
@@ -174,6 +181,7 @@ export class TurnosService {
 
       if (error) {
         toast.error('No se pudieron cargar los turnos.');
+        this.lastError.set('No se pudieron cargar los turnos.');
         return [];
       }
 
@@ -181,6 +189,7 @@ export class TurnosService {
       return Object.freeze(turnos);
     } catch {
       toast.error('Error de conexión al cargar turnos.');
+      this.lastError.set('Error de conexión al cargar turnos.');
       return [];
     } finally {
       this._isLoading.set(false);
@@ -295,6 +304,7 @@ export class TurnosService {
    */
   async obtenerTodosLosTurnosAdmin(): Promise<readonly TurnoConRelaciones[]> {
     this._isLoading.set(true);
+    this.lastError.set(null);
 
     try {
       const { data, error } = await this.supabase.supabase
@@ -321,6 +331,7 @@ export class TurnosService {
 
       if (error) {
         toast.error('No se pudieron cargar los turnos.');
+        this.lastError.set('No se pudieron cargar los turnos.');
         return [];
       }
 
@@ -328,6 +339,7 @@ export class TurnosService {
       return Object.freeze(turnos);
     } catch {
       toast.error('Error de conexión al cargar turnos.');
+      this.lastError.set('Error de conexión al cargar turnos.');
       return [];
     } finally {
       this._isLoading.set(false);

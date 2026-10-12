@@ -3,6 +3,8 @@ import { SupabaseService } from '@core/services/supabase.service';
 import { EspecialidadInfo } from '@core/models/turno.model';
 import { DiaSemana } from '@core/models/disponibilidad.model';
 import { EspecialistaWizard } from './wizard-turno.service';
+import { DIA_DESCANSO_DOMINGO, DURACION_SLOT_MINUTOS, VENTANA_DIAS_SOLICITUD } from './scheduling.config';
+import { extraerHora, finDiaISO, inicioDiaISO } from '@shared/utils/date-locale.utils';
 import { toast } from 'ngx-sonner';
 
 /**
@@ -46,7 +48,8 @@ export class AppointmentRequestService {
       .order('name');
 
     if (error || !data) {
-      return Object.freeze([]);
+      toast.error('No se pudieron cargar las especialidades. Intenta nuevamente.');
+      throw new Error('No se pudieron cargar las especialidades.');
     }
 
     const especialidades: EspecialidadInfo[] = data.map((row) => ({
@@ -74,7 +77,12 @@ export class AppointmentRequestService {
       .select('especialista_id')
       .eq('especialidad_id', especialidadId);
 
-    if (relError || !relaciones || relaciones.length === 0) {
+    if (relError) {
+      toast.error('No se pudieron cargar los especialistas. Intenta nuevamente.');
+      throw new Error('No se pudieron cargar los especialistas.');
+    }
+
+    if (!relaciones || relaciones.length === 0) {
       return Object.freeze([]);
     }
 
@@ -91,7 +99,7 @@ export class AppointmentRequestService {
 
     if (profilesError || !perfiles) {
       toast.error('Error al cargar los especialistas. Intenta nuevamente.');
-      return Object.freeze([]);
+      throw new Error('Error al cargar los especialistas.');
     }
 
     const idsAprobados = await this.filtrarEspecialistasAprobados(
@@ -121,16 +129,16 @@ export class AppointmentRequestService {
   }
 
   /**
-   * Verifica qué días de los próximos 15 tienen al menos un slot disponible.
+   * Verifica qué días de la ventana de solicitud tienen al menos un slot disponible.
    *
-   * Para cada día (excluyendo domingos), consulta la disponibilidad
+   * Para cada día (excluyendo el día de descanso), consulta la disponibilidad
    * del especialista y cruza con los turnos existentes para determinar
    * si queda al menos un bloque libre.
    *
    * @param especialistaId UUID del especialista.
    * @returns Lista congelada de objetos con fecha y día de la semana.
    */
-   async cargarFechasDisponibles(
+  async cargarFechasDisponibles(
     especialistaId: string,
   ): Promise<ReadonlyArray<{
     fecha: string;
@@ -148,12 +156,12 @@ export class AppointmentRequestService {
     }
 
     const fechasStr: string[] = [];
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < VENTANA_DIAS_SOLICITUD; i++) {
       const fecha = new Date(hoy);
       fecha.setDate(hoy.getDate() + i);
       const diaSemana = fecha.getDay() as DiaSemana;
 
-      if (diaSemana === 0) continue;
+      if (diaSemana === DIA_DESCANSO_DOMINGO) continue;
 
       const fechaStr = this.formatearFecha(fecha);
       fechasStr.push(fechaStr);
@@ -164,12 +172,12 @@ export class AppointmentRequestService {
       fechasStr,
     );
 
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < VENTANA_DIAS_SOLICITUD; i++) {
       const fecha = new Date(hoy);
       fecha.setDate(hoy.getDate() + i);
       const diaSemana = fecha.getDay() as DiaSemana;
 
-      if (diaSemana === 0) continue;
+      if (diaSemana === DIA_DESCANSO_DOMINGO) continue;
 
       const fechaStr = this.formatearFecha(fecha);
       const bloques = mapaDisponibilidad.get(diaSemana);
@@ -191,8 +199,8 @@ export class AppointmentRequestService {
    * Genera los bloques horarios disponibles para una fecha específica.
    *
    * Obtiene la disponibilidad del especialista para el día de la semana
-   * correspondiente, genera slots de 30 minutos y los marca como
-   * libres u ocupados según los turnos existentes.
+   * correspondiente, genera slots según la duración configurada y los
+   * marca como libres u ocupados según los turnos existentes.
    *
    * @param especialistaId UUID del especialista.
    * @param fechaStr Fecha en formato "YYYY-MM-DD".
@@ -204,11 +212,16 @@ export class AppointmentRequestService {
   ): Promise<ReadonlyArray<{ hora: string; disponible: boolean }>> {
     const diaSemana = this.obtenerDiaSemana(fechaStr);
 
-    const { data: disponibilidad } = await this.supabase.supabase
+    const { data: disponibilidad, error: dispError } = await this.supabase.supabase
       .from('disponibilidad_especialista')
       .select('hora_inicio, hora_fin')
       .eq('especialista_id', especialistaId)
       .eq('dia_semana', diaSemana);
+
+    if (dispError) {
+      toast.error('No se pudo cargar la disponibilidad. Intenta nuevamente.');
+      throw new Error('No se pudo cargar la disponibilidad.');
+    }
 
     if (!disponibilidad || disponibilidad.length === 0) {
       return Object.freeze([]);
@@ -216,10 +229,10 @@ export class AppointmentRequestService {
 
     const slotsBase = this.generarSlots(disponibilidad);
 
-    const startOfDay = `${fechaStr}T00:00:00.000Z`;
-    const endOfDay = `${fechaStr}T23:59:59.999Z`;
+    const startOfDay = inicioDiaISO(fechaStr);
+    const endOfDay = finDiaISO(fechaStr);
 
-    const { data: turnosOcupados } = await this.supabase.supabase
+    const { data: turnosOcupados, error: turnosError } = await this.supabase.supabase
       .from('turnos')
       .select('fecha_hora')
       .eq('especialista_id', especialistaId)
@@ -227,11 +240,13 @@ export class AppointmentRequestService {
       .lte('fecha_hora', endOfDay)
       .not('estado', 'in', '(cancelado,rechazado)');
 
+    if (turnosError) {
+      toast.error('No se pudieron verificar los horarios ocupados. Intenta nuevamente.');
+      throw new Error('No se pudieron verificar los horarios ocupados.');
+    }
+
     const horasOcupadas = new Set(
-      (turnosOcupados ?? []).map((t: TurnoOcupado) => {
-        const iso = t.fecha_hora;
-        return iso.substring(11, 16);
-      }),
+      (turnosOcupados ?? []).map((t: TurnoOcupado) => extraerHora(t.fecha_hora)),
     );
 
     const bloques = slotsBase.map(slot => ({
@@ -251,10 +266,15 @@ export class AppointmentRequestService {
   private async cargarBloquesDisponibilidad(
     especialistaId: string,
   ): Promise<Array<{ dia_semana: DiaSemana; hora_inicio: string; hora_fin: string }>> {
-    const { data } = await this.supabase.supabase
+    const { data, error } = await this.supabase.supabase
       .from('disponibilidad_especialista')
       .select('dia_semana, hora_inicio, hora_fin')
       .eq('especialista_id', especialistaId);
+
+    if (error) {
+      toast.error('No se pudo cargar la disponibilidad. Intenta nuevamente.');
+      throw new Error('No se pudo cargar la disponibilidad.');
+    }
 
     return (data ?? []).map((row) => ({
       dia_semana: row['dia_semana'] as DiaSemana,
@@ -279,16 +299,21 @@ export class AppointmentRequestService {
     const primeraFecha = fechasStr[0];
     const ultimaFecha = fechasStr[fechasStr.length - 1];
 
-    const startOfDay = `${primeraFecha}T00:00:00.000Z`;
-    const endOfDay = `${ultimaFecha}T23:59:59.999Z`;
+    const startOfDay = inicioDiaISO(primeraFecha);
+    const endOfDay = finDiaISO(ultimaFecha);
 
-    const { data: turnos } = await this.supabase.supabase
+    const { data: turnos, error } = await this.supabase.supabase
       .from('turnos')
       .select('fecha_hora')
       .eq('especialista_id', especialistaId)
       .gte('fecha_hora', startOfDay)
       .lte('fecha_hora', endOfDay)
       .not('estado', 'in', '(cancelado,rechazado)');
+
+    if (error) {
+      toast.error('No se pudieron verificar los turnos ocupados. Intenta nuevamente.');
+      throw new Error('No se pudieron verificar los turnos ocupados.');
+    }
 
     const mapa = new Map<string, TurnoOcupado[]>();
 
@@ -336,11 +361,14 @@ export class AppointmentRequestService {
   private async enriquecerEspecialidades(
     mapaEspecialistas: Map<string, EspecialistaWizard>,
   ): Promise<void> {
-    const { data: todasRelaciones } = await this.supabase.supabase
+    const { data: todasRelaciones, error: relError } = await this.supabase.supabase
       .from('especialista_especialidad')
       .select('especialista_id, especialidad_id');
 
-    if (!todasRelaciones) return;
+    if (relError || !todasRelaciones) {
+      toast.error('No se pudieron cargar los especialistas. Intenta nuevamente.');
+      throw new Error('No se pudieron cargar los especialistas.');
+    }
 
     const todasIds = [...new Set(todasRelaciones.map(r => r.especialidad_id))];
 
@@ -375,7 +403,7 @@ export class AppointmentRequestService {
   }
 
   /**
-   * Fragmenta un array de bloques de disponibilidad en slots de 30 minutos.
+   * Fragmenta un array de bloques de disponibilidad en slots regulares.
    *
    * @param bloques Array de registros con hora_inicio y hora_fin.
    * @returns Array de cadenas horarias en formato "HH:mm".
@@ -396,7 +424,7 @@ export class AppointmentRequestService {
         slots.push(
           `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`,
         );
-        minutosActuales += 30;
+        minutosActuales += DURACION_SLOT_MINUTOS;
       }
     }
 
@@ -404,7 +432,7 @@ export class AppointmentRequestService {
   }
 
   /**
-   * Calcula el total de slots de 30 minutos que caben en los bloques dados.
+   * Calcula el total de slots regulares que caben en los bloques dados.
    *
    * @param bloques Array de bloques con hora_inicio y hora_fin.
    * @returns Número total de slots.
@@ -414,7 +442,7 @@ export class AppointmentRequestService {
     for (const bloque of bloques) {
       const minutosInicio = this.parsearMinutos(bloque.hora_inicio);
       const minutosFin = this.parsearMinutos(bloque.hora_fin);
-      total += Math.floor((minutosFin - minutosInicio) / 30);
+      total += Math.floor((minutosFin - minutosInicio) / DURACION_SLOT_MINUTOS);
     }
     return total;
   }
