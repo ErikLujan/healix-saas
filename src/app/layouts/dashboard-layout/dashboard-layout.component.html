@@ -1,6 +1,6 @@
 <div @fadeIn class="min-h-screen bg-background flex flex-col">
-  <!-- Glassmorphic Header -->
-  <header class="h-14 backdrop-blur-xl bg-white/80 border-b border-slate-200/60 shadow-xs flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
+  <!-- Header claro con borde slate y elevación al desplazar -->
+  <header class="shell-header h-14 backdrop-blur-xl bg-white/80 border-b border-slate-300 shadow-sm flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40" [class.header-scrolled]="isHeaderScrolled()">
     <div class="flex items-center gap-4">
       <!-- Mobile Hamburger Button -->
       <button
@@ -15,7 +15,7 @@
       <div class="hidden sm:flex items-center gap-2 text-sm text-fg-muted">
         <a routerLink="/panel-principal" class="hover:text-fg transition-colors flex items-center gap-1.5">
           <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="w-5 h-5 rounded object-contain" />
-          <span class="font-medium">Healix</span>
+          <span class="shell-brand text-base text-fg">Healix</span>
         </a>
         <svg lucideIcon="chevron-right" class="w-3.5 h-3.5 text-fg-subtle"></svg>
         <span class="text-fg font-medium">{{ currentBreadcrumb() }}</span>
@@ -52,7 +52,7 @@
                 <span class="text-xs font-medium text-danger bg-danger/10 px-2 py-0.5 rounded-full">{{ pendingCount() }} pendiente(s)</span>
               }
             </div>
-            <div class="max-h-64 overflow-y-auto">
+            <div class="light-scroll max-h-64 overflow-y-auto">
               @if (notifications().length === 0) {
                 <div class="px-4 py-8 text-center">
                   <svg lucideIcon="bell" class="w-8 h-8 text-fg-subtle mx-auto mb-2 opacity-40"></svg>
@@ -158,36 +158,36 @@
   @if (isMobileMenuOpen()) {
     <div
       @drawerSlide
-      class="fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-surface border-r border-divider z-50 md:hidden flex flex-col shadow-xl"
+      class="fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-brand-700 border-r border-white/10 z-50 md:hidden flex flex-col shadow-xl"
     >
       <!-- Drawer Header -->
-      <div class="h-14 flex items-center justify-between px-4 border-b border-divider shrink-0">
+      <div class="h-14 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
         <div class="flex items-center gap-2.5">
           <img src="assets/images/icono.png" alt="Logotipo de Healix" width="768" height="547" loading="eager" decoding="async" class="w-8 h-8 rounded-lg object-cover" />
-          <span class="text-sm font-semibold text-fg font-display">Healix</span>
+          <span class="shell-brand text-base text-white">Healix</span>
         </div>
         <button
           type="button"
           (click)="closeMobileMenu()"
-          class="p-2 rounded-lg hover:bg-black/5 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+          class="p-2 rounded-lg hover:bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
           aria-label="Cerrar menú de navegación"
         >
-          <svg lucideIcon="x" class="w-5 h-5 text-fg"></svg>
+          <svg lucideIcon="x" class="w-5 h-5 text-white/85"></svg>
         </button>
       </div>
 
       <!-- Drawer Navigation -->
-      <nav class="flex-1 overflow-y-auto py-3 px-3">
+      <nav class="shell-scroll flex-1 overflow-y-auto py-3 px-3">
         @for (group of navGroups(); track group.title) {
           <div class="mb-3">
-            <p class="px-3 mb-1.5 text-[10px] font-semibold text-fg-subtle uppercase tracking-widest">{{ group.title }}</p>
+            <p class="px-3 mb-1.5 text-[10px] font-semibold text-white/70 uppercase tracking-widest">{{ group.title }}</p>
             @for (item of group.items; track item.path) {
               <a
                 [routerLink]="item.path"
-                routerLinkActive="bg-brand-50 text-brand-700 font-medium"
+                routerLinkActive="bg-brand-500/40 text-white font-medium"
                 [routerLinkActiveOptions]="{ exact: item.path === '/panel-principal' }"
                 (click)="closeMobileMenu()"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-fg-muted hover:bg-surface-sunken hover:text-fg transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+                class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/85 hover:bg-white/10 hover:text-white transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
               >
                 <svg [lucideIcon]="item.icon" class="w-4 h-4 shrink-0"></svg>
                 <span>{{ item.label }}</span>
@@ -202,29 +202,28 @@
         <button
           type="button"
           (click)="onCaptchaWidgetClick()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
-          [class]="isCaptchaEnabled() ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
+          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
         >
-          <span class="w-2 h-2 rounded-full shrink-0" [class]="isCaptchaEnabled() ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-          <svg lucideIcon="shield-check" class="w-3.5 h-3.5 shrink-0"></svg>
+          <span class="w-2 h-2 rounded-full shrink-0" [class]="isCaptchaEnabled() ? 'bg-emerald-200' : 'bg-amber-200'"></span>
+          <svg lucideIcon="shield-check" class="w-3.5 h-3.5 shrink-0" [class]="isCaptchaEnabled() ? 'text-emerald-200' : 'text-amber-200'"></svg>
           <span class="font-medium">{{ isCaptchaEnabled() ? 'Protección Anti-Bot Activa' : 'Anti-Bot (Bypass)' }}</span>
         </button>
       </div>
 
       <!-- Drawer User Card -->
       @if (userProfile(); as profile) {
-        <div class="border-t border-divider p-4 shrink-0">
+        <div class="border-t border-white/10 p-4 shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden shrink-0">
+            <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
               @if (getAvatarUrl(); as avatarUrl) {
                 <img [src]="avatarUrl" [alt]="profile.full_name" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
               } @else {
-                <span class="text-xs font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
+                <span class="text-xs font-bold text-white">{{ getInitials(profile.full_name) }}</span>
               }
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-fg truncate">{{ profile.full_name }}</p>
-              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5" [class]="roleBadgeClass()">
+              <p class="text-sm font-medium text-white truncate">{{ profile.full_name }}</p>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5" [class]="rolePillDarkClass">
                 <svg [lucideIcon]="roleIcon()" class="w-2.5 h-2.5"></svg>
                 {{ profile.role | titlecase }}
               </span>
@@ -232,7 +231,7 @@
             <button
               type="button"
               (click)="signOut()"
-              class="p-1.5 rounded-lg hover:bg-danger/10 text-fg-subtle hover:text-danger transition-colors"
+              class="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
               aria-label="Cerrar sesión"
             >
               <svg lucideIcon="log-out" class="w-4 h-4"></svg>
@@ -244,18 +243,18 @@
   }
 
   <div class="flex flex-1 min-w-0">
-    <!-- Desktop Sidebar -->
-    <aside @slideInLeft class="w-60 bg-surface border-r border-divider hidden md:flex flex-col sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
+    <!-- Desktop Sidebar sólida Deep Teal -->
+    <aside @slideInLeft class="shell-scroll w-60 bg-brand-700 border-r border-white/10 hidden md:flex flex-col sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
       <nav class="flex-1 py-3 px-3">
         @for (group of navGroups(); track group.title) {
           <div class="mb-4">
-            <p class="px-3 mb-1.5 text-[10px] font-semibold text-fg-subtle uppercase tracking-widest">{{ group.title }}</p>
+            <p class="px-3 mb-1.5 text-[10px] font-semibold text-white/70 uppercase tracking-widest">{{ group.title }}</p>
             @for (item of group.items; track item.path) {
               <a
                 [routerLink]="item.path"
-                routerLinkActive="bg-brand-50 text-brand-700 font-medium border-l-2 border-brand-700 -ml-px"
+                routerLinkActive="bg-brand-500/40 text-white font-medium border-l-2 border-teal-200 -ml-px"
                 [routerLinkActiveOptions]="{ exact: item.path === '/panel-principal' }"
-                class="flex items-center gap-2.5 px-3 py-2 rounded-r-lg text-sm text-fg-muted hover:bg-surface-sunken hover:text-fg transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
+                class="flex items-center gap-2.5 px-3 py-2 rounded-r-lg text-sm text-white/85 hover:bg-white/10 hover:text-white transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
               >
                 <svg [lucideIcon]="item.icon" class="w-4 h-4 shrink-0"></svg>
                 <span>{{ item.label }}</span>
@@ -270,36 +269,35 @@
         <button
           type="button"
           (click)="onCaptchaWidgetClick()"
-          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none"
-          [class]="isCaptchaEnabled() ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'"
+          class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
         >
-          <span class="w-2 h-2 rounded-full shrink-0" [class]="isCaptchaEnabled() ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-          <svg lucideIcon="shield-check" class="w-3.5 h-3.5 shrink-0"></svg>
+          <span class="w-2 h-2 rounded-full shrink-0" [class]="isCaptchaEnabled() ? 'bg-emerald-200' : 'bg-amber-200'"></span>
+          <svg lucideIcon="shield-check" class="w-3.5 h-3.5 shrink-0" [class]="isCaptchaEnabled() ? 'text-emerald-200' : 'text-amber-200'"></svg>
           <span class="font-medium">{{ isCaptchaEnabled() ? 'Protección Anti-Bot Activa' : 'Anti-Bot (Bypass)' }}</span>
         </button>
       </div>
 
       <!-- Desktop User Card -->
       @if (userProfile(); as profile) {
-        <div class="border-t border-divider p-3 shrink-0">
+        <div class="border-t border-white/10 p-3 shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden shrink-0">
+            <div class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
               @if (getAvatarUrl(); as avatarUrl) {
                 <img [src]="avatarUrl" [alt]="profile.full_name" width="36" height="36" loading="lazy" decoding="async" class="w-9 h-9 rounded-full object-cover" fallbackAvatar />
               } @else {
-                <span class="text-xs font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
+                <span class="text-xs font-bold text-white">{{ getInitials(profile.full_name) }}</span>
               }
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-xs font-medium text-fg truncate">{{ profile.full_name }}</p>
-              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5" [class]="roleBadgeClass()">
+              <p class="text-xs font-medium text-white truncate">{{ profile.full_name }}</p>
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium mt-0.5" [class]="rolePillDarkClass">
                 <svg [lucideIcon]="roleIcon()" class="w-2.5 h-2.5"></svg>
                 {{ profile.role | titlecase }}
               </span>
             </div>
             <a
               routerLink="/perfil"
-              class="p-1.5 rounded-lg hover:bg-surface-sunken transition-colors text-fg-subtle hover:text-fg"
+              class="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none"
               aria-label="Mi perfil"
             >
               <svg lucideIcon="settings" class="w-4 h-4"></svg>
@@ -309,8 +307,8 @@
       }
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 min-w-0 w-full p-4 sm:p-6 isolation-isolate flex flex-col">
+    <!-- Main Content con fondo suave -->
+    <main class="flex-1 min-w-0 w-full p-4 sm:p-6 isolation-isolate flex flex-col bg-slate-50">
       <div class="relative w-full flex-1 min-h-[calc(100vh-4rem)] overflow-clip">
         <div [@routeAnimations]="animationState()" class="route-shell-inner w-full">
           <router-outlet />

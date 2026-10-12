@@ -55,8 +55,8 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
       } @else {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (card of kpiCards(); track card.label) {
-            <div class="bg-surface border border-divider rounded-xl p-5 relative overflow-hidden">
-              <div class="absolute left-0 top-0 bottom-0 w-1" [style.background]="card.gradient"></div>
+            <div class="bg-surface border border-divider rounded-xl shadow-xs p-5 relative overflow-hidden">
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="pl-3">
                 <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">
                   {{ card.label }}
@@ -77,7 +77,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
             <div class="flex items-center justify-between mb-5">
               <div>
                 <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">AGENDA DE HOY</p>
-                <h3 class="text-lg font-bold text-fg">Turnos programados</h3>
+                <h2 class="text-lg font-bold text-fg">Turnos programados</h2>
               </div>
               <a routerLink="/turnos" class="text-brand-700 text-sm font-semibold hover:text-brand-600 transition-colors">
                 Ver todos
@@ -119,7 +119,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
           <div class="space-y-6">
             <div class="bg-surface border border-divider rounded-xl p-6">
               <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">PACIENTE EN CONTEXTO</p>
-              <h3 class="text-sm font-semibold text-fg mb-4">Detalle rapido</h3>
+              <h2 class="text-sm font-semibold text-fg mb-4">Detalle rapido</h2>
               @if (nextPatient()) {
                 <div class="space-y-3 mb-5">
                   <div class="flex items-center justify-between py-2 border-b border-divider">
@@ -174,28 +174,24 @@ export class SpecialistDashboardComponent implements OnInit {
       label: 'Turnos hoy',
       value: this.turnosDelDia(),
       color: 'text-brand-700',
-      gradient: 'linear-gradient(180deg, #0d9488, #0f766e)',
       subtext: this.getDayName(),
     },
     {
       label: 'Pendientes',
       value: this.turnosPendientes(),
       color: 'text-amber-600',
-      gradient: 'linear-gradient(180deg, #f59e0b, #d97706)',
       subtext: 'Requieren accion',
     },
     {
       label: 'Pacientes atendidos',
       value: this.pacientesAtendidos(),
       color: 'text-emerald-600',
-      gradient: 'linear-gradient(180deg, #10b981, #059669)',
       subtext: 'Total historial',
     },
     {
       label: 'Historias clinicas',
       value: this.pendingRecords(),
       color: 'text-purple-600',
-      gradient: 'linear-gradient(180deg, #a855f7, #9333ea)',
       subtext: 'Pendientes de firma',
     },
   ]);

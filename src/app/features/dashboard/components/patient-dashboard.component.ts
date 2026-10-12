@@ -110,7 +110,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
               [routerLink]="card.link"
               class="bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
             >
-              <div class="absolute left-0 top-0 bottom-0 w-1" [style.background]="card.gradient"></div>
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="pl-3">
                 <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">
                   {{ card.label }}
@@ -129,7 +129,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="lg:col-span-3 bg-surface border border-divider rounded-xl p-6">
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">AGENDA</p>
-            <h3 class="text-sm font-semibold text-fg mb-5">Proximos turnos</h3>
+            <h2 class="text-sm font-semibold text-fg mb-5">Proximos turnos</h2>
 
             @if (upcomingTurnos().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
@@ -170,7 +170,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
 
           <div class="lg:col-span-2 bg-surface border border-divider rounded-xl p-6">
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">HISTORIA</p>
-            <h3 class="text-sm font-semibold text-fg mb-5">Consultas anteriores</h3>
+            <h2 class="text-sm font-semibold text-fg mb-5">Consultas anteriores</h2>
 
             @if (recentHistory().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
@@ -218,28 +218,24 @@ export class PatientDashboardComponent implements OnInit {
       label: 'Proximos turnos',
       value: this.turnosDelPaciente(),
       color: 'text-brand-700',
-      gradient: 'linear-gradient(180deg, #0d9488, #0f766e)',
       link: '/turnos',
     },
     {
       label: 'Consultas 2026',
       value: this.historialPaciente(),
       color: 'text-emerald-600',
-      gradient: 'linear-gradient(180deg, #10b981, #059669)',
       subtext: `${this.historialPaciente()} realizadas`,
     },
     {
       label: 'Solicitar turno',
       value: '+',
       color: 'text-purple-600',
-      gradient: 'linear-gradient(180deg, #a855f7, #9333ea)',
       link: '/turnos/solicitar',
     },
     {
       label: 'Mi perfil',
       value: '\u2192',
       color: 'text-slate-600',
-      gradient: 'linear-gradient(180deg, #64748b, #475569)',
       link: '/perfil',
     },
   ]);

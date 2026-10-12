@@ -1,10 +1,11 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { TitleCasePipe } from '@angular/common';
 import { filter, Subscription } from 'rxjs';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { fadeIn, slideInLeft, dropdownFade, overlayFade, drawerSlide, routeAnimations } from '@core/animations/route-animations';
 import { AuthService } from '@core/services/auth.service';
+import { BreadcrumbService } from './breadcrumb.service';
 import { AdminUsersService } from '@features/administration/services/admin-users.service';
 import { CaptchaConfigService } from '@shared/services/captcha-config.service';
 import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
@@ -42,6 +43,7 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly adminUsersService = inject(AdminUsersService);
   private readonly captchaConfig = inject(CaptchaConfigService);
+  private readonly breadcrumbService = inject(BreadcrumbService);
 
   private _animationState = signal<string>('dashboard');
   private navSub?: Subscription;
@@ -52,6 +54,13 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
   readonly showDropdown = signal(false);
   readonly isMobileMenuOpen = signal(false);
   readonly showNotifications = signal(false);
+
+  /**
+   * Elevación del header al desplazar la página.
+   *
+   * Conmuta con histéresis para evitar parpadeo en el umbral.
+   */
+  readonly isHeaderScrolled = signal(false);
 
   readonly isCaptchaEnabled = this.captchaConfig.isCaptchaEnabled;
 
@@ -86,26 +95,13 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
     return items;
   });
 
-  readonly currentBreadcrumb = computed(() => {
-    const url = this.router.url;
-    const segments = url.split('/').filter(Boolean);
-    const last = segments[segments.length - 1] ?? 'panel-principal';
-    const labelMap: Record<string, string> = {
-      'panel-principal': 'Panel Principal',
-      'turnos': 'Turnos',
-      'solicitar': 'Solicitar Turno',
-      'pacientes': 'Pacientes',
-      'especialistas': 'Especialistas',
-      'disponibilidad': 'Disponibilidad',
-      'historial-clinico': 'Historial Clínico',
-      'administracion': 'Administración',
-      'usuarios': 'Usuarios',
-      'especialidades': 'Especialidades',
-      'estadisticas': 'Estadísticas',
-      'perfil': 'Mi Perfil',
-    };
-    return labelMap[last] ?? 'Panel Principal';
-  });
+  /**
+   * Miga de pan dinámica resuelta por BreadcrumbService.
+   *
+   * Lee el `title` de la ruta hija más profunda con repliegue a
+   * Panel Principal; el encabezado la muestra solo en escritorio.
+   */
+  readonly currentBreadcrumb = this.breadcrumbService.title;
 
   readonly navGroups = computed((): NavGroup[] => {
     const role = this.userRole();
@@ -211,6 +207,14 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
     return 'bg-emerald-100 text-emerald-700';
   });
 
+  /**
+   * Píldora de rol para las tarjetas de usuario sobre el sidebar oscuro.
+   *
+   * Variante oscura en familia lavanda para coherencia con las tablas;
+   * el desplegable claro del header conserva `roleBadgeClass`.
+   */
+  readonly rolePillDarkClass = 'bg-white/12 text-purple-100 border border-white/15';
+
   readonly roleIcon = computed(() => {
     const role = this.userRole();
     if (role === 'administrador') return 'shield';
@@ -226,6 +230,8 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
     if (this.userRole() === 'administrador') {
       this.adminUsersService.loadUsers();
     }
+
+    this.onWindowScroll();
   }
 
   ngOnDestroy(): void {
@@ -276,6 +282,22 @@ export class DashboardLayoutComponent implements OnInit, OnDestroy {
     this.isMobileMenuOpen.update(v => !v);
   }
 
+  /**
+   * Actualiza la elevación del header según el desplazamiento.
+   *
+   * Umbral de activación cerca de 8px con histéresis de 4px;
+   * solo conmuta la señal, sin mutar el DOM directamente.
+   */
+  @HostListener('window:scroll')
+  onWindowScroll(): void {
+    if (typeof window === 'undefined') return;
+    const y = window.scrollY;
+    if (!this.isHeaderScrolled() && y > 8) {
+      this.isHeaderScrolled.set(true);
+    } else if (this.isHeaderScrolled() && y < 4) {
+      this.isHeaderScrolled.set(false);
+    }
+  }
   closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
   }

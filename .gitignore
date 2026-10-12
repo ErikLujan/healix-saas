@@ -77,7 +77,6 @@ OPENCODE.md
 .opencode/cache/
 .opencode/*.log
 
-prompt.md
 handoff.md
 
 .playwright-mcp/

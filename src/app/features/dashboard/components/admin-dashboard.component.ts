@@ -54,11 +54,11 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           @for (card of kpiCards(); track card.label) {
             <a
               [routerLink]="card.link || null"
-              class="group bg-surface border border-divider rounded-xl p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
+              class="group bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
               [class.cursor-pointer]="card.link"
               [class.cursor-default]="!card.link"
             >
-              <div class="absolute left-0 top-0 bottom-0 w-1" [style.background]="card.gradient"></div>
+              <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="flex items-start justify-between pl-3">
                 <div>
                   <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">
@@ -86,7 +86,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div class="bg-surface border border-divider rounded-xl p-6">
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">ANALITICA</p>
-            <h3 class="text-sm font-semibold text-fg mb-5">Turnos por especialidad</h3>
+            <h2 class="text-sm font-semibold text-fg mb-5">Turnos por especialidad</h2>
             @if (hasChartData()) {
               <div class="relative h-52">
                 <canvas baseChart
@@ -104,7 +104,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
 
           <div class="bg-surface border border-divider rounded-xl p-6">
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">ACCESOS RAPIDOS</p>
-            <h3 class="text-sm font-semibold text-fg mb-5">Gestion del sistema</h3>
+            <h2 class="text-sm font-semibold text-fg mb-5">Gestion del sistema</h2>
             <div class="space-y-2">
               <a routerLink="/especialistas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
                 <div class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
@@ -142,7 +142,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
 
         <div class="bg-surface border border-divider rounded-xl p-6">
           <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">RESUMEN</p>
-          <h3 class="text-sm font-semibold text-fg mb-5">Metricas del sistema</h3>
+          <h2 class="text-sm font-semibold text-fg mb-5">Metricas del sistema</h2>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="text-center p-4 bg-surface-sunken rounded-lg">
               <p class="text-2xl font-bold text-fg tabular-nums">{{ totalUsuarios() }}</p>
@@ -187,7 +187,6 @@ export class AdminDashboardComponent implements OnInit {
       value: this.totalUsuarios(),
       icon: 'users',
       color: 'text-brand-700',
-      gradient: 'linear-gradient(180deg, #6366f1, #4f46e5)',
       iconBg: 'rgba(99, 102, 241, 0.1)',
       iconColor: '#6366f1',
       link: '/administracion/usuarios',
@@ -197,7 +196,6 @@ export class AdminDashboardComponent implements OnInit {
       value: this.especialistasAprobados(),
       icon: 'stethoscope',
       color: 'text-emerald-600',
-      gradient: 'linear-gradient(180deg, #10b981, #059669)',
       iconBg: 'rgba(16, 185, 129, 0.1)',
       iconColor: '#10b981',
       link: '/especialistas',
@@ -207,7 +205,6 @@ export class AdminDashboardComponent implements OnInit {
       value: this.especialistasPendientes(),
       icon: 'clock',
       color: 'text-amber-600',
-      gradient: 'linear-gradient(180deg, #f59e0b, #d97706)',
       iconBg: 'rgba(245, 158, 11, 0.1)',
       iconColor: '#f59e0b',
       link: '/especialistas',
@@ -217,7 +214,6 @@ export class AdminDashboardComponent implements OnInit {
       value: this.totalTurnos(),
       icon: 'calendar',
       color: 'text-purple-600',
-      gradient: 'linear-gradient(180deg, #a855f7, #9333ea)',
       iconBg: 'rgba(168, 85, 247, 0.1)',
       iconColor: '#a855f7',
     },

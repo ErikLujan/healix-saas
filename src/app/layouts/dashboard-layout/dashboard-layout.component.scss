@@ -8,3 +8,80 @@
   display: block;
   overflow: clip;
 }
+
+/* Header del shell: transición corta solo de pintura, sin saltos de layout. */
+.shell-header {
+  transition:
+    background-color var(--duration-fast) var(--ease-out-strong),
+    border-color var(--duration-fast) var(--ease-out-strong),
+    box-shadow var(--duration-fast) var(--ease-out-strong);
+}
+
+/* Estado desplazado: fondo más sólido, borde más fuerte y sombra media. */
+.header-scrolled {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: var(--color-slate-400);
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-header {
+    transition: none;
+  }
+}
+
+/* Marca del header en Manrope ExtraBold: solo brand del shell. */
+.shell-brand {
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* Scroll fino del sidebar oscuro: conserva overflow-y auto, sin pista blanca. */
+.shell-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.shell-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shell-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shell-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+}
+
+.shell-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+/* Scroll fino gris para superficies claras: conserva overflow-y auto. */
+.light-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.light-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.light-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.light-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 9999px;
+}
+
+.light-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-subtle);
+}
