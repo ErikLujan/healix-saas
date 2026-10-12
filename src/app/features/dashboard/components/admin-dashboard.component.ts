@@ -29,22 +29,22 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (i of [1,2,3,4]; track i) {
             <div class="bg-surface border border-divider rounded-xl p-5 animate-pulse">
-              <div class="h-3 w-24 bg-slate-200 rounded mb-3"></div>
-              <div class="h-8 w-16 bg-slate-200 rounded mb-2"></div>
-              <div class="h-3 w-20 bg-slate-100 rounded"></div>
+              <div class="h-3 w-24 bg-border rounded mb-3"></div>
+              <div class="h-8 w-16 bg-border rounded mb-2"></div>
+              <div class="h-3 w-20 bg-surface-sunken rounded"></div>
             </div>
           }
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-32 bg-slate-200 rounded mb-6"></div>
-            <div class="h-48 bg-slate-100 rounded-lg"></div>
+            <div class="h-4 w-32 bg-border rounded mb-6"></div>
+            <div class="h-48 bg-surface-sunken rounded-lg"></div>
           </div>
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-40 bg-slate-200 rounded mb-6"></div>
+            <div class="h-4 w-40 bg-border rounded mb-6"></div>
             <div class="space-y-4">
               @for (i of [1,2,3]; track i) {
-                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="h-12 bg-surface-sunken rounded-lg"></div>
               }
             </div>
           </div>
@@ -54,7 +54,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           @for (card of kpiCards(); track card.label) {
             <a
               [routerLink]="card.link || null"
-              class="group bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
+              class="group bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none relative overflow-hidden"
               [class.cursor-pointer]="card.link"
               [class.cursor-default]="!card.link"
             >
@@ -106,7 +106,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">ACCESOS RAPIDOS</p>
             <h2 class="text-sm font-semibold text-fg mb-5">Gestion del sistema</h2>
             <div class="space-y-2">
-              <a routerLink="/especialistas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/especialistas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="stethoscope" class="w-4 h-4 text-purple-600"></svg>
                 </div>
@@ -116,7 +116,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
                 </div>
                 <svg lucideIcon="chevron-right" class="w-4 h-4 text-fg-subtle shrink-0"></svg>
               </a>
-              <a routerLink="/administracion/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/administracion/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="users" class="w-4 h-4 text-emerald-600"></svg>
                 </div>
@@ -126,7 +126,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
                 </div>
                 <svg lucideIcon="chevron-right" class="w-4 h-4 text-fg-subtle shrink-0"></svg>
               </a>
-              <a routerLink="/estadisticas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/estadisticas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="bar-chart-2" class="w-4 h-4 text-amber-600"></svg>
                 </div>

@@ -1,10 +1,11 @@
 import { Component, output, signal, HostListener } from '@angular/core';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 
 @Component({
   selector: 'app-resena-modal',
   standalone: true,
-  imports: [LucideDynamicIcon],
+  imports: [LucideDynamicIcon, DialogFocusTrapDirective],
   templateUrl: './resena-modal.component.html',
 })
 export class ResenaModalComponent {

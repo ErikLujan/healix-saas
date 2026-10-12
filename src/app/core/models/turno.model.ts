@@ -136,6 +136,17 @@ export const ESTADOS_TURNO = {
 } as const;
 
 /**
+ * Orden canónico de estados para pestañas y filtros de turnos.
+ */
+export const ORDEN_ESTADOS_TURNO: readonly TurnoEstado[] = [
+  'pendiente',
+  'confirmado',
+  'finalizado',
+  'cancelado',
+  'rechazado',
+];
+
+/**
  * Estados que representan fin de ciclo (no permiten transiciones posteriores).
  */
 export const ESTADOS_TERMINALES: ReadonlySet<TurnoEstado> = new Set<TurnoEstado>([

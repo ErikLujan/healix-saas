@@ -27,27 +27,27 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
       @if (isLoading()) {
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mb-6">
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-3 w-32 bg-slate-200 rounded mb-4"></div>
-            <div class="h-6 w-48 bg-slate-200 rounded mb-4"></div>
+            <div class="h-3 w-32 bg-border rounded mb-4"></div>
+            <div class="h-6 w-48 bg-border rounded mb-4"></div>
             <div class="space-y-3 mb-5">
-              <div class="h-4 w-40 bg-slate-100 rounded"></div>
-              <div class="h-4 w-32 bg-slate-100 rounded"></div>
+              <div class="h-4 w-40 bg-surface-sunken rounded"></div>
+              <div class="h-4 w-32 bg-surface-sunken rounded"></div>
             </div>
             <div class="flex gap-3">
-              <div class="h-10 w-32 bg-slate-200 rounded-lg"></div>
-              <div class="h-10 w-24 bg-slate-100 rounded-lg"></div>
+              <div class="h-10 w-32 bg-border rounded-lg"></div>
+              <div class="h-10 w-24 bg-surface-sunken rounded-lg"></div>
             </div>
           </div>
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse flex flex-col items-center justify-center">
-            <div class="h-3 w-24 bg-slate-200 rounded mb-4"></div>
-            <div class="h-10 w-32 bg-slate-200 rounded-lg"></div>
+            <div class="h-3 w-24 bg-border rounded mb-4"></div>
+            <div class="h-10 w-32 bg-border rounded-lg"></div>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           @for (i of [1,2,3,4]; track i) {
             <div class="bg-surface border border-divider rounded-xl p-5 animate-pulse">
-              <div class="h-3 w-24 bg-slate-200 rounded mb-3"></div>
-              <div class="h-8 w-16 bg-slate-200 rounded"></div>
+              <div class="h-3 w-24 bg-border rounded mb-3"></div>
+              <div class="h-8 w-16 bg-border rounded"></div>
             </div>
           }
         </div>
@@ -74,7 +74,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                   </div>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                  <a routerLink="/turnos" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors">
+                  <a routerLink="/turnos" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                     Ver mis turnos
                   </a>
                   <button class="inline-flex items-center gap-1.5 border border-divider text-fg text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-surface-sunken transition-colors">
@@ -98,7 +98,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
 
           <div class="bg-surface border border-divider rounded-xl p-6 flex flex-col items-center justify-center text-center">
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-3">NUEVO TURNO</p>
-            <a routerLink="/turnos/solicitar" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors">
+            <a routerLink="/turnos/solicitar" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
               Reservar turno
             </a>
           </div>
@@ -108,7 +108,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
           @for (card of kpiCards(); track card.label) {
             <a
               [routerLink]="card.link"
-              class="bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
+              class="bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none relative overflow-hidden"
             >
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="pl-3">
@@ -189,7 +189,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                   </div>
                 }
               </div>
-              <a routerLink="/historial-clinico" class="inline-flex items-center gap-1.5 text-brand-700 text-sm font-semibold mt-5 hover:text-brand-600 transition-colors">
+              <a routerLink="/historial-clinico" class="inline-flex items-center gap-1.5 text-brand-700 text-sm font-semibold mt-5 hover:text-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 Ver historia clinica completa
               </a>
             }

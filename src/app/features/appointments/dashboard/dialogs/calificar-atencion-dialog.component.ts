@@ -2,11 +2,12 @@ import { Component, output, signal, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 
 @Component({
   selector: 'app-calificar-atencion-dialog',
   standalone: true,
-  imports: [FormsModule, NgClass, LucideDynamicIcon],
+  imports: [FormsModule, NgClass, LucideDynamicIcon, DialogFocusTrapDirective],
   templateUrl: './calificar-atencion-dialog.component.html',
 })
 export class CalificarAtencionDialogComponent {

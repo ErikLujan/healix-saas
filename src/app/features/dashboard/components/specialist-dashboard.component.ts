@@ -28,26 +28,26 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (i of [1,2,3,4]; track i) {
             <div class="bg-surface border border-divider rounded-xl p-5 animate-pulse">
-              <div class="h-3 w-24 bg-slate-200 rounded mb-3"></div>
-              <div class="h-8 w-16 bg-slate-200 rounded mb-2"></div>
-              <div class="h-3 w-20 bg-slate-100 rounded"></div>
+              <div class="h-3 w-24 bg-border rounded mb-3"></div>
+              <div class="h-8 w-16 bg-border rounded mb-2"></div>
+              <div class="h-3 w-20 bg-surface-sunken rounded"></div>
             </div>
           }
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-32 bg-slate-200 rounded mb-6"></div>
+            <div class="h-4 w-32 bg-border rounded mb-6"></div>
             <div class="space-y-4">
               @for (i of [1,2,3]; track i) {
-                <div class="h-20 bg-slate-100 rounded-lg"></div>
+                <div class="h-20 bg-surface-sunken rounded-lg"></div>
               }
             </div>
           </div>
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-40 bg-slate-200 rounded mb-6"></div>
+            <div class="h-4 w-40 bg-border rounded mb-6"></div>
             <div class="space-y-4">
               @for (i of [1,2]; track i) {
-                <div class="h-16 bg-slate-100 rounded-lg"></div>
+                <div class="h-16 bg-surface-sunken rounded-lg"></div>
               }
             </div>
           </div>
@@ -79,7 +79,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                 <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">AGENDA DE HOY</p>
                 <h2 class="text-lg font-bold text-fg">Turnos programados</h2>
               </div>
-              <a routerLink="/turnos" class="text-brand-700 text-sm font-semibold hover:text-brand-600 transition-colors">
+              <a routerLink="/turnos" class="text-brand-700 text-sm font-semibold hover:text-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 Ver todos
               </a>
             </div>

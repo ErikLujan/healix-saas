@@ -15,6 +15,7 @@ import { LucideDynamicIcon } from '@lucide/angular';
 import { ClinicalRangeComponent } from '@shared/components/clinical-controls/clinical-range.component';
 import { ClinicalNumericComponent } from '@shared/components/clinical-controls/clinical-numeric.component';
 import { ClinicalBooleanComponent } from '@shared/components/clinical-controls/clinical-boolean.component';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 import { MedicalRecordsService } from '@core/services/medical-records.service';
 import { AuthService } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
@@ -55,6 +56,7 @@ function validarPresionArterial(control: AbstractControl): ValidationErrors | nu
     ClinicalRangeComponent,
     ClinicalNumericComponent,
     ClinicalBooleanComponent,
+    DialogFocusTrapDirective,
   ],
   templateUrl: './finish-appointment.dialog.html',
 })

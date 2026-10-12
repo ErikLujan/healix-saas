@@ -2,6 +2,7 @@ import { Component, output, signal, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 
 /** Longitud minima requerida para motivos de cancelacion y rechazo. */
 const LONGITUD_MINIMA_MOTIVO = 10;
@@ -9,7 +10,7 @@ const LONGITUD_MINIMA_MOTIVO = 10;
 @Component({
   selector: 'app-comentario-dialog',
   standalone: true,
-  imports: [FormsModule, NgClass, LucideDynamicIcon],
+  imports: [FormsModule, NgClass, LucideDynamicIcon, DialogFocusTrapDirective],
   templateUrl: './comentario-dialog.component.html',
 })
 export class ComentarioDialogComponent {

@@ -2,12 +2,13 @@ import { Component, output, signal, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 import { EncuestaSatisfaccion } from '@core/models/turno.model';
 
 @Component({
   selector: 'app-encuesta-satisfaccion-dialog',
   standalone: true,
-  imports: [FormsModule, NgClass, LucideDynamicIcon],
+  imports: [FormsModule, NgClass, LucideDynamicIcon, DialogFocusTrapDirective],
   templateUrl: './encuesta-satisfaccion-dialog.component.html',
 })
 export class EncuestaSatisfaccionDialogComponent {

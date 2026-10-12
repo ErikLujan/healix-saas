@@ -6,21 +6,22 @@ import { Observable } from 'rxjs';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { AuthService, UserRole } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
-import { TurnoConRelaciones, EncuestaSatisfaccion } from '@core/models/turno.model';
+import { TurnoConRelaciones, EncuestaSatisfaccion, ORDEN_ESTADOS_TURNO } from '@core/models/turno.model';
+import { TurnoEstado } from '@core/models/database.types';
 import { ComentarioDialogComponent } from '../../dialogs/comentario-dialog.component';
 import { ResenaModalComponent } from '../../dialogs/resena-modal.component';
 import { CalificarAtencionDialogComponent } from '../../dialogs/calificar-atencion-dialog.component';
 import { EncuestaSatisfaccionDialogComponent } from '../../dialogs/encuesta-satisfaccion-dialog.component';
 import { FinishAppointmentDialogComponent } from '../../../finish/dialogs/finish-appointment.dialog';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { DEFAULT_PAGE_SIZE } from '@shared/components/pagination/pagination.config';
 import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
 import { FechaFormatPipe } from '@shared/pipes/fecha-format.pipe';
+import { EmptyValuePipe } from '@shared/pipes/empty-value.pipe';
+import { extraerFechaCorta, extraerHora, formatearFechaLegibleEsAR, nombreMesEsAR } from '@shared/utils/date-locale.utils';
 import { MedicalRecordsService } from '@core/services/medical-records.service';
 import { MedicalRecordConRelaciones } from '@core/models/medical-record.model';
 import { RegistrationService, Specialty } from '@core/services/registration.service';
-
-/** Cantidad maxima de tarjetas visibles por pagina en el dashboard. */
-const PAGE_SIZE = 4;
 
 /**
  * Dashboard unificado de gestion de turnos.
@@ -48,6 +49,7 @@ const PAGE_SIZE = 4;
     PaginationComponent,
     EstadoTurnoColorPipe,
     FechaFormatPipe,
+    EmptyValuePipe,
   ],
   templateUrl: './dashboard-page.component.html',
 })
@@ -93,7 +95,7 @@ export class DashboardPageComponent implements OnInit {
   readonly searchQuery = signal('');
 
   /** Filtro activo por estado (null = todos). */
-  readonly filtroEstado = signal<string | null>(null);
+  readonly filtroEstado = signal<TurnoEstado | null>(null);
 
   /** Especialidades disponibles para el filtro dropdown. */
   readonly especialidades = signal<readonly Specialty[]>([]);
@@ -116,10 +118,16 @@ export class DashboardPageComponent implements OnInit {
   /** Tipo de accion pendiente en el dialogo de comentario ('cancelar' | 'rechazar' | 'confirmar'). */
   private accionPendiente = signal<'cancelar' | 'rechazar' | 'confirmar'>('cancelar');
 
+  /** Orden canónico de estados para las pestañas de filtro. */
+  readonly ordenEstados = ORDEN_ESTADOS_TURNO;
+
+  /** Tamaño de segmento compartido con el paginador. */
+  readonly pageSize = DEFAULT_PAGE_SIZE;
+
   /** Contadores por estado para los tabs. */
   readonly contadores = computed(() => {
     const turnos = this._turnos();
-    const contadores: Record<string, number> = {
+    const contadores: Record<TurnoEstado, number> = {
       pendiente: 0,
       confirmado: 0,
       rechazado: 0,
@@ -158,17 +166,12 @@ export class DashboardPageComponent implements OnInit {
       const resena = t.resena_diagnostico?.toLowerCase() ?? '';
       const comentarioCancelacion = t.comentario_cancelacion_rechazo?.toLowerCase() ?? '';
 
-      const fechaRaw = t.fecha_hora.substring(0, 10);
+      const fechaRaw = extraerFechaCorta(t.fecha_hora);
       const [anio, mes, dia] = fechaRaw.split('-');
       const fechaISO = `${anio}-${mes}-${dia}`;
       const fechaBarra = `${dia}/${mes}/${anio}`;
-      const mesNombres: Record<string, string> = {
-        '01': 'enero', '02': 'febrero', '03': 'marzo', '04': 'abril',
-        '05': 'mayo', '06': 'junio', '07': 'julio', '08': 'agosto',
-        '09': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre',
-      };
-      const fechaLegible = `${dia} de ${mesNombres[mes] ?? mes} de ${anio}`;
-      const hora = t.fecha_hora.substring(11, 16);
+      const fechaLegible = `${dia} de ${nombreMesEsAR(mes)} de ${anio}`;
+      const hora = extraerHora(t.fecha_hora);
 
       const coincideBasico = especialidad.includes(query)
         || especialista.includes(query)
@@ -216,8 +219,8 @@ export class DashboardPageComponent implements OnInit {
 
   /** Porcion paginada del array filtrado para la pagina actual. */
   readonly turnosPaginados = computed(() => {
-    const inicio = (this.currentPage() - 1) * PAGE_SIZE;
-    const fin = inicio + PAGE_SIZE;
+    const inicio = (this.currentPage() - 1) * this.pageSize;
+    const fin = inicio + this.pageSize;
     return this.turnosFiltrados().slice(inicio, fin);
   });
 
@@ -339,7 +342,7 @@ export class DashboardPageComponent implements OnInit {
   }
 
   /** Selecciona un filtro de estado o lo deselecciona, reseteando la paginacion. */
-  seleccionarFiltro(estado: string | null): void {
+  seleccionarFiltro(estado: TurnoEstado | null): void {
     this.filtroEstado.update(actual => actual === estado ? null : estado);
     this.currentPage.set(1);
   }
@@ -482,17 +485,10 @@ export class DashboardPageComponent implements OnInit {
   }
 
   formatearHora(fechaHora: string): string {
-    return fechaHora.substring(11, 16);
+    return extraerHora(fechaHora);
   }
 
   formatearFechaLegible(fechaHora: string): string {
-    const fechaStr = fechaHora.substring(0, 10);
-    const [anio, mes, dia] = fechaStr.split('-').map(Number);
-    const fechaObj = new Date(anio, mes - 1, dia);
-    return fechaObj.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatearFechaLegibleEsAR(fechaHora);
   }
 }
