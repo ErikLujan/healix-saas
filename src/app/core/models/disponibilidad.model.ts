@@ -65,16 +65,14 @@ export const RESTRICCIONES_HORARIAS: Readonly<Record<number, { readonly inicio: 
 /** Duración fija en minutos de cada bloque de atención generado. */
 export const DURACION_SLOT_MINUTOS = 30;
 
-/** Nombre legible de cada dia de la semana para la interfaz. */
-export const NOMBRES_DIAS: ReadonlyArray<string> = [
-  'Domingo',
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
-] as const;
+/** Hora de inicio por defecto al habilitar un día sin bloques. */
+export const HORA_INICIO_DEFAULT = '08:00';
+
+/** Hora de fin por defecto al habilitar un día sin bloques. */
+export const HORA_FIN_DEFAULT = '12:00';
+
+/** Extensión por defecto en horas al agregar un bloque contiguo. */
+export const EXTENSION_BLOQUE_DEFAULT_HORAS = 4;
 
 /**
  * Representa un bloque horario generado dinámicamente a partir

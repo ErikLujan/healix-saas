@@ -17,6 +17,7 @@ export class StepPatientComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly seleccionado = this.wizard.pacienteSeleccionado;
   readonly busqueda = signal('');
+  readonly errorCarga = this.adminUsersService.lastError;
 
   readonly pacientesFiltrados = computed(() => {
     const termino = this.busqueda().toLowerCase().trim();
@@ -29,11 +30,19 @@ export class StepPatientComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.cargarPacientes();
+  }
+
+  async cargarPacientes(): Promise<void> {
+    this.isLoading.set(true);
     if (this.adminUsersService.users().length === 0) {
-      this.adminUsersService.loadUsers().then(() => this.isLoading.set(false));
-    } else {
-      this.isLoading.set(false);
+      await this.adminUsersService.loadUsers();
     }
+    this.isLoading.set(false);
+  }
+
+  async reintentar(): Promise<void> {
+    await this.cargarPacientes();
   }
 
   seleccionar(paciente: PacienteWizard): void {

@@ -1,0 +1,30 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4" appDialogFocusTrap
+  role="dialog" aria-modal="true" [attr.aria-label]="titulo()">
+  <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs animate-in fade-in-0 duration-200" (click)="cancelar()"></div>
+  <div class="relative w-full max-w-md rounded-2xl bg-surface border border-divider shadow-2xl p-4 sm:p-6 space-y-4 animate-in fade-in-0 zoom-in-95 duration-200">
+    <div class="flex items-start gap-3">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-danger/10 text-danger">
+        <svg lucideIcon="alert-triangle" class="h-5 w-5"></svg>
+      </div>
+      <div class="min-w-0">
+        <h3 class="text-lg font-semibold text-text-primary">{{ titulo() }}</h3>
+        @if (descripcion()) {
+          <p class="mt-1 text-sm text-text-secondary leading-relaxed">{{ descripcion() }}</p>
+        }
+      </div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button type="button" (click)="cancelar()" [disabled]="isProcessing()"
+        class="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-background transition-all duration-150 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed">
+        {{ textoCancelar() }}
+      </button>
+      <button type="button" (click)="confirmar()" [disabled]="isProcessing()"
+        class="inline-flex items-center gap-2 rounded-xl bg-danger px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-danger/90 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-danger/30 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed">
+        @if (isProcessing()) {
+          <span class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+        }
+        {{ textoConfirmar() }}
+      </button>
+    </div>
+  </div>
+</div>

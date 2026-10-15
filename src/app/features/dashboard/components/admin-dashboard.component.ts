@@ -7,6 +7,7 @@ import { TurnosService } from '@core/services/turnos.service';
 import { AdminUsersService } from '@features/administration/services/admin-users.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
+import { aplicarAlfa, paletaGraficos } from '@shared/utils/chart.tokens';
 import type { ChartConfiguration, ChartData } from 'chart.js';
 
 @Component({
@@ -29,32 +30,42 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (i of [1,2,3,4]; track i) {
             <div class="bg-surface border border-divider rounded-xl p-5 animate-pulse">
-              <div class="h-3 w-24 bg-slate-200 rounded mb-3"></div>
-              <div class="h-8 w-16 bg-slate-200 rounded mb-2"></div>
-              <div class="h-3 w-20 bg-slate-100 rounded"></div>
+              <div class="h-3 w-24 bg-border rounded mb-3"></div>
+              <div class="h-8 w-16 bg-border rounded mb-2"></div>
+              <div class="h-3 w-20 bg-surface-sunken rounded"></div>
             </div>
           }
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-32 bg-slate-200 rounded mb-6"></div>
-            <div class="h-48 bg-slate-100 rounded-lg"></div>
+            <div class="h-4 w-32 bg-border rounded mb-6"></div>
+            <div class="h-48 bg-surface-sunken rounded-lg"></div>
           </div>
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-4 w-40 bg-slate-200 rounded mb-6"></div>
+            <div class="h-4 w-40 bg-border rounded mb-6"></div>
             <div class="space-y-4">
               @for (i of [1,2,3]; track i) {
-                <div class="h-12 bg-slate-100 rounded-lg"></div>
+                <div class="h-12 bg-surface-sunken rounded-lg"></div>
               }
             </div>
           </div>
+        </div>
+      } @else if (errorCarga()) {
+        <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
+          <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+          <p class="text-sm font-medium text-fg">No se pudo cargar el panel.</p>
+          <p class="text-xs text-fg-muted mt-1">{{ errorCarga() }}</p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+            Reintentar
+          </button>
         </div>
       } @else {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (card of kpiCards(); track card.label) {
             <a
               [routerLink]="card.link || null"
-              class="group bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
+              class="group bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none relative overflow-hidden"
               [class.cursor-pointer]="card.link"
               [class.cursor-default]="!card.link"
             >
@@ -106,7 +117,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">ACCESOS RAPIDOS</p>
             <h2 class="text-sm font-semibold text-fg mb-5">Gestion del sistema</h2>
             <div class="space-y-2">
-              <a routerLink="/especialistas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/especialistas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="stethoscope" class="w-4 h-4 text-purple-600"></svg>
                 </div>
@@ -116,7 +127,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
                 </div>
                 <svg lucideIcon="chevron-right" class="w-4 h-4 text-fg-subtle shrink-0"></svg>
               </a>
-              <a routerLink="/administracion/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/administracion/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="users" class="w-4 h-4 text-emerald-600"></svg>
                 </div>
@@ -126,7 +137,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
                 </div>
                 <svg lucideIcon="chevron-right" class="w-4 h-4 text-fg-subtle shrink-0"></svg>
               </a>
-              <a routerLink="/estadisticas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group">
+              <a routerLink="/estadisticas" class="flex items-center gap-3 p-3 rounded-xl hover:bg-brand-50 transition-all duration-200 group focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 <div class="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
                   <svg lucideIcon="bar-chart-2" class="w-4 h-4 text-amber-600"></svg>
                 </div>
@@ -172,6 +183,7 @@ export class AdminDashboardComponent implements OnInit {
   private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
 
   readonly totalUsuarios = signal(0);
   readonly especialistasPendientes = signal(0);
@@ -187,35 +199,35 @@ export class AdminDashboardComponent implements OnInit {
       value: this.totalUsuarios(),
       icon: 'users',
       color: 'text-brand-700',
-      iconBg: 'rgba(99, 102, 241, 0.1)',
-      iconColor: '#6366f1',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/administracion/usuarios',
     },
     {
       label: 'Especialistas activos',
       value: this.especialistasAprobados(),
       icon: 'stethoscope',
-      color: 'text-emerald-600',
-      iconBg: 'rgba(16, 185, 129, 0.1)',
-      iconColor: '#10b981',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/especialistas',
     },
     {
       label: 'Pendientes aprobacion',
       value: this.especialistasPendientes(),
       icon: 'clock',
-      color: 'text-amber-600',
-      iconBg: 'rgba(245, 158, 11, 0.1)',
-      iconColor: '#f59e0b',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/especialistas',
     },
     {
       label: 'Turnos totales',
       value: this.totalTurnos(),
       icon: 'calendar',
-      color: 'text-purple-600',
-      iconBg: 'rgba(168, 85, 247, 0.1)',
-      iconColor: '#a855f7',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
     },
   ]);
 
@@ -230,14 +242,15 @@ export class AdminDashboardComponent implements OnInit {
 
     const labels = Array.from(specialtyMap.keys());
     const data = Array.from(specialtyMap.values());
+    const paleta = paletaGraficos();
 
     return {
       labels,
       datasets: [{
         data,
         label: 'Turnos',
-        backgroundColor: 'rgba(99, 102, 241, 0.8)',
-        borderColor: 'rgba(99, 102, 241, 1)',
+        backgroundColor: aplicarAlfa(paleta.marca500, 0.8),
+        borderColor: paleta.marca700,
         borderWidth: 1,
         borderRadius: 6,
         maxBarThickness: 48,
@@ -245,55 +258,84 @@ export class AdminDashboardComponent implements OnInit {
     };
   });
 
-  readonly barChartOptions = computed((): ChartConfiguration<'bar'>['options'] => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#1e293b',
-        titleFont: { size: 12, weight: 'bold' },
-        bodyFont: { size: 12 },
-        padding: 10,
-        cornerRadius: 8,
+  readonly barChartOptions = computed((): ChartConfiguration<'bar'>['options'] => {
+    const paleta = paletaGraficos();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: paleta.texto,
+          titleColor: paleta.superficie,
+          bodyColor: paleta.superficie,
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+        },
       },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 11 }, color: '#94a3b8' },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: "'Inter', system-ui, sans-serif" }, color: paleta.textoSutil },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: aplicarAlfa(paleta.borde, 0.5) },
+          ticks: { font: { size: 11, family: "'Inter', system-ui, sans-serif" }, color: paleta.textoSutil, stepSize: 1 },
+        },
       },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(226, 232, 240, 0.5)' },
-        ticks: { font: { size: 11 }, color: '#94a3b8', stepSize: 1 },
-      },
-    },
-  }));
+    };
+  });
 
   readonly hasChartData = computed(() => this.barChartData().datasets[0].data.length > 0);
 
   async ngOnInit(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  async recargar(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  private async cargarPanel(): Promise<void> {
     this.isLoading.set(true);
+    this.errorCarga.set(null);
 
-    await this.adminUsersService.loadUsers();
+    try {
+      await this.adminUsersService.loadUsers();
 
-    const users = this.adminUsersService.users();
-    this.totalUsuarios.set(users.length);
-    this.especialistasPendientes.set(
-      users.filter(u => u.especialistas && !u.especialistas.is_approved).length,
-    );
-    this.especialistasAprobados.set(
-      users.filter(u => u.especialistas && u.especialistas.is_approved).length,
-    );
+      const cargaUsuariosError = this.adminUsersService.lastError();
+      if (cargaUsuariosError) {
+        this.errorCarga.set(cargaUsuariosError);
+        return;
+      }
 
-    const turnos = await this.turnosService.obtenerTodosLosTurnosAdmin();
-    this.totalTurnos.set(turnos.length);
-    this.turnosData.set(turnos);
+      const users = this.adminUsersService.users();
+      this.totalUsuarios.set(users.length);
+      this.especialistasPendientes.set(
+        users.filter(u => u.especialistas && !u.especialistas.is_approved).length,
+      );
+      this.especialistasAprobados.set(
+        users.filter(u => u.especialistas && u.especialistas.is_approved).length,
+      );
 
-    const historias = await this.medicalRecordsService.getAllRecords().toPromise();
-    this.totalHistorias.set(historias?.length ?? 0);
+      const turnos = await this.turnosService.obtenerTodosLosTurnosAdmin();
+      const cargaTurnosError = this.turnosService.lastError();
+      if (cargaTurnosError) {
+        this.errorCarga.set(cargaTurnosError);
+        return;
+      }
+      this.totalTurnos.set(turnos.length);
+      this.turnosData.set(turnos);
 
-    this.isLoading.set(false);
+      const historias = await this.medicalRecordsService.getAllRecords().toPromise();
+      this.totalHistorias.set(historias?.length ?? 0);
+    } catch {
+      this.errorCarga.set('No se pudo cargar el panel. Revisá tu conexión.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 }

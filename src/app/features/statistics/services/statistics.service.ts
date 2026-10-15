@@ -1,5 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { SupabaseService } from '@core/services/supabase.service';
+import { extraerFechaCorta, obtenerDiaSemanaLocal } from '@shared/utils/date-locale.utils';
+import { toast } from 'ngx-sonner';
 
 /**
  * Filtro de rango de fechas para consultas estadisticas.
@@ -58,6 +60,9 @@ export class StatisticsService {
 
   readonly isLoading = signal(false);
 
+  /** Último error de carga, expuesto para estados de error con reintento. */
+  readonly lastError = signal<string | null>(null);
+
   /** Log de accesos recientes. */
   readonly accessLogs = signal<readonly AccessLogEntry[]>([]);
   /** Turnos por especialidad. */
@@ -82,6 +87,7 @@ export class StatisticsService {
    */
   async loadAllStats(): Promise<void> {
     this.isLoading.set(true);
+    this.lastError.set(null);
 
     await Promise.all([
       this.loadKPIs(),
@@ -100,17 +106,22 @@ export class StatisticsService {
     const now = new Date();
     const primerDiaMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    const [usuariosResult, pendientesResult, turnosMesResult, historiasResult] = await Promise.all([
-      this.supabase.supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      this.supabase.supabase.from('especialistas').select('id', { count: 'exact', head: true }).eq('is_approved', false),
-      this.supabase.supabase.from('turnos').select('id', { count: 'exact', head: true }).gte('created_at', primerDiaMes),
-      this.supabase.supabase.from('historias_clinicas').select('id', { count: 'exact', head: true }),
-    ]);
+    try {
+      const [usuariosResult, pendientesResult, turnosMesResult, historiasResult] = await Promise.all([
+        this.supabase.supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        this.supabase.supabase.from('especialistas').select('id', { count: 'exact', head: true }).eq('is_approved', false),
+        this.supabase.supabase.from('turnos').select('id', { count: 'exact', head: true }).gte('created_at', primerDiaMes),
+        this.supabase.supabase.from('historias_clinicas').select('id', { count: 'exact', head: true }),
+      ]);
 
-    this.totalUsuarios.set(usuariosResult.count ?? 0);
-    this.especialistasPendientes.set(pendientesResult.count ?? 0);
-    this.turnosDelMes.set(turnosMesResult.count ?? 0);
-    this.totalHistorias.set(historiasResult.count ?? 0);
+      this.totalUsuarios.set(usuariosResult.count ?? 0);
+      this.especialistasPendientes.set(pendientesResult.count ?? 0);
+      this.turnosDelMes.set(turnosMesResult.count ?? 0);
+      this.totalHistorias.set(historiasResult.count ?? 0);
+    } catch {
+      toast.error('No se pudieron cargar los indicadores. Intenta nuevamente.');
+      this.lastError.set('No se pudieron cargar los indicadores.');
+    }
   }
 
   /**
@@ -137,6 +148,8 @@ export class StatisticsService {
       .limit(50);
 
     if (error) {
+      toast.error('No se pudo cargar el registro de accesos. Intenta nuevamente.');
+      this.lastError.set('No se pudo cargar el registro de accesos.');
       return;
     }
 
@@ -163,6 +176,8 @@ export class StatisticsService {
       .select('especialidad_id, specialties!inner(name)');
 
     if (error) {
+      toast.error('No se pudieron cargar los turnos por especialidad. Intenta nuevamente.');
+      this.lastError.set('No se pudieron cargar los turnos por especialidad.');
       return;
     }
 
@@ -189,6 +204,8 @@ export class StatisticsService {
       .select('fecha_hora');
 
     if (error) {
+      toast.error('No se pudieron cargar los turnos por día. Intenta nuevamente.');
+      this.lastError.set('No se pudieron cargar los turnos por día.');
       return;
     }
 
@@ -197,8 +214,8 @@ export class StatisticsService {
     for (const dia of diasSemana) counts.set(dia, 0);
 
     for (const row of data ?? []) {
-      const fecha = new Date(row.fecha_hora);
-      const dia = diasSemana[fecha.getDay()];
+      const fechaCorta = extraerFechaCorta(row.fecha_hora);
+      const dia = diasSemana[obtenerDiaSemanaLocal(fechaCorta)];
       counts.set(dia, (counts.get(dia) ?? 0) + 1);
     }
 
@@ -223,6 +240,8 @@ export class StatisticsService {
       .lte('fecha_hora', range.hasta + 'T23:59:59');
 
     if (error) {
+      toast.error('No se pudieron cargar los turnos por médico. Intenta nuevamente.');
+      this.lastError.set('No se pudieron cargar los turnos por médico.');
       return;
     }
 

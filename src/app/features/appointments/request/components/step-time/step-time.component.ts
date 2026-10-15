@@ -15,6 +15,7 @@ export class StepTimeComponent implements OnInit {
 
   readonly bloques = signal<readonly BloqueDisponible[]>([]);
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
   readonly seleccionada = this.wizard.horaSeleccionada;
   readonly especialista = this.wizard.especialistaSeleccionado;
   readonly fechaSeleccionada = this.wizard.fechaSeleccionada;
@@ -38,10 +39,20 @@ export class StepTimeComponent implements OnInit {
       return;
     }
 
-    const bloquesRaw = await this.requestService.cargarBloquesHorarios(especialista.id, fecha);
+    this.isLoading.set(true);
+    this.errorCarga.set(null);
+    try {
+      const bloquesRaw = await this.requestService.cargarBloquesHorarios(especialista.id, fecha);
+      this.bloques.set(Object.freeze(bloquesRaw));
+    } catch {
+      this.errorCarga.set('No se pudieron cargar los horarios.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
 
-    this.bloques.set(Object.freeze(bloquesRaw));
-    this.isLoading.set(false);
+  async reintentar(): Promise<void> {
+    await this.cargarBloques();
   }
 
   seleccionar(hora: string): void {

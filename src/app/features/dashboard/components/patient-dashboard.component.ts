@@ -7,6 +7,7 @@ import { AuthService } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
+import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, formatearFechaLegibleEsAR } from '@shared/utils/date-locale.utils';
 
 @Component({
   selector: 'app-patient-dashboard',
@@ -16,10 +17,10 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
   template: `
     <div @fadeIn class="min-h-full">
       <div @slideUp class="mb-8">
-        <h1 class="text-2xl font-semibold text-fg font-display tracking-tight">
+        <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">
           Mi clinica
         </h1>
-        <p class="text-sm text-fg-muted mt-1">
+        <p class="text-sm text-text-secondary mt-1">
           Acceso rapido a tus servicios medicos.
         </p>
       </div>
@@ -27,29 +28,39 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
       @if (isLoading()) {
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mb-6">
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse">
-            <div class="h-3 w-32 bg-slate-200 rounded mb-4"></div>
-            <div class="h-6 w-48 bg-slate-200 rounded mb-4"></div>
+            <div class="h-3 w-32 bg-border rounded mb-4"></div>
+            <div class="h-6 w-48 bg-border rounded mb-4"></div>
             <div class="space-y-3 mb-5">
-              <div class="h-4 w-40 bg-slate-100 rounded"></div>
-              <div class="h-4 w-32 bg-slate-100 rounded"></div>
+              <div class="h-4 w-40 bg-surface-sunken rounded"></div>
+              <div class="h-4 w-32 bg-surface-sunken rounded"></div>
             </div>
             <div class="flex gap-3">
-              <div class="h-10 w-32 bg-slate-200 rounded-lg"></div>
-              <div class="h-10 w-24 bg-slate-100 rounded-lg"></div>
+              <div class="h-10 w-32 bg-border rounded-lg"></div>
+              <div class="h-10 w-24 bg-surface-sunken rounded-lg"></div>
             </div>
           </div>
           <div class="bg-surface border border-divider rounded-xl p-6 animate-pulse flex flex-col items-center justify-center">
-            <div class="h-3 w-24 bg-slate-200 rounded mb-4"></div>
-            <div class="h-10 w-32 bg-slate-200 rounded-lg"></div>
+            <div class="h-3 w-24 bg-border rounded mb-4"></div>
+            <div class="h-10 w-32 bg-border rounded-lg"></div>
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           @for (i of [1,2,3,4]; track i) {
             <div class="bg-surface border border-divider rounded-xl p-5 animate-pulse">
-              <div class="h-3 w-24 bg-slate-200 rounded mb-3"></div>
-              <div class="h-8 w-16 bg-slate-200 rounded"></div>
+              <div class="h-3 w-24 bg-border rounded mb-3"></div>
+              <div class="h-8 w-16 bg-border rounded"></div>
             </div>
           }
+        </div>
+      } @else if (errorCarga()) {
+        <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
+          <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+          <p class="text-sm font-medium text-text-primary">No se pudo cargar tu panel.</p>
+          <p class="text-xs text-text-secondary mt-1">{{ errorCarga() }}</p>
+          <button type="button" (click)="recargar()"
+            class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+            Reintentar
+          </button>
         </div>
       } @else {
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 mb-6">
@@ -57,48 +68,42 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
             <div class="bg-surface border border-divider rounded-xl p-6 relative overflow-hidden">
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-brand-500 to-brand-700"></div>
               <div class="pl-3">
-                <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">TU PROXIMA CONSULTA</p>
-                <h2 class="text-xl font-bold text-fg mb-4">
+                <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-2">TU PROXIMA CONSULTA</p>
+                <h2 class="text-xl font-bold text-text-primary mb-4">
                   {{ nextAppointment()!.especialidad?.name ?? 'Sin especialidad' }}
-                  <span class="text-fg-muted font-normal">&middot;</span>
+                  <span class="text-text-secondary font-normal">&middot;</span>
                   {{ nextAppointment()!.especialista?.full_name ?? 'Sin especialista' }}
                 </h2>
                 <div class="space-y-2 mb-4">
-                  <div class="flex items-center gap-2 text-sm text-fg-muted">
-                    <svg lucideIcon="calendar" class="w-4 h-4 text-fg-subtle"></svg>
+                  <div class="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg lucideIcon="calendar" class="w-4 h-4 text-text-subtle"></svg>
                     <span>{{ formatDate(nextAppointment()!.fecha_hora) }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-sm text-fg-muted">
-                    <svg lucideIcon="clock" class="w-4 h-4 text-fg-subtle"></svg>
+                  <div class="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg lucideIcon="clock" class="w-4 h-4 text-text-subtle"></svg>
                     <span>{{ formatTime(nextAppointment()!.fecha_hora) }}</span>
                   </div>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                  <a routerLink="/turnos" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors">
+                  <a routerLink="/turnos" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                     Ver mis turnos
                   </a>
-                  <button class="inline-flex items-center gap-1.5 border border-divider text-fg text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-surface-sunken transition-colors">
-                    Reagendar
-                  </button>
-                  <button class="inline-flex items-center gap-1.5 text-red-600 text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors">
-                    Cancelar
-                  </button>
                 </div>
               </div>
             </div>
           } @else {
             <div class="bg-surface border border-divider rounded-xl p-6 flex items-center justify-center">
               <div class="text-center">
-                <svg lucideIcon="calendar" class="w-12 h-12 text-fg-subtle mx-auto mb-3 opacity-40"></svg>
-                <p class="text-sm font-medium text-fg">No tenes turnos proximos</p>
-                <p class="text-xs text-fg-muted mt-1">Reserva un turno para comenzar.</p>
+                <svg lucideIcon="calendar" class="w-12 h-12 text-text-subtle mx-auto mb-3 opacity-40"></svg>
+                <p class="text-sm font-medium text-text-primary">No tenes turnos proximos</p>
+                <p class="text-xs text-text-secondary mt-1">Reserva un turno para comenzar.</p>
               </div>
             </div>
           }
 
           <div class="bg-surface border border-divider rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-3">NUEVO TURNO</p>
-            <a routerLink="/turnos/solicitar" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors">
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-3">NUEVO TURNO</p>
+            <a routerLink="/turnos/solicitar" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
               Reservar turno
             </a>
           </div>
@@ -108,18 +113,18 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
           @for (card of kpiCards(); track card.label) {
             <a
               [routerLink]="card.link"
-              class="bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 relative overflow-hidden"
+              class="bg-surface border border-divider rounded-xl shadow-xs p-5 transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 hover:border-brand-100 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none relative overflow-hidden"
             >
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="pl-3">
-                <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">
+                <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-2">
                   {{ card.label }}
                 </p>
                 <p class="text-3xl font-extrabold tracking-tight tabular-nums" [class]="card.color">
                   {{ card.value }}
                 </p>
                 @if (card.subtext) {
-                  <p class="text-xs text-fg-muted mt-1">{{ card.subtext }}</p>
+                  <p class="text-xs text-text-secondary mt-1">{{ card.subtext }}</p>
                 }
               </div>
             </a>
@@ -128,13 +133,13 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="lg:col-span-3 bg-surface border border-divider rounded-xl p-6">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">AGENDA</p>
-            <h2 class="text-sm font-semibold text-fg mb-5">Proximos turnos</h2>
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-1">AGENDA</p>
+            <h2 class="text-sm font-semibold text-text-primary mb-5">Proximos turnos</h2>
 
             @if (upcomingTurnos().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
-                <svg lucideIcon="calendar" class="w-10 h-10 text-fg-subtle mx-auto mb-2 opacity-40"></svg>
-                <p class="text-sm text-fg-muted">Sin turnos programados</p>
+                <svg lucideIcon="calendar" class="w-10 h-10 text-text-subtle mx-auto mb-2 opacity-40"></svg>
+                <p class="text-sm text-text-secondary">Sin turnos programados</p>
               </div>
             } @else {
               <div class="space-y-4">
@@ -142,12 +147,12 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                   <div class="border border-divider rounded-xl p-4 hover:border-brand-100 transition-colors">
                     <div class="flex items-start justify-between mb-2">
                       <div>
-                        <p class="text-sm font-bold text-fg">
+                        <p class="text-sm font-bold text-text-primary">
                           {{ turno.especialista?.full_name ?? 'Sin especialista' }}
-                          <span class="text-fg-muted font-normal">&middot;</span>
+                          <span class="text-text-secondary font-normal">&middot;</span>
                           {{ turno.especialidad?.name ?? '' }}
                         </p>
-                        <p class="text-xs text-fg-muted">{{ formatDate(turno.fecha_hora) }}</p>
+                        <p class="text-xs text-text-secondary">{{ formatDate(turno.fecha_hora) }}</p>
                       </div>
                       <span
                         class="text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -156,7 +161,7 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                         {{ turno.estado | titlecase }}
                       </span>
                     </div>
-                    <div class="flex items-center gap-4 text-xs text-fg-muted mt-2">
+                    <div class="flex items-center gap-4 text-xs text-text-secondary mt-2">
                       <span class="flex items-center gap-1">
                         <svg lucideIcon="clock" class="w-3 h-3"></svg>
                         {{ formatTime(turno.fecha_hora) }}
@@ -169,13 +174,13 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
           </div>
 
           <div class="lg:col-span-2 bg-surface border border-divider rounded-xl p-6">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">HISTORIA</p>
-            <h2 class="text-sm font-semibold text-fg mb-5">Consultas anteriores</h2>
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-1">HISTORIA</p>
+            <h2 class="text-sm font-semibold text-text-primary mb-5">Consultas anteriores</h2>
 
             @if (recentHistory().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
-                <svg lucideIcon="file-text" class="w-10 h-10 text-fg-subtle mx-auto mb-2 opacity-40"></svg>
-                <p class="text-sm text-fg-muted">Sin historial clinico</p>
+                <svg lucideIcon="file-text" class="w-10 h-10 text-text-subtle mx-auto mb-2 opacity-40"></svg>
+                <p class="text-sm text-text-secondary">Sin historial clinico</p>
               </div>
             } @else {
               <div class="relative pl-5 space-y-5">
@@ -183,13 +188,13 @@ import { TurnoConRelaciones } from '@core/models/turno.model';
                 @for (record of recentHistory(); track record.id) {
                   <div class="relative">
                     <span class="absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full bg-brand-700 ring-2 ring-surface"></span>
-                    <p class="text-xs text-fg-muted">{{ formatDate(record.created_at) }}</p>
-                    <p class="text-sm font-semibold text-fg">{{ record.especialista?.full_name ?? 'Sin especialista' }}</p>
-                    <p class="text-xs text-fg-muted">{{ record.datos_dinamicos.length }} datos clinicos registrados</p>
+                    <p class="text-xs text-text-secondary">{{ formatDate(record.created_at) }}</p>
+                    <p class="text-sm font-semibold text-text-primary">{{ record.especialista?.full_name ?? 'Sin especialista' }}</p>
+                    <p class="text-xs text-text-secondary">{{ record.datos_dinamicos.length }} datos clinicos registrados</p>
                   </div>
                 }
               </div>
-              <a routerLink="/historial-clinico" class="inline-flex items-center gap-1.5 text-brand-700 text-sm font-semibold mt-5 hover:text-brand-600 transition-colors">
+              <a routerLink="/historial-clinico" class="inline-flex items-center gap-1.5 text-brand-700 text-sm font-semibold mt-5 hover:text-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
                 Ver historia clinica completa
               </a>
             }
@@ -205,9 +210,12 @@ export class PatientDashboardComponent implements OnInit {
   private readonly medicalRecordsService = inject(MedicalRecordsService);
 
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
 
   readonly turnosDelPaciente = signal(0);
   readonly historialPaciente = signal(0);
+  readonly turnosDelMes = signal(0);
+  readonly especialidadesConsultadas = signal(0);
 
   readonly nextAppointment = signal<TurnoConRelaciones | null>(null);
   readonly upcomingTurnos = signal<readonly TurnoConRelaciones[]>([]);
@@ -221,27 +229,36 @@ export class PatientDashboardComponent implements OnInit {
       link: '/turnos',
     },
     {
-      label: 'Consultas 2026',
+      label: `Consultas ${anioActual()}`,
       value: this.historialPaciente(),
-      color: 'text-emerald-600',
+      color: 'text-brand-700',
       subtext: `${this.historialPaciente()} realizadas`,
     },
     {
-      label: 'Solicitar turno',
-      value: '+',
-      color: 'text-purple-600',
-      link: '/turnos/solicitar',
+      label: 'Turnos este mes',
+      value: this.turnosDelMes(),
+      color: 'text-brand-700',
+      link: '/turnos',
     },
     {
-      label: 'Mi perfil',
-      value: '\u2192',
-      color: 'text-slate-600',
-      link: '/perfil',
+      label: 'Especialidades',
+      value: this.especialidadesConsultadas(),
+      color: 'text-brand-700',
+      subtext: 'Distintas consultadas',
     },
   ]);
 
   async ngOnInit(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  async recargar(): Promise<void> {
+    await this.cargarPanel();
+  }
+
+  private async cargarPanel(): Promise<void> {
     this.isLoading.set(true);
+    this.errorCarga.set(null);
     const perfil = this.authService.userProfile();
 
     if (!perfil) {
@@ -249,33 +266,46 @@ export class PatientDashboardComponent implements OnInit {
       return;
     }
 
-    const [turnos, historial] = await Promise.all([
-      this.turnosService.obtenerTurnosPorPaciente(perfil.id),
-      this.medicalRecordsService.getHistoryByPatientId(perfil.id).toPromise(),
-    ]);
+    try {
+      const [turnos, historial] = await Promise.all([
+        this.turnosService.obtenerTurnosPorPaciente(perfil.id),
+        this.medicalRecordsService.getHistoryByPatientId(perfil.id).toPromise(),
+      ]);
 
-    const now = new Date();
-    const upcoming = turnos
-      .filter(t => new Date(t.fecha_hora) > now && t.estado !== 'cancelado' && t.estado !== 'rechazado')
-      .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime());
+      const cargaError = this.turnosService.lastError();
+      if (cargaError) {
+        this.errorCarga.set(cargaError);
+        return;
+      }
 
-    this.turnosDelPaciente.set(upcoming.length);
-    this.historialPaciente.set(historial?.length ?? 0);
-    this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
-    this.upcomingTurnos.set(upcoming.slice(0, 3));
-    this.recentHistory.set(historial?.slice(0, 3) ?? []);
+      const ahoraLocal = fechaHoraLocalActual();
+      const marcaLocal = (fechaHora: string): string =>
+        `${extraerFechaCorta(fechaHora)}T${extraerHora(fechaHora)}`;
+      const upcoming = turnos
+        .filter(t => marcaLocal(t.fecha_hora) > ahoraLocal && t.estado !== 'cancelado' && t.estado !== 'rechazado')
+        .sort((a, b) => marcaLocal(a.fecha_hora).localeCompare(marcaLocal(b.fecha_hora)));
 
-    this.isLoading.set(false);
+      const mesActual = ahoraLocal.substring(0, 7);
+      this.turnosDelPaciente.set(upcoming.length);
+      this.historialPaciente.set(historial?.length ?? 0);
+      this.turnosDelMes.set(turnos.filter(t => extraerFechaCorta(t.fecha_hora).substring(0, 7) === mesActual).length);
+      this.especialidadesConsultadas.set(new Set(turnos.map(t => t.especialidad_id)).size);
+      this.nextAppointment.set(upcoming.length > 0 ? upcoming[0] : null);
+      this.upcomingTurnos.set(upcoming.slice(0, 3));
+      this.recentHistory.set(historial?.slice(0, 3) ?? []);
+    } catch {
+      this.errorCarga.set('No se pudo cargar tu panel. Revisá tu conexión.');
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   formatDate(fechaHora: string): string {
-    const date = new Date(fechaHora);
-    return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+    return formatearFechaLegibleEsAR(fechaHora);
   }
 
   formatTime(fechaHora: string): string {
-    const date = new Date(fechaHora);
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return extraerHora(fechaHora);
   }
 
   getStatusClass(estado: string): string {

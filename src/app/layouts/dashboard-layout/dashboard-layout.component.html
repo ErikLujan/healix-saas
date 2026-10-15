@@ -1,6 +1,6 @@
 <div @fadeIn class="min-h-screen bg-background flex flex-col">
   <!-- Header claro con borde slate y elevación al desplazar -->
-  <header class="shell-header h-14 backdrop-blur-xl bg-white/80 border-b border-slate-300 shadow-sm flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40" [class.header-scrolled]="isHeaderScrolled()">
+  <header class="shell-header h-14 backdrop-blur-xl bg-white/80 border-b border-border-strong shadow-sm flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40" [class.header-scrolled]="isHeaderScrolled()">
     <div class="flex items-center gap-4">
       <!-- Mobile Hamburger Button -->
       <button
@@ -308,7 +308,7 @@
     </aside>
 
     <!-- Main Content con fondo suave -->
-    <main class="flex-1 min-w-0 w-full p-4 sm:p-6 isolation-isolate flex flex-col bg-slate-50">
+    <main class="flex-1 min-w-0 w-full p-4 sm:p-6 isolation-isolate flex flex-col bg-background">
       <div class="relative w-full flex-1 min-h-[calc(100vh-4rem)] overflow-clip">
         <div [@routeAnimations]="animationState()" class="route-shell-inner w-full">
           <router-outlet />

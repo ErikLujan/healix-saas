@@ -115,7 +115,7 @@ body {
  */
 
 .animate-shimmer {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+  background: linear-gradient(90deg, var(--color-surface-sunken) 25%, var(--color-border) 37%, var(--color-surface-sunken) 63%);
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
@@ -178,4 +178,26 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-subtle);
+}
+
+/**
+ * Movimiento reducido: respeta la preferencia del sistema operativo.
+ *
+ * Desactiva animaciones continuas y transiciones decorativas sin
+ * alterar la estructura ni la información visible.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-shimmer,
+  .animate-pulse-dot,
+  .animate-step-in {
+    animation: none;
+  }
+
+  .pressable {
+    transition: none;
+  }
 }

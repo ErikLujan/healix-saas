@@ -19,6 +19,7 @@ export class StepSpecialtyComponent implements OnInit {
 
   readonly especialidades = signal<readonly EspecialidadInfo[]>([]);
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
   readonly seleccionada = this.wizard.especialidadSeleccionada;
 
   readonly paginaActual = signal(0);
@@ -37,8 +38,20 @@ export class StepSpecialtyComponent implements OnInit {
   }
 
   async cargarEspecialidades(): Promise<void> {
-    this.especialidades.set(await this.requestService.cargarEspecialidades());
-    this.isLoading.set(false);
+    this.isLoading.set(true);
+    this.errorCarga.set(null);
+    try {
+      this.especialidades.set(await this.requestService.cargarEspecialidades());
+    } catch {
+      this.errorCarga.set('No se pudieron cargar las especialidades.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async reintentar(): Promise<void> {
+    this.paginaActual.set(0);
+    await this.cargarEspecialidades();
   }
 
   seleccionar(especialidad: EspecialidadInfo): void {

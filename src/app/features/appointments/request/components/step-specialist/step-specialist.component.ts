@@ -18,6 +18,7 @@ export class StepSpecialistComponent implements OnInit {
 
   readonly especialistas = signal<readonly EspecialistaWizard[]>([]);
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
   readonly seleccionado = this.wizard.especialistaSeleccionado;
 
   readonly paginaActual = signal(0);
@@ -42,10 +43,22 @@ export class StepSpecialistComponent implements OnInit {
       return;
     }
 
-    this.especialistas.set(
-      await this.requestService.cargarEspecialistasAprobados(especialidad.id),
-    );
-    this.isLoading.set(false);
+    this.isLoading.set(true);
+    this.errorCarga.set(null);
+    try {
+      this.especialistas.set(
+        await this.requestService.cargarEspecialistasAprobados(especialidad.id),
+      );
+    } catch {
+      this.errorCarga.set('No se pudieron cargar los especialistas.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async reintentar(): Promise<void> {
+    this.paginaActual.set(0);
+    await this.cargarEspecialistas();
   }
 
   seleccionar(especialista: EspecialistaWizard): void {

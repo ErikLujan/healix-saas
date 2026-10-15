@@ -1,5 +1,6 @@
 import { Component, input, output, computed } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { DEFAULT_PAGE_SIZE } from './pagination.config';
 import type { PaginationRange } from './pagination.types';
 
 /**
@@ -41,7 +42,7 @@ export class PaginationComponent {
   readonly totalItems = input<number>(0);
 
   /** Tamaño de segmento por página. */
-  readonly pageSize = input<number>(4);
+  readonly pageSize = input<number>(DEFAULT_PAGE_SIZE);
 
   /** Emite el nuevo número de página al hacer clic. */
   readonly pageChange = output<number>();

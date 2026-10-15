@@ -14,6 +14,12 @@ import {
   MedicalRecordConRelaciones,
   CLAVES_OBLIGATORIAS,
 } from '../../models/medical-record.model';
+import {
+  UNIDADES_CLINICAS,
+  clasesNivelDolor as clasesNivelDolorBase,
+  formatearClaveDinamica as formatearClaveDinamicaBase,
+  formatearNivelDolor as formatearNivelDolorBase,
+} from '@shared/utils/clinical-format.utils';
 
 const listStaggerAnimation = trigger('listStagger', [
   transition(':enter', [
@@ -42,8 +48,8 @@ const expandCollapseAnimation = trigger('expandCollapse', [
   template: `
     @if (records().length === 0) {
       <div class="flex flex-col items-center justify-center py-16 px-4">
-        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 mb-4">
-          <svg lucideIcon="file-text" class="h-8 w-8 text-slate-400"></svg>
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-sunken mb-4">
+          <svg lucideIcon="file-text" class="h-8 w-8 text-text-subtle"></svg>
         </div>
         <h3 class="text-lg font-semibold text-text-primary mb-1">Sin registros clínicos</h3>
         <p class="text-sm text-text-secondary text-center max-w-sm">
@@ -53,7 +59,7 @@ const expandCollapseAnimation = trigger('expandCollapse', [
     } @else {
       <div class="space-y-4" @listStagger>
         @for (record of records(); track record.id; let i = $index) {
-          <div class="border border-slate-200/80 rounded-2xl bg-surface shadow-sm overflow-hidden transition-shadow duration-200 hover:shadow-md">
+          <div class="border border-divider rounded-2xl bg-surface shadow-sm overflow-hidden transition-shadow duration-200 hover:shadow-md">
             <button
               type="button"
               (click)="toggleExpansion(i)"
@@ -94,15 +100,15 @@ const expandCollapseAnimation = trigger('expandCollapse', [
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div class="bg-brand-50 rounded-xl p-3 text-center">
                         <p class="text-xs text-brand-700 font-medium mb-0.5">Altura</p>
-                        <p class="text-lg font-bold text-brand-700">{{ record.altura }}<span class="text-xs font-normal ml-0.5">cm</span></p>
+                        <p class="text-lg font-bold text-brand-700">{{ record.altura }}<span class="text-xs font-normal ml-0.5">{{ UNIDADES.altura }}</span></p>
                       </div>
                       <div class="bg-emerald-50 rounded-xl p-3 text-center">
                         <p class="text-xs text-emerald-600 font-medium mb-0.5">Peso</p>
-                        <p class="text-lg font-bold text-emerald-700">{{ record.peso }}<span class="text-xs font-normal ml-0.5">kg</span></p>
+                        <p class="text-lg font-bold text-emerald-700">{{ record.peso }}<span class="text-xs font-normal ml-0.5">{{ UNIDADES.peso }}</span></p>
                       </div>
                       <div class="bg-orange-50 rounded-xl p-3 text-center">
                         <p class="text-xs text-orange-600 font-medium mb-0.5">Temperatura</p>
-                        <p class="text-lg font-bold text-orange-700">{{ record.temperatura }}<span class="text-xs font-normal ml-0.5">C</span></p>
+                        <p class="text-lg font-bold text-orange-700">{{ record.temperatura }}<span class="text-xs font-normal ml-0.5">{{ UNIDADES.temperatura }}</span></p>
                       </div>
                       <div class="bg-purple-50 rounded-xl p-3 text-center">
                         <p class="text-xs text-purple-600 font-medium mb-0.5">Presión</p>
@@ -133,7 +139,7 @@ const expandCollapseAnimation = trigger('expandCollapse', [
                             <svg lucideIcon="activity" class="h-5 w-5 text-text-subtle flex-shrink-0"></svg>
                             <div class="min-w-0">
                               <p class="text-xs text-text-subtle font-medium">Frec. Cardíaca</p>
-                              <p class="text-sm font-bold text-text-primary">{{ valorFC }} <span class="text-xs font-normal">lpm</span></p>
+                              <p class="text-sm font-bold text-text-primary">{{ valorFC }} <span class="text-xs font-normal">{{ UNIDADES.frecuenciaCardiaca }}</span></p>
                             </div>
                           </div>
                         }
@@ -184,6 +190,10 @@ const expandCollapseAnimation = trigger('expandCollapse', [
 })
 export class MedicalHistoryListComponent {
   readonly CLAVES = CLAVES_OBLIGATORIAS;
+  readonly UNIDADES = UNIDADES_CLINICAS;
+  readonly formatearNivelDolor = formatearNivelDolorBase;
+  readonly clasesNivelDolor = clasesNivelDolorBase;
+  readonly formatearClaveDinamica = formatearClaveDinamicaBase;
 
   readonly records = input.required<readonly MedicalRecordConRelaciones[]>();
 
@@ -199,39 +209,6 @@ export class MedicalHistoryListComponent {
     return record.datos_dinamicos.filter(
       d => !Object.values(CLAVES_OBLIGATORIAS).includes(d.clave as typeof CLAVES_OBLIGATORIAS[keyof typeof CLAVES_OBLIGATORIAS]),
     );
-  }
-
-  formatearNivelDolor(valor: string): string {
-    const nivel = parseInt(valor, 10);
-    if (isNaN(nivel)) return valor;
-    if (nivel <= 3) return `${nivel}/10 - Leve`;
-    if (nivel <= 6) return `${nivel}/10 - Moderado`;
-    return `${nivel}/10 - Intenso`;
-  }
-
-  clasesNivelDolor(valor: string): string {
-    const nivel = parseInt(valor, 10);
-    if (isNaN(nivel)) return 'bg-slate-100 text-slate-700';
-    if (nivel <= 3) return 'bg-emerald-100 text-emerald-700';
-    if (nivel <= 6) return 'bg-amber-100 text-amber-700';
-    return 'bg-red-100 text-red-700';
-  }
-
-  formatearClaveDinamica(clave: string): string {
-    const formatoClaves: Record<string, string> = {
-      colesterol: 'Colesterol',
-      glucosa: 'Glucosa',
-      'frecuencia cardiaca': 'Frec. Cardíaca',
-      'saturacion de oxigeno': 'Saturación O₂',
-      imc: 'IMC',
-      'grupo sanguineo': 'Grupo Sanguíneo',
-      'factor rh': 'Factor Rh',
-      observaciones: 'Observaciones',
-    };
-    if (formatoClaves[clave]) return formatoClaves[clave];
-    return clave
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   toggleExpansion(index: number): void {

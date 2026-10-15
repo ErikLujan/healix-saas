@@ -36,6 +36,9 @@ export class AdminUsersService implements OnDestroy {
   readonly users = signal<AdminUser[]>([]);
   readonly isLoading = signal(false);
 
+  /** Último error de carga, expuesto para estados de error con reintento. */
+  readonly lastError = signal<string | null>(null);
+
   private readonly channel = this.supabase.supabase
     .channel('admin-users-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => this.loadUsers())
@@ -54,6 +57,7 @@ export class AdminUsersService implements OnDestroy {
    */
   async loadUsers(): Promise<void> {
     this.isLoading.set(true);
+    this.lastError.set(null);
 
     const { data, error } = await this.supabase.supabase
       .from('profiles')
@@ -72,6 +76,7 @@ export class AdminUsersService implements OnDestroy {
 
     if (error) {
       toast.error('No fue posible cargar los usuarios. Por favor, verifica los datos e intenta nuevamente.');
+      this.lastError.set('No fue posible cargar los usuarios.');
       this.isLoading.set(false);
       return;
     }

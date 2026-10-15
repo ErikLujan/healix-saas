@@ -1,4 +1,4 @@
-<div class="space-y-6">
+﻿<div class="space-y-6">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">{{ titulo() }}</h1>
@@ -46,14 +46,14 @@
         : 'bg-transparent text-slate-600 border border-transparent hover:text-slate-900 hover:bg-slate-200/60'">
       Todos ({{ totalTurnos() }})
     </button>
-    @for (estado of ['pendiente', 'confirmado', 'finalizado', 'cancelado', 'rechazado']; track estado) {
+    @for (estado of ordenEstados; track estado) {
       @if (contadores()[estado] > 0) {
         <button type="button" (click)="seleccionarFiltro(estado)"
           class="flex-shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 active:scale-[0.98]"
           [ngClass]="filtroEstado() === estado
             ? 'bg-teal-50 text-teal-700 font-semibold border border-teal-200/90 shadow-2xs'
             : 'bg-transparent text-slate-600 border border-transparent hover:text-slate-900 hover:bg-slate-200/60'">
-          {{ estado === 'confirmado' ? 'Aceptado' : (estado === 'pendiente' ? 'Pendiente' : (estado === 'finalizado' ? 'Finalizado' : (estado === 'cancelado' ? 'Cancelado' : 'Rechazado'))) }} ({{ contadores()[estado] }})
+          {{ (estado | estadoTurnoColor).label }} ({{ contadores()[estado] }})
         </button>
       }
     }
@@ -61,8 +61,8 @@
 
   @if (isLoading()) {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      @for (i of [1,2,3,4,5]; track i) {
-        <div class="rounded-2xl border border-slate-200/80 bg-surface p-5 space-y-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="rounded-2xl border border-divider bg-surface p-5 space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="h-5 w-20 rounded-full animate-shimmer"></div>
@@ -120,7 +120,7 @@
                   <td class="px-4 py-3 font-mono tabular-nums tracking-tight text-fg whitespace-nowrap">
                     <div class="flex items-center gap-1.5">
                       <svg lucideIcon="calendar" class="h-3.5 w-3.5 text-text-subtle flex-shrink-0"></svg>
-                      {{ turno.fecha_hora | fechaFormat:'corta' }}
+                      {{ turno.fecha_hora | fechaFormat:'cortaLegible' }}
                     </div>
                   </td>
                   <td class="px-4 py-3 font-mono tabular-nums tracking-tight text-fg whitespace-nowrap">
@@ -129,9 +129,9 @@
                       {{ turno.fecha_hora | fechaFormat:'hora' }}
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-fg whitespace-nowrap">{{ turno.paciente?.full_name ?? '—' }}</td>
-                  <td class="px-4 py-3 text-fg whitespace-nowrap">{{ turno.especialista?.full_name ?? '—' }}</td>
-                  <td class="px-4 py-3 text-fg-muted whitespace-nowrap">{{ turno.especialidad?.name ?? '—' }}</td>
+                  <td class="px-4 py-3 text-fg whitespace-nowrap">{{ turno.paciente?.full_name | emptyValue }}</td>
+                  <td class="px-4 py-3 text-fg whitespace-nowrap">{{ turno.especialista?.full_name | emptyValue }}</td>
+                  <td class="px-4 py-3 text-fg-muted whitespace-nowrap">{{ turno.especialidad?.name | emptyValue }}</td>
                   <td class="px-4 py-3 whitespace-nowrap">
                     <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold
                       {{ (turno.estado | estadoTurnoColor).badge }}">
@@ -140,122 +140,8 @@
                     </span>
                   </td>
                   <td class="px-4 py-3 text-right whitespace-nowrap min-w-[180px]">
-                    <div class="flex items-center justify-end gap-1">
-                      @if (turno.estado === 'pendiente' && rol() === 'especialista') {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirDialogoConfirmarAceptar(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-teal-50 hover:border-teal-200 text-slate-600 hover:text-teal-600 transition-all flex-shrink-0"
-                            aria-label="Aceptar Turno">
-                            <svg lucideIcon="check-circle" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Aceptar Turno</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirDialogoRechazar(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-rose-600 transition-all flex-shrink-0"
-                            aria-label="Rechazar Turno">
-                            <svg lucideIcon="x-circle" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Rechazar Turno</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'confirmado' && rol() === 'especialista') {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirDialogoFinalizar(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-brand-50 hover:border-brand-200 text-slate-600 hover:text-brand-700 transition-all flex-shrink-0"
-                            aria-label="Finalizar Atención">
-                            <svg lucideIcon="clipboard-check" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Finalizar Atención</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if ((turno.estado === 'pendiente' || turno.estado === 'confirmado') && rol() !== 'especialista') {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirDialogoCancelar(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-slate-100 hover:border-slate-300 text-slate-600 hover:text-slate-700 transition-all flex-shrink-0"
-                            aria-label="Cancelar Turno">
-                            <svg lucideIcon="ban" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Cancelar Turno</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'finalizado' && turno.resena_diagnostico) {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirModalResena(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-brand-50 hover:border-brand-200 text-slate-600 hover:text-brand-700 transition-all flex-shrink-0"
-                            aria-label="Ver Reseña / Diagnóstico">
-                            <svg lucideIcon="file-text" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Reseña / Diagnóstico</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.calificacion_estrellas === null) {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirDialogoCalificar(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-amber-50 hover:border-amber-200 text-slate-600 hover:text-amber-600 transition-all flex-shrink-0"
-                            aria-label="Calificar Atención">
-                            <svg lucideIcon="star" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Calificar Atención</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.calificacion_estrellas !== null) {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="verCalificacion(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-amber-50 hover:border-amber-200 text-slate-600 hover:text-amber-600 transition-all flex-shrink-0"
-                            aria-label="Ver Calificación Otorgada">
-                            <svg lucideIcon="eye" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Calificación</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.resena_diagnostico && !turno.encuesta_satisfaccion) {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="abrirEncuesta(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-emerald-50 hover:border-emerald-200 text-slate-600 hover:text-emerald-700 transition-all flex-shrink-0"
-                            aria-label="Completar Encuesta de Satisfacción">
-                            <svg lucideIcon="clipboard-list" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Completar Encuesta</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
-                      @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.encuesta_satisfaccion) {
-                        <div class="relative group inline-flex items-center justify-center">
-                          <button type="button" (click)="verEncuesta(turno)"
-                            class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-emerald-50 hover:border-emerald-200 text-slate-600 hover:text-emerald-700 transition-all flex-shrink-0"
-                            aria-label="Ver Encuesta de Satisfacción">
-                            <svg lucideIcon="eye" class="w-4 h-4"></svg>
-                          </button>
-                          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                            <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Encuesta</span>
-                            <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                          </div>
-                        </div>
-                      }
+                    <div class="flex justify-end">
+                      <app-turno-actions [turno]="turno" [rol]="rol()!" (accionEjecutada)="ejecutarAccion($event, turno)" />
                     </div>
                   </td>
                 </tr>
@@ -286,13 +172,13 @@
             <div class="space-y-2 mb-4">
               <div class="flex items-center gap-2">
                 <svg lucideIcon="stethoscope" class="h-4 w-4 text-brand-500 flex-shrink-0"></svg>
-                <span class="text-sm font-semibold text-text-primary">{{ turno.especialidad?.name ?? '—' }}</span>
+                <span class="text-sm font-semibold text-text-primary">{{ turno.especialidad?.name | emptyValue }}</span>
                 <span class="text-sm text-text-subtle">&middot;</span>
-                <span class="text-sm text-text-secondary">{{ turno.especialista?.full_name ?? '—' }}</span>
+                <span class="text-sm text-text-secondary">{{ turno.especialista?.full_name | emptyValue }}</span>
               </div>
               <div class="flex items-center gap-2 text-sm text-text-secondary">
                 <svg lucideIcon="user" class="h-3.5 w-3.5 flex-shrink-0"></svg>
-                <span class="text-text-primary">{{ turno.paciente?.full_name ?? '—' }}</span>
+                <span class="text-text-primary">{{ turno.paciente?.full_name | emptyValue }}</span>
               </div>
               <div class="flex items-center gap-4 text-sm text-text-subtle">
                 <div class="flex items-center gap-1.5">
@@ -316,141 +202,25 @@
               } @else if (turno.estado === 'cancelado') {
                 <div class="mb-3 rounded-xl bg-slate-50 border border-slate-200 p-2.5">
                   <p class="text-xs text-slate-600">
-                    <span class="font-bold">Motivo de Cancelación:</span> {{ turno.comentario_cancelacion_rechazo }}
+                    <span class="font-bold">Motivo de CancelaciÃ³n:</span> {{ turno.comentario_cancelacion_rechazo }}
                   </p>
                 </div>
               }
             }
 
             @if (turno.estado === 'finalizado' && turno.calificacion_estrellas !== null && rol() === 'paciente') {
-              <div class="mb-3 flex items-center gap-1">
+              <div class="mb-3 flex items-center gap-1" role="img" aria-label="Tu calificaciÃ³n">
                 @for (i of [1,2,3,4,5]; track i) {
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
-                    [ngClass]="i <= (turno.calificacion_estrellas!) ? 'text-amber-400' : 'text-gray-200'"
-                    viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
+                  <svg lucideIcon="star" class="w-4 h-4"
+                    [ngClass]="i <= (turno.calificacion_estrellas!) ? 'text-warning' : 'text-border'"
+                    fill="currentColor" stroke="none" aria-hidden="true"></svg>
                 }
-                <span class="text-xs text-text-secondary ml-1">Tu calificación</span>
+                <span class="text-xs text-text-secondary ml-1">Tu calificaciÃ³n</span>
               </div>
             }
 
-            <div class="flex flex-wrap gap-1.5 pt-3 border-t border-divider">
-              @if (turno.estado === 'pendiente' && rol() === 'especialista') {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirDialogoConfirmarAceptar(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-teal-50 hover:border-teal-200 text-slate-600 hover:text-teal-600 transition-all flex-shrink-0"
-                    aria-label="Aceptar Turno">
-                    <svg lucideIcon="check-circle" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Aceptar Turno</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirDialogoRechazar(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-rose-50 hover:border-rose-200 text-slate-600 hover:text-rose-600 transition-all flex-shrink-0"
-                    aria-label="Rechazar Turno">
-                    <svg lucideIcon="x-circle" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Rechazar Turno</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'confirmado' && rol() === 'especialista') {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirDialogoFinalizar(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-brand-50 hover:border-brand-200 text-slate-600 hover:text-brand-700 transition-all flex-shrink-0"
-                    aria-label="Finalizar Atención">
-                    <svg lucideIcon="clipboard-check" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Finalizar Atención</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if ((turno.estado === 'pendiente' || turno.estado === 'confirmado') && rol() !== 'especialista') {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirDialogoCancelar(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-slate-100 hover:border-slate-300 text-slate-600 hover:text-slate-700 transition-all flex-shrink-0"
-                    aria-label="Cancelar Turno">
-                    <svg lucideIcon="ban" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Cancelar Turno</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'finalizado' && turno.resena_diagnostico) {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirModalResena(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-brand-50 hover:border-brand-200 text-slate-600 hover:text-brand-700 transition-all flex-shrink-0"
-                    aria-label="Ver Reseña / Diagnóstico">
-                    <svg lucideIcon="file-text" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Reseña / Diagnóstico</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.calificacion_estrellas === null) {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirDialogoCalificar(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-amber-50 hover:border-amber-200 text-slate-600 hover:text-amber-600 transition-all flex-shrink-0"
-                    aria-label="Calificar Atención">
-                    <svg lucideIcon="star" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Calificar Atención</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.calificacion_estrellas !== null) {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="verCalificacion(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-amber-50 hover:border-amber-200 text-slate-600 hover:text-amber-600 transition-all flex-shrink-0"
-                    aria-label="Ver Calificación Otorgada">
-                    <svg lucideIcon="eye" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Calificación</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.resena_diagnostico && !turno.encuesta_satisfaccion) {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="abrirEncuesta(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-emerald-50 hover:border-emerald-200 text-slate-600 hover:text-emerald-700 transition-all flex-shrink-0"
-                    aria-label="Completar Encuesta de Satisfacción">
-                    <svg lucideIcon="clipboard-list" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Completar Encuesta</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
-              @if (turno.estado === 'finalizado' && rol() === 'paciente' && turno.encuesta_satisfaccion) {
-                <div class="relative group inline-flex items-center justify-center">
-                  <button type="button" (click)="verEncuesta(turno)"
-                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-divider bg-surface hover:bg-emerald-50 hover:border-emerald-200 text-slate-600 hover:text-emerald-700 transition-all flex-shrink-0"
-                    aria-label="Ver Encuesta de Satisfacción">
-                    <svg lucideIcon="eye" class="w-4 h-4"></svg>
-                  </button>
-                  <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center pointer-events-none z-50 transition-all duration-200 ease-out opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
-                    <span class="bg-[#0F4C4A] text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap">Ver Encuesta</span>
-                    <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#0F4C4A] -mt-px"></div>
-                  </div>
-                </div>
-              }
+            <div class="pt-3 border-t border-divider">
+              <app-turno-actions [turno]="turno" [rol]="rol()!" (accionEjecutada)="ejecutarAccion($event, turno)" />
             </div>
           </div>
         }
@@ -459,10 +229,20 @@
       <app-pagination
         [currentPage]="currentPage()"
         [totalItems]="turnosFiltrados().length"
-        [pageSize]="4"
+        [pageSize]="pageSize"
         (pageChange)="onPageChange($event)"
       />
-    } @else {
+  } @else if (errorCarga()) {
+    <div class="text-center py-16 rounded-2xl border border-danger/20 bg-danger/5" role="alert">
+      <svg lucideIcon="alert-triangle" class="mx-auto h-12 w-12 text-danger/60"></svg>
+      <p class="mt-3 text-sm font-medium text-text-primary">No se pudo cargar la informaciÃ³n.</p>
+      <p class="mt-1 text-xs text-text-secondary">{{ errorCarga() }}</p>
+      <button type="button" (click)="recargar()"
+        class="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-brand-700/90 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+        Reintentar
+      </button>
+    </div>
+  } @else {
       <div class="text-center py-16">
         <svg lucideIcon="calendar" class="mx-auto h-12 w-12 text-text-subtle opacity-40"></svg>
         <p class="mt-3 text-text-subtle">No se encontraron turnos.</p>

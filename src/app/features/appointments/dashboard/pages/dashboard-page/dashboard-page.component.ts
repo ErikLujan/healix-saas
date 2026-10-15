@@ -6,21 +6,23 @@ import { Observable } from 'rxjs';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { AuthService, UserRole } from '@core/services/auth.service';
 import { TurnosService } from '@core/services/turnos.service';
-import { TurnoConRelaciones, EncuestaSatisfaccion } from '@core/models/turno.model';
+import { TurnoConRelaciones, EncuestaSatisfaccion, ORDEN_ESTADOS_TURNO } from '@core/models/turno.model';
+import { TurnoEstado } from '@core/models/database.types';
 import { ComentarioDialogComponent } from '../../dialogs/comentario-dialog.component';
 import { ResenaModalComponent } from '../../dialogs/resena-modal.component';
 import { CalificarAtencionDialogComponent } from '../../dialogs/calificar-atencion-dialog.component';
 import { EncuestaSatisfaccionDialogComponent } from '../../dialogs/encuesta-satisfaccion-dialog.component';
 import { FinishAppointmentDialogComponent } from '../../../finish/dialogs/finish-appointment.dialog';
+import { TurnoActionsComponent, AccionTurno } from '../../components/turno-actions/turno-actions.component';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { DEFAULT_PAGE_SIZE } from '@shared/components/pagination/pagination.config';
 import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
 import { FechaFormatPipe } from '@shared/pipes/fecha-format.pipe';
+import { EmptyValuePipe } from '@shared/pipes/empty-value.pipe';
+import { extraerFechaCorta, extraerHora, formatearFechaCortaLegibleEsAR, formatearFechaLegibleEsAR, nombreMesEsAR } from '@shared/utils/date-locale.utils';
 import { MedicalRecordsService } from '@core/services/medical-records.service';
 import { MedicalRecordConRelaciones } from '@core/models/medical-record.model';
 import { RegistrationService, Specialty } from '@core/services/registration.service';
-
-/** Cantidad maxima de tarjetas visibles por pagina en el dashboard. */
-const PAGE_SIZE = 4;
 
 /**
  * Dashboard unificado de gestion de turnos.
@@ -45,9 +47,11 @@ const PAGE_SIZE = 4;
     CalificarAtencionDialogComponent,
     EncuestaSatisfaccionDialogComponent,
     FinishAppointmentDialogComponent,
+    TurnoActionsComponent,
     PaginationComponent,
     EstadoTurnoColorPipe,
     FechaFormatPipe,
+    EmptyValuePipe,
   ],
   templateUrl: './dashboard-page.component.html',
 })
@@ -93,7 +97,7 @@ export class DashboardPageComponent implements OnInit {
   readonly searchQuery = signal('');
 
   /** Filtro activo por estado (null = todos). */
-  readonly filtroEstado = signal<string | null>(null);
+  readonly filtroEstado = signal<TurnoEstado | null>(null);
 
   /** Especialidades disponibles para el filtro dropdown. */
   readonly especialidades = signal<readonly Specialty[]>([]);
@@ -110,16 +114,25 @@ export class DashboardPageComponent implements OnInit {
   /** Indica si está cargando los turnos iniciales. */
   readonly isLoading = signal(true);
 
+  /** Error de carga con reintento cuando falla la lectura inicial. */
+  readonly errorCarga = signal<string | null>(null);
+
   /** Turno seleccionado para alguna operacion. */
   readonly turnoSeleccionado = signal<TurnoConRelaciones | null>(null);
 
   /** Tipo de accion pendiente en el dialogo de comentario ('cancelar' | 'rechazar' | 'confirmar'). */
   private accionPendiente = signal<'cancelar' | 'rechazar' | 'confirmar'>('cancelar');
 
+  /** Orden canónico de estados para las pestañas de filtro. */
+  readonly ordenEstados = ORDEN_ESTADOS_TURNO;
+
+  /** Tamaño de segmento compartido con el paginador. */
+  readonly pageSize = DEFAULT_PAGE_SIZE;
+
   /** Contadores por estado para los tabs. */
   readonly contadores = computed(() => {
     const turnos = this._turnos();
-    const contadores: Record<string, number> = {
+    const contadores: Record<TurnoEstado, number> = {
       pendiente: 0,
       confirmado: 0,
       rechazado: 0,
@@ -158,17 +171,13 @@ export class DashboardPageComponent implements OnInit {
       const resena = t.resena_diagnostico?.toLowerCase() ?? '';
       const comentarioCancelacion = t.comentario_cancelacion_rechazo?.toLowerCase() ?? '';
 
-      const fechaRaw = t.fecha_hora.substring(0, 10);
+      const fechaRaw = extraerFechaCorta(t.fecha_hora);
       const [anio, mes, dia] = fechaRaw.split('-');
       const fechaISO = `${anio}-${mes}-${dia}`;
       const fechaBarra = `${dia}/${mes}/${anio}`;
-      const mesNombres: Record<string, string> = {
-        '01': 'enero', '02': 'febrero', '03': 'marzo', '04': 'abril',
-        '05': 'mayo', '06': 'junio', '07': 'julio', '08': 'agosto',
-        '09': 'septiembre', '10': 'octubre', '11': 'noviembre', '12': 'diciembre',
-      };
-      const fechaLegible = `${dia} de ${mesNombres[mes] ?? mes} de ${anio}`;
-      const hora = t.fecha_hora.substring(11, 16);
+      const fechaLegible = `${dia} de ${nombreMesEsAR(mes)} de ${anio}`;
+      const fechaCortaLegible = formatearFechaCortaLegibleEsAR(t.fecha_hora).toLowerCase();
+      const hora = extraerHora(t.fecha_hora);
 
       const coincideBasico = especialidad.includes(query)
         || especialista.includes(query)
@@ -179,6 +188,7 @@ export class DashboardPageComponent implements OnInit {
         || fechaISO.includes(query)
         || fechaBarra.includes(query)
         || fechaLegible.toLowerCase().includes(query)
+        || fechaCortaLegible.includes(query)
         || hora.includes(query);
 
       if (coincideBasico) return true;
@@ -216,8 +226,8 @@ export class DashboardPageComponent implements OnInit {
 
   /** Porcion paginada del array filtrado para la pagina actual. */
   readonly turnosPaginados = computed(() => {
-    const inicio = (this.currentPage() - 1) * PAGE_SIZE;
-    const fin = inicio + PAGE_SIZE;
+    const inicio = (this.currentPage() - 1) * this.pageSize;
+    const fin = inicio + this.pageSize;
     return this.turnosFiltrados().slice(inicio, fin);
   });
 
@@ -241,6 +251,13 @@ export class DashboardPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    await this.recargar();
+  }
+
+  /** Recarga turnos y especialidades tras un error o por reintento explícito. */
+  async recargar(): Promise<void> {
+    this.errorCarga.set(null);
+    this.currentPage.set(1);
     await Promise.all([
       this.fetchTurnosByRole(true),
       this.cargarEspecialidades(),
@@ -285,7 +302,13 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._turnos.set(turnos as TurnoConRelaciones[]);
-    await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
+    const historialOk = await this.cargarHistoriasClinicas(turnos as TurnoConRelaciones[], rol, perfil.id);
+    const turnosError = this.turnosService.lastError();
+    if (turnosError) {
+      this.errorCarga.set(turnosError);
+    } else if (!historialOk) {
+      this.errorCarga.set('No se pudo cargar el historial clínico para la búsqueda.');
+    }
     if (mostrarLoading) this.isLoading.set(false);
   }
 
@@ -301,8 +324,9 @@ export class DashboardPageComponent implements OnInit {
     turnos: readonly TurnoConRelaciones[],
     rol: UserRole,
     perfilId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const historiasMap = new Map<string, MedicalRecordConRelaciones>();
+    let sinErrores = true;
 
     const loadHistory = (observable$: Observable<readonly MedicalRecordConRelaciones[]>) =>
       new Promise<void>((resolve) => {
@@ -313,7 +337,10 @@ export class DashboardPageComponent implements OnInit {
             }
             resolve();
           },
-          error: () => resolve(),
+          error: () => {
+            sinErrores = false;
+            resolve();
+          },
         });
       });
 
@@ -330,6 +357,7 @@ export class DashboardPageComponent implements OnInit {
     }
 
     this._historiasClinicas.set(historiasMap);
+    return sinErrores;
   }
 
   /** Actualiza el termino de busqueda y resetea la paginacion. */
@@ -339,7 +367,7 @@ export class DashboardPageComponent implements OnInit {
   }
 
   /** Selecciona un filtro de estado o lo deselecciona, reseteando la paginacion. */
-  seleccionarFiltro(estado: string | null): void {
+  seleccionarFiltro(estado: TurnoEstado | null): void {
     this.filtroEstado.update(actual => actual === estado ? null : estado);
     this.currentPage.set(1);
   }
@@ -352,13 +380,56 @@ export class DashboardPageComponent implements OnInit {
 
   /** Carga las especialidades activas para el filtro dropdown. */
   private async cargarEspecialidades(): Promise<void> {
-    const data = await this.registrationService.getActiveSpecialties();
-    this.especialidades.set(data);
+    try {
+      const data = await this.registrationService.getActiveSpecialties();
+      this.especialidades.set(data);
+    } catch {
+      this.errorCarga.set('No se pudieron cargar las especialidades del filtro.');
+    }
   }
 
   /** Maneja el cambio de pagina desde el componente de paginacion. */
   onPageChange(page: number): void {
     this.currentPage.set(page);
+  }
+
+  /**
+   * Despacha la accion elegida desde los botones de turno hacia el
+   * método de dialogo correspondiente.
+   *
+   * @param accion Accion emitida por el componente de acciones.
+   * @param turno Turno sobre el que se ejecuta la accion.
+   */
+  ejecutarAccion(accion: AccionTurno, turno: TurnoConRelaciones): void {
+    switch (accion) {
+      case 'aceptar':
+        this.abrirDialogoConfirmarAceptar(turno);
+        break;
+      case 'rechazar':
+        this.abrirDialogoRechazar(turno);
+        break;
+      case 'finalizar':
+        this.abrirDialogoFinalizar(turno);
+        break;
+      case 'cancelar':
+        this.abrirDialogoCancelar(turno);
+        break;
+      case 'ver-resena':
+        this.abrirModalResena(turno);
+        break;
+      case 'calificar':
+        this.abrirDialogoCalificar(turno);
+        break;
+      case 'ver-calificacion':
+        this.verCalificacion(turno);
+        break;
+      case 'completar-encuesta':
+        this.abrirEncuesta(turno);
+        break;
+      case 'ver-encuesta':
+        this.verEncuesta(turno);
+        break;
+    }
   }
 
   /** Abre el dialogo de cancelacion para un turno. */
@@ -413,21 +484,24 @@ export class DashboardPageComponent implements OnInit {
 
     const accion = this.accionPendiente();
 
-    switch (accion) {
-      case 'rechazar':
-        await this.turnosService.rechazarTurno(turno.id, comentario);
-        break;
-      case 'confirmar':
-        await this.turnosService.confirmarTurno(turno.id);
-        break;
-      case 'cancelar':
-      default:
-        await this.turnosService.cancelarTurno(turno.id, comentario);
-        break;
-    }
+    try {
+      switch (accion) {
+        case 'rechazar':
+          await this.turnosService.rechazarTurno(turno.id, comentario);
+          break;
+        case 'confirmar':
+          await this.turnosService.confirmarTurno(turno.id);
+          break;
+        case 'cancelar':
+        default:
+          await this.turnosService.cancelarTurno(turno.id, comentario);
+          break;
+      }
 
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   /** Abre el modal de resena medica para un turno. */
@@ -450,11 +524,18 @@ export class DashboardPageComponent implements OnInit {
   /** Confirma la calificacion de un turno. */
   async confirmarCalificar(datos: { comentario: string; estrellas: number }): Promise<void> {
     const turno = this.turnoSeleccionado();
-    if (!turno) return;
+    if (!turno) {
+      this.dialogCalificar()?.finalizarEnvio();
+      return;
+    }
 
-    await this.turnosService.calificarTurno(turno.id, datos.comentario, datos.estrellas);
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+    try {
+      await this.turnosService.calificarTurno(turno.id, datos.comentario, datos.estrellas);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.dialogCalificar()?.finalizarEnvio();
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   /** Abre el dialogo de encuesta de satisfaccion para un turno. */
@@ -474,25 +555,25 @@ export class DashboardPageComponent implements OnInit {
   /** Confirma el envio de la encuesta de satisfaccion. */
   async confirmarEncuesta(encuesta: EncuestaSatisfaccion): Promise<void> {
     const turno = this.turnoSeleccionado();
-    if (!turno) return;
+    if (!turno) {
+      this.dialogEncuesta()?.finalizarEnvio();
+      return;
+    }
 
-    await this.turnosService.guardarEncuesta(turno.id, encuesta);
-    await this.fetchTurnosByRole();
-    this.turnoSeleccionado.set(null);
+    try {
+      await this.turnosService.guardarEncuesta(turno.id, encuesta);
+      await this.fetchTurnosByRole();
+    } finally {
+      this.dialogEncuesta()?.finalizarEnvio();
+      this.turnoSeleccionado.set(null);
+    }
   }
 
   formatearHora(fechaHora: string): string {
-    return fechaHora.substring(11, 16);
+    return extraerHora(fechaHora);
   }
 
   formatearFechaLegible(fechaHora: string): string {
-    const fechaStr = fechaHora.substring(0, 10);
-    const [anio, mes, dia] = fechaStr.split('-').map(Number);
-    const fechaObj = new Date(anio, mes - 1, dia);
-    return fechaObj.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatearFechaLegibleEsAR(fechaHora);
   }
 }

@@ -1,14 +1,16 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { extraerFechaCorta, extraerHora, formatearFechaCortaLegibleEsAR, formatearFechaLegibleEsAR } from '@shared/utils/date-locale.utils';
 
-type FormatoFecha = 'corta' | 'hora' | 'legible';
+type FormatoFecha = 'corta' | 'cortaLegible' | 'hora' | 'legible';
 
 /**
  * Pipe puro para formatear marcas de tiempo ISO del dominio de turnos.
  *
  * Formatos soportados:
- * - `corta`  → "YYYY-MM-DD"
- * - `hora`   → "HH:mm"
- * - `legible` → "1 de enero de 2026"
+ * - `corta`        → "2026-10-12"
+ * - `cortaLegible` → "12 oct 2026" (es-AR)
+ * - `hora`         → "HH:mm"
+ * - `legible`      → "12 de octubre de 2026"
  */
 @Pipe({
   name: 'fechaFormat',
@@ -16,27 +18,21 @@ type FormatoFecha = 'corta' | 'hora' | 'legible';
   pure: true,
 })
 export class FechaFormatPipe implements PipeTransform {
-  private static readonly MESES: readonly string[] = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-  ];
-
   transform(value: string | null | undefined, formato: FormatoFecha = 'legible'): string {
     if (!value) return '';
 
     switch (formato) {
       case 'corta':
-        return value.substring(0, 10);
+        return extraerFechaCorta(value);
+      case 'cortaLegible':
+        return formatearFechaCortaLegibleEsAR(value);
       case 'hora':
-        return value.substring(11, 16);
+        return extraerHora(value);
       case 'legible': {
-        const fechaStr = value.substring(0, 10);
-        const [anio, mes, dia] = fechaStr.split('-').map(Number);
-        const mesNombre = FechaFormatPipe.MESES[mes - 1] ?? String(mes);
-        return `${dia} de ${mesNombre} de ${anio}`;
+        return formatearFechaLegibleEsAR(value);
       }
       default:
-        return value.substring(0, 10);
+        return extraerFechaCorta(value);
     }
   }
 }

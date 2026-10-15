@@ -28,6 +28,9 @@ export class PatientListComponent implements OnInit {
   readonly isLoading = signal(true);
   readonly searchQuery = signal('');
 
+  /** Whether the viewer is an administrator (broader portfolio rule). */
+  readonly esAdmin = computed(() => this.authService.userRole() === 'administrador');
+
   /**
    * Pacientes filtrados por busqueda libre.
    * El correo es opcional tras el endurecimiento RLS (solo propietario

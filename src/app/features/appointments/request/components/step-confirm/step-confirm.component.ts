@@ -5,12 +5,14 @@ import { TurnosService } from '@core/services/turnos.service';
 import { AuthService } from '@core/services/auth.service';
 import { Router } from '@angular/router';
 import { CaptchaDirective } from '@shared/directives/captcha.directive';
+import { EmptyValuePipe } from '@shared/pipes/empty-value.pipe';
+import { construirFechaHoraISO, formatearFechaLargaEsAR } from '@shared/utils/date-locale.utils';
 import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-step-confirm',
   standalone: true,
-  imports: [LucideDynamicIcon, CaptchaDirective],
+  imports: [LucideDynamicIcon, CaptchaDirective, EmptyValuePipe],
   templateUrl: './step-confirm.component.html',
 })
 export class StepConfirmComponent {
@@ -22,6 +24,7 @@ export class StepConfirmComponent {
   readonly estado = this.wizard.estado;
   readonly isCreando = signal(false);
   readonly captchaSolved = signal(false);
+  readonly errorCrear = signal<string | null>(null);
 
   readonly especialidad = this.wizard.especialidadSeleccionada;
   readonly especialista = this.wizard.especialistaSeleccionado;
@@ -30,16 +33,7 @@ export class StepConfirmComponent {
   readonly paciente = this.wizard.pacienteSeleccionado;
 
   get fechaFormateada(): string {
-    const fecha = this.fecha();
-    if (!fecha) return '';
-    const [anio, mes, dia] = fecha.split('-').map(Number);
-    const fechaObj = new Date(anio, mes - 1, dia);
-    return fechaObj.toLocaleDateString('es-AR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatearFechaLargaEsAR(this.fecha());
   }
 
   onCaptchaSolved(solved: boolean): void {
@@ -68,14 +62,43 @@ export class StepConfirmComponent {
     const perfil = this.authService.userProfile();
     const paciente = this.paciente();
 
-    if (!especialista || !especialidad || !fecha || !hora || !perfil) return;
+    if (!especialidad) {
+      toast.warning('Falta la especialidad. Volvé al paso de especialidad para elegirla.');
+      return;
+    }
+
+    if (!especialista) {
+      toast.warning('Falta el especialista. Volvé al paso de especialista para elegirlo.');
+      return;
+    }
+
+    if (!fecha) {
+      toast.warning('Falta la fecha. Volvé al paso de fecha para elegirla.');
+      return;
+    }
+
+    if (!hora) {
+      toast.warning('Falta el horario. Volvé al paso de horario para elegirlo.');
+      return;
+    }
+
+    if (!perfil) {
+      toast.warning('No se pudo identificar tu sesión. Ingresá nuevamente.');
+      return;
+    }
+
+    if (this.authService.userRole() === 'administrador' && !paciente) {
+      toast.warning('Seleccioná un paciente antes de confirmar la solicitud.');
+      return;
+    }
 
     const pacienteId = paciente?.id ?? perfil.id;
 
     this.isCreando.set(true);
+    this.errorCrear.set(null);
 
     try {
-      const fechaHoraISO = `${fecha}T${hora}:00.000Z`;
+      const fechaHoraISO = construirFechaHoraISO(fecha, hora);
 
       await this.turnosService.crearTurnoPendiente({
         paciente_id: pacienteId,
@@ -90,6 +113,7 @@ export class StepConfirmComponent {
         this.wizard.reiniciar();
       }
     } catch {
+      this.errorCrear.set('No se pudo registrar el turno. Podés reintentarlo.');
       this.isCreando.set(false);
     }
   }

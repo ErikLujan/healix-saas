@@ -2,7 +2,8 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { WizardTurnoService } from '../../services/wizard-turno.service';
 import { AppointmentRequestService } from '../../services/appointment-request.service';
-import { DiaSemana } from '@core/models/disponibilidad.model';
+import { VENTANA_DIAS_SOLICITUD } from '../../services/scheduling.config';
+import { fechaLocalHoy, nombreDiaCortoEsAR, nombreMesCortoEsAR } from '@shared/utils/date-locale.utils';
 
 interface FechaDisponible {
   readonly fecha: string;
@@ -10,17 +11,15 @@ interface FechaDisponible {
   readonly diaNombre: string;
   readonly diaNumero: number;
   readonly mesNombre: string;
+  readonly anio: number;
   readonly esHoy: boolean;
 }
 
-const NOMBRES_DIAS_CORTOS: Record<number, string> = {
-  0: 'Dom', 1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb',
-};
-
-const NOMBRES_MESES: Record<number, string> = {
-  0: 'Ene', 1: 'Feb', 2: 'Mar', 3: 'Abr', 4: 'May', 5: 'Jun',
-  6: 'Jul', 7: 'Ago', 8: 'Sep', 9: 'Oct', 10: 'Nov', 11: 'Dic',
-};
+interface GrupoMensual {
+  readonly clave: string;
+  readonly etiqueta: string;
+  readonly fechas: readonly FechaDisponible[];
+}
 
 @Component({
   selector: 'app-step-date',
@@ -34,20 +33,30 @@ export class StepDateComponent implements OnInit {
 
   readonly fechasDisponibles = signal<readonly FechaDisponible[]>([]);
   readonly isLoading = signal(true);
+  readonly errorCarga = signal<string | null>(null);
   readonly seleccionada = this.wizard.fechaSeleccionada;
   readonly especialista = this.wizard.especialistaSeleccionado;
+  readonly ventanaDias = VENTANA_DIAS_SOLICITUD;
 
   readonly agrupadasPorMes = computed(() => {
     const fechas = this.fechasDisponibles();
-    const agrupadas = new Map<string, readonly FechaDisponible[]>();
+    const agrupadas = new Map<string, GrupoMensual>();
 
     for (const fecha of fechas) {
-      const clave = `${fecha.mesNombre}`;
-      const existentes = agrupadas.get(clave) ?? [];
-      agrupadas.set(clave, [...existentes, fecha]);
+      const clave = `${fecha.anio}-${fecha.mesNombre}`;
+      const existente = agrupadas.get(clave);
+      if (existente) {
+        agrupadas.set(clave, { ...existente, fechas: [...existente.fechas, fecha] });
+      } else {
+        agrupadas.set(clave, {
+          clave,
+          etiqueta: `${fecha.mesNombre} ${fecha.anio}`,
+          fechas: [fecha],
+        });
+      }
     }
 
-    return Array.from(agrupadas.entries());
+    return Array.from(agrupadas.values());
   });
 
   async ngOnInit(): Promise<void> {
@@ -61,25 +70,37 @@ export class StepDateComponent implements OnInit {
       return;
     }
 
-    const hoy = new Date();
-    const fechasRaw = await this.requestService.cargarFechasDisponibles(especialista.id);
+    this.isLoading.set(true);
+    this.errorCarga.set(null);
 
-    const fechas: FechaDisponible[] = fechasRaw.map((f, i) => {
-      const [anio, mes, dia] = f.fecha.split('-').map(Number);
-      const fechaDate = new Date(anio, mes - 1, dia);
+    try {
+      const fechasRaw = await this.requestService.cargarFechasDisponibles(especialista.id);
+      const hoyLocal = fechaLocalHoy();
 
-      return {
-        fecha: f.fecha,
-        diaSemana: f.diaSemana,
-        diaNombre: NOMBRES_DIAS_CORTOS[f.diaSemana],
-        diaNumero: dia,
-        mesNombre: NOMBRES_MESES[fechaDate.getMonth()],
-        esHoy: i === 0,
-      };
-    });
+      const fechas: FechaDisponible[] = fechasRaw.map((f) => {
+        const [anio, mes, dia] = f.fecha.split('-').map(Number);
 
-    this.fechasDisponibles.set(Object.freeze(fechas));
-    this.isLoading.set(false);
+        return {
+          fecha: f.fecha,
+          diaSemana: f.diaSemana,
+          diaNombre: nombreDiaCortoEsAR(f.diaSemana),
+          diaNumero: dia,
+          mesNombre: nombreMesCortoEsAR(mes),
+          anio,
+          esHoy: f.fecha === hoyLocal,
+        };
+      });
+
+      this.fechasDisponibles.set(Object.freeze(fechas));
+    } catch {
+      this.errorCarga.set('No se pudieron cargar las fechas disponibles.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async reintentar(): Promise<void> {
+    await this.cargarFechasDisponibles();
   }
 
   seleccionar(fecha: FechaDisponible): void {

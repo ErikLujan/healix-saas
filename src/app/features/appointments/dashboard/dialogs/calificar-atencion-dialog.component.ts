@@ -2,11 +2,12 @@ import { Component, output, signal, computed, HostListener } from '@angular/core
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { LucideDynamicIcon } from '@lucide/angular';
+import { DialogFocusTrapDirective } from '@shared/directives/dialog-focus-trap.directive';
 
 @Component({
   selector: 'app-calificar-atencion-dialog',
   standalone: true,
-  imports: [FormsModule, NgClass, LucideDynamicIcon],
+  imports: [FormsModule, NgClass, LucideDynamicIcon, DialogFocusTrapDirective],
   templateUrl: './calificar-atencion-dialog.component.html',
 })
 export class CalificarAtencionDialogComponent {
@@ -73,10 +74,21 @@ export class CalificarAtencionDialogComponent {
 
   confirmar(): void {
     if (this.botonDeshabilitado()) return;
-    this.isVisible.set(false);
+    this.isEnviando.set(true);
     this.onConfirmar.emit({
       comentario: this.comentario().trim(),
       estrellas: this.estrellas(),
     });
+  }
+
+  /**
+   * Cierra el diálogo tras completar el envío.
+   *
+   * Lo invoca el contenedor cuando la persistencia concluye,
+   * con éxito o con error ya notificado por el servicio.
+   */
+  finalizarEnvio(): void {
+    this.isEnviando.set(false);
+    this.isVisible.set(false);
   }
 }
