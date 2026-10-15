@@ -30,7 +30,6 @@ export class RequestPageComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
   readonly pasoActual = this.wizard.pasoActual;
-  readonly puedeAvanzar = this.wizard.puedeAvanzar;
   readonly puedeRetroceder = this.wizard.puedeRetroceder;
 
   readonly isAdmin = computed(() => this.authService.userRole() === 'administrador');
@@ -42,7 +41,8 @@ export class RequestPageComponent implements OnInit {
         { numero: 2, titulo: 'Especialidad' },
         { numero: 3, titulo: 'Especialista' },
         { numero: 4, titulo: 'Fecha' },
-        { numero: 5, titulo: 'Confirmar' },
+        { numero: 5, titulo: 'Horario' },
+        { numero: 6, titulo: 'Confirmar' },
       ];
     }
     return [
@@ -53,6 +53,8 @@ export class RequestPageComponent implements OnInit {
       { numero: 5, titulo: 'Confirmar' },
     ];
   });
+
+  readonly totalPasos = computed(() => this.pasos().length);
 
   readonly tituloPaso = computed(
     () => this.pasos().find(p => p.numero === this.pasoActual())?.titulo ?? '',

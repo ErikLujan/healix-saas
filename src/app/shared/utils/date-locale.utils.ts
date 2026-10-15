@@ -193,6 +193,23 @@ export function formatearFechaCorta(fecha: Date): string {
 }
 
 /**
+ * Días laborales de la clínica con nombre en español rioplatense.
+ *
+ * Lunes a sábado en orden, generados con `Intl` es-AR. El domingo se
+ * excluye por política de la clínica (ver modelo de disponibilidad).
+ *
+ * @returns Días hábiles con identificador numérico y nombre.
+ */
+export function diasLaboralesEsAR(): ReadonlyArray<{ readonly id: number; readonly nombre: string }> {
+  const base = new Date(2026, 0, 5);
+  return [0, 1, 2, 3, 4, 5].map(desplazamiento => {
+    const fecha = new Date(base);
+    fecha.setDate(base.getDate() + desplazamiento);
+    return { id: fecha.getDay(), nombre: nombreDiaEsAR(fecha) };
+  });
+}
+
+/**
  * Día de la semana local desde una fecha corta, sin conversión de zona.
  *
  * @param fechaCorta Fecha `YYYY-MM-DD`.
@@ -202,6 +219,47 @@ export function obtenerDiaSemanaLocal(fechaCorta: string): number {
   const [anio, mes, dia] = fechaCorta.split('-').map(Number);
   if (!anio || !mes || !dia) return 0;
   return new Date(anio, mes - 1, dia).getDay();
+}
+
+/**
+ * Formatea una marca ISO como fecha corta capitalizada es-AR.
+ *
+ * Convierte el instante a hora local del dispositivo antes de
+ * formatear, por lo que es apta para marcas reales (`created_at`).
+ * Para hora local de agenda se utilizan las variantes de recorte.
+ *
+ * @param valor Marca de tiempo ISO del dominio.
+ * @returns Fecha como "12 Oct 2026" o cadena vacía si no hay valor.
+ */
+export function formatearFechaCortaCapitalizadaEsAR(valor: string | null | undefined): string {
+  if (!valor) return '';
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return '';
+  const partes = new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).formatToParts(fecha);
+  const dia = partes.find(p => p.type === 'day')?.value ?? '';
+  const mesCrudo = (partes.find(p => p.type === 'month')?.value ?? '').replace(/\./g, '').trim();
+  const mes = mesCrudo.charAt(0).toUpperCase() + mesCrudo.slice(1);
+  const anio = partes.find(p => p.type === 'year')?.value ?? '';
+  return `${dia} ${mes} ${anio}`;
+}
+
+/**
+ * Formatea una marca ISO como fecha corta capitalizada con hora local.
+ *
+ * @param valor Marca de tiempo ISO del dominio.
+ * @returns Fecha como "12 Oct 2026, 10:30" o cadena vacía si no hay valor.
+ */
+export function formatearFechaHoraCortaEsAR(valor: string | null | undefined): string {
+  if (!valor) return '';
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return '';
+  const horas = String(fecha.getHours()).padStart(2, '0');
+  const minutos = String(fecha.getMinutes()).padStart(2, '0');
+  return `${formatearFechaCortaCapitalizadaEsAR(valor)}, ${horas}:${minutos}`;
 }
 
 /**

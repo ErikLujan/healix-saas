@@ -361,9 +361,12 @@ export class AppointmentRequestService {
   private async enriquecerEspecialidades(
     mapaEspecialistas: Map<string, EspecialistaWizard>,
   ): Promise<void> {
+    const idsEspecialistas = Array.from(mapaEspecialistas.keys());
+
     const { data: todasRelaciones, error: relError } = await this.supabase.supabase
       .from('especialista_especialidad')
-      .select('especialista_id, especialidad_id');
+      .select('especialista_id, especialidad_id')
+      .in('especialista_id', idsEspecialistas);
 
     if (relError || !todasRelaciones) {
       toast.error('No se pudieron cargar los especialistas. Intenta nuevamente.');

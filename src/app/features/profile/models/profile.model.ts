@@ -24,3 +24,21 @@ export interface ProfileUpdatePayload {
 
 /** Tab identifiers for the profile page. */
 export type TabId = 'informacion' | 'horarios' | 'historial' | 'seguridad';
+
+/**
+ * Definición de pestañas de la página de perfil con títulos visibles.
+ *
+ * Fuente única para el tablist, los títulos de panel y la navegación
+ * por teclado. El shell filtra por rol las pestañas visibles.
+ */
+export interface TabPerfil {
+  readonly id: TabId;
+  readonly titulo: string;
+}
+
+export const TABS_PERFIL: readonly TabPerfil[] = [
+  { id: 'informacion', titulo: 'Información Personal' },
+  { id: 'horarios', titulo: 'Mis Horarios' },
+  { id: 'historial', titulo: 'Mi Historial Clínico' },
+  { id: 'seguridad', titulo: 'Seguridad' },
+];

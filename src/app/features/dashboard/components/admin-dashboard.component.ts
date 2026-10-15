@@ -7,6 +7,7 @@ import { TurnosService } from '@core/services/turnos.service';
 import { AdminUsersService } from '@features/administration/services/admin-users.service';
 import { MedicalRecordsService } from '@features/medical-history/services/medical-records.service';
 import { TurnoConRelaciones } from '@core/models/turno.model';
+import { aplicarAlfa, paletaGraficos } from '@shared/utils/chart.tokens';
 import type { ChartConfiguration, ChartData } from 'chart.js';
 
 @Component({
@@ -198,35 +199,35 @@ export class AdminDashboardComponent implements OnInit {
       value: this.totalUsuarios(),
       icon: 'users',
       color: 'text-brand-700',
-      iconBg: 'rgba(99, 102, 241, 0.1)',
-      iconColor: '#6366f1',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/administracion/usuarios',
     },
     {
       label: 'Especialistas activos',
       value: this.especialistasAprobados(),
       icon: 'stethoscope',
-      color: 'text-emerald-600',
-      iconBg: 'rgba(16, 185, 129, 0.1)',
-      iconColor: '#10b981',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/especialistas',
     },
     {
       label: 'Pendientes aprobacion',
       value: this.especialistasPendientes(),
       icon: 'clock',
-      color: 'text-amber-600',
-      iconBg: 'rgba(245, 158, 11, 0.1)',
-      iconColor: '#f59e0b',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       link: '/especialistas',
     },
     {
       label: 'Turnos totales',
       value: this.totalTurnos(),
       icon: 'calendar',
-      color: 'text-purple-600',
-      iconBg: 'rgba(168, 85, 247, 0.1)',
-      iconColor: '#a855f7',
+      color: 'text-brand-700',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
     },
   ]);
 
@@ -241,14 +242,15 @@ export class AdminDashboardComponent implements OnInit {
 
     const labels = Array.from(specialtyMap.keys());
     const data = Array.from(specialtyMap.values());
+    const paleta = paletaGraficos();
 
     return {
       labels,
       datasets: [{
         data,
         label: 'Turnos',
-        backgroundColor: 'rgba(99, 102, 241, 0.8)',
-        borderColor: 'rgba(99, 102, 241, 1)',
+        backgroundColor: aplicarAlfa(paleta.marca500, 0.8),
+        borderColor: paleta.marca700,
         borderWidth: 1,
         borderRadius: 6,
         maxBarThickness: 48,
@@ -256,31 +258,36 @@ export class AdminDashboardComponent implements OnInit {
     };
   });
 
-  readonly barChartOptions = computed((): ChartConfiguration<'bar'>['options'] => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: '#1e293b',
-        titleFont: { size: 12, weight: 'bold' },
-        bodyFont: { size: 12 },
-        padding: 10,
-        cornerRadius: 8,
+  readonly barChartOptions = computed((): ChartConfiguration<'bar'>['options'] => {
+    const paleta = paletaGraficos();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: paleta.texto,
+          titleColor: paleta.superficie,
+          bodyColor: paleta.superficie,
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 12 },
+          padding: 10,
+          cornerRadius: 8,
+        },
       },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 11 }, color: '#94a3b8' },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11, family: "'Inter', system-ui, sans-serif" }, color: paleta.textoSutil },
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: aplicarAlfa(paleta.borde, 0.5) },
+          ticks: { font: { size: 11, family: "'Inter', system-ui, sans-serif" }, color: paleta.textoSutil, stepSize: 1 },
+        },
       },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(226, 232, 240, 0.5)' },
-        ticks: { font: { size: 11 }, color: '#94a3b8', stepSize: 1 },
-      },
-    },
-  }));
+    };
+  });
 
   readonly hasChartData = computed(() => this.barChartData().datasets[0].data.length > 0);
 

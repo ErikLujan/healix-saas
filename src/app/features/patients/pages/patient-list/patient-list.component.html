@@ -7,6 +7,13 @@
     <div>
       <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">Listado de Pacientes</h1>
       <p class="mt-0.5 text-sm text-text-secondary">Registro de pacientes atendidos e historias clínicas completas.</p>
+      <p class="mt-0.5 text-xs text-text-subtle">
+        @if (esAdmin()) {
+          Se listan pacientes con historia clínica registrada.
+        } @else {
+          Solo se listan pacientes con al menos un turno finalizado.
+        }
+      </p>
     </div>
   </div>
 

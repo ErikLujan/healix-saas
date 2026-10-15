@@ -7,7 +7,7 @@
         <div class="profile-skeleton-line-sm w-72 animate-shimmer"></div>
       </div>
 
-      <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/80 border border-slate-200/80 rounded-2xl overflow-x-auto">
+      <div class="flex items-center gap-1.5 p-1.5 bg-surface-sunken/80 border border-divider rounded-2xl overflow-x-auto">
         <div class="profile-skeleton-line-sm w-32 animate-shimmer rounded-xl h-9"></div>
         <div class="profile-skeleton-line-sm w-24 animate-shimmer rounded-xl h-9"></div>
       </div>
@@ -38,84 +38,59 @@
       <span class="sr-only">Cargando perfil...</span>
     </div>
   } @else {
-    @if (perfil(); as profile) {
+    @if (errorCarga()) {
+      <div class="bg-surface border border-danger/20 rounded-2xl p-6 sm:p-8 text-center" role="alert">
+        <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+        <p class="text-sm font-medium text-text-primary">No se pudo cargar el perfil.</p>
+        <p class="text-xs text-text-secondary mt-1">{{ errorCarga() }}</p>
+        <button type="button" (click)="recargar()"
+          class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+          Reintentar
+        </button>
+      </div>
+    } @else {
+      @if (perfil(); as profile) {
       <div>
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Cuenta</p>
         <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">Mi Perfil</h1>
         <p class="mt-1 text-sm text-text-secondary">Gestioná tu información personal y configuración.</p>
       </div>
 
       <!-- Tab Bar -->
-      <div class="flex items-center gap-1.5 p-1.5 bg-slate-100/80 border border-slate-200/80 rounded-2xl overflow-x-auto" role="tablist" aria-label="Secciones del perfil">
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="tabActiva() === 'informacion'"
-          [attr.aria-controls]="'panel-informacion'"
-          (click)="seleccionarTab('informacion')"
-          class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
-          [ngClass]="tabActiva() === 'informacion'
-            ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
-            : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
-        >
-          Información Personal
-        </button>
-        @if (rol() === 'especialista') {
+      <div class="flex items-center gap-1.5 p-1.5 bg-surface-sunken/80 border border-divider rounded-2xl overflow-x-auto" role="tablist" aria-label="Secciones del perfil" (keydown)="onTabKeydown($event)">
+        @for (tab of tabsVisibles(); track tab.id) {
           <button
             type="button"
             role="tab"
-            [attr.aria-selected]="tabActiva() === 'horarios'"
-            [attr.aria-controls]="'panel-horarios'"
-            (click)="seleccionarTab('horarios')"
-            class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
-            [ngClass]="tabActiva() === 'horarios'
-              ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
-              : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
+            [id]="'tab-' + tab.id"
+            [attr.aria-selected]="tabActiva() === tab.id"
+            [attr.aria-controls]="'panel-' + tab.id"
+            [attr.tabindex]="tabActiva() === tab.id ? 0 : -1"
+            (click)="seleccionarTab(tab.id)"
+            class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
+            [ngClass]="tabActiva() === tab.id
+              ? 'bg-surface text-brand-700 shadow-xs border border-divider font-semibold'
+              : 'text-text-secondary hover:text-text-primary hover:bg-surface-sunken/50 border border-transparent'"
           >
-            Mis Horarios
+            {{ tab.titulo }}
           </button>
         }
-        @if (rol() === 'paciente') {
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="tabActiva() === 'historial'"
-            [attr.aria-controls]="'panel-historial'"
-            (click)="seleccionarTab('historial')"
-            class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
-            [ngClass]="tabActiva() === 'historial'
-              ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
-              : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
-          >
-            Mi Historial Clínico
-          </button>
-        }
-        <button
-          type="button"
-          role="tab"
-          [attr.aria-selected]="tabActiva() === 'seguridad'"
-          [attr.aria-controls]="'panel-seguridad'"
-          (click)="seleccionarTab('seguridad')"
-          class="rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2"
-          [ngClass]="tabActiva() === 'seguridad'
-            ? 'bg-white text-brand-700 shadow-xs border border-slate-200/80 font-semibold'
-            : 'text-text-secondary hover:text-text-primary hover:bg-slate-200/50 border border-transparent'"
-        >
-          Seguridad
-        </button>
       </div>
 
       <!-- Tab: Información Personal -->
       @if (tabActiva() === 'informacion') {
         <div id="panel-informacion" role="tabpanel" aria-labelledby="tab-informacion" class="space-y-6 tab-content-enter">
           <!-- Profile Header Card -->
-          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8 shadow-xs">
             <div class="flex flex-col sm:flex-row items-center gap-6">
-              <div class="relative">
+              <div class="relative shrink-0">
                 <div class="w-24 h-24 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden border-2 border-border">
                   @if (getAvatarUrl(); as avatarUrl) {
                     <img [src]="avatarUrl" [alt]="profile.full_name" width="96" height="96" loading="lazy" decoding="async" class="w-24 h-24 rounded-full object-cover" fallbackAvatar />
+                  } @else if (inicialesAvatar()) {
+                    <span class="text-2xl font-bold text-brand-700">{{ inicialesAvatar() }}</span>
                   } @else {
-                    <span class="text-2xl font-bold text-brand-700">{{ getInitials(profile.full_name) }}</span>
+                    <svg lucideIcon="user" class="w-10 h-10 text-brand-700"></svg>
                   }
                 </div>
                 @if (isUploadingAvatar()) {
@@ -125,23 +100,49 @@
                 }
               </div>
 
-              <div class="flex-1 text-center sm:text-left">
-                <h2 class="text-xl font-bold text-text-primary">{{ profile.full_name }}</h2>
-                <p class="text-sm text-text-secondary">{{ profile.email }}</p>
-                <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs font-semibold
-                  {{ profile.role === 'administrador' ? 'bg-purple-100 text-purple-700' :
-                     profile.role === 'especialista' ? 'bg-teal-100 text-teal-700' :
-                     'bg-emerald-100 text-emerald-700' }}">
+              <div class="flex-1 min-w-0 text-center sm:text-left">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Perfil verificado</p>
+                <h2 class="text-xl font-bold text-text-primary truncate">{{ profile.full_name }}</h2>
+                <p class="text-sm text-text-secondary truncate">{{ profile.email }}</p>
+                <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-xs font-semibold {{ claseRol() }}">
                   {{ profile.role | titlecase }}
                 </span>
               </div>
             </div>
+
+            @if (tabActiva() === 'informacion') {
+              <div class="mt-6 pt-5 border-t border-divider flex flex-wrap justify-center sm:justify-end gap-3">
+                @if (!isEditing()) {
+                  <button type="button" (click)="editarPerfil()"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:outline-none"
+                    aria-label="Editar perfil">
+                    <svg lucideIcon="pencil" class="h-4 w-4 shrink-0"></svg>
+                    Editar perfil
+                  </button>
+                } @else {
+                  <button type="button" (click)="guardarPerfil()" [disabled]="isSavingProfile()"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
+                    @if (isSavingProfile()) {
+                      <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Guardando...
+                    } @else {
+                      Guardar cambios
+                    }
+                  </button>
+                  <button type="button" (click)="cancelarEdicion()" [disabled]="isSavingProfile()"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-sunken transition-all focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed">
+                    Cancelar
+                  </button>
+                }
+              </div>
+            }
           </div>
 
           <!-- Patient Profile Images -->
           @if (rol() === 'paciente' && datosRol(); as datos) {
             @if (datos.avatar_url_frontal || datos.avatar_url_secundario) {
-              <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+              <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8 shadow-xs">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Documentación</p>
                 <h3 class="text-lg font-semibold text-text-primary mb-4">Fotos de Perfil del Paciente</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   @if (datos.avatar_url_frontal) {
@@ -150,13 +151,13 @@
                       <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-divider bg-surface-sunken shadow-xs">
                         <img [src]="datos.avatar_url_frontal" alt="Foto frontal del documento" loading="lazy" decoding="async" class="w-full h-full object-cover" fallbackAvatar />
                         @if (avatarActivo() === 'frontal') {
-                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-[#0F4C4A] text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
+                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-brand-700 text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             Avatar Principal Activo
                           </span>
                         } @else {
                           <button type="button" (click)="establecerAvatarPrincipal('frontal')"
-                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-slate-200/80">
+                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-surface/90 backdrop-blur-sm text-text-secondary text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-divider">
                             Establecer como Principal
                           </button>
                         }
@@ -169,13 +170,13 @@
                       <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-divider bg-surface-sunken shadow-xs">
                         <img [src]="datos.avatar_url_secundario" alt="Foto de perfil del documento" loading="lazy" decoding="async" class="w-full h-full object-cover" fallbackAvatar />
                         @if (avatarActivo() === 'secundario') {
-                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-[#0F4C4A] text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
+                          <span class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-brand-700 text-white text-[10px] font-semibold px-2 py-0.5 shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             Avatar Principal Activo
                           </span>
                         } @else {
                           <button type="button" (click)="establecerAvatarPrincipal('secundario')"
-                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-slate-200/80">
+                            class="absolute top-2 left-2 inline-flex items-center gap-1 rounded-lg bg-surface/90 backdrop-blur-sm text-text-secondary text-[10px] font-semibold px-2 py-0.5 shadow-md hover:bg-brand-50 hover:text-brand-700 transition-all border border-divider">
                             Establecer como Principal
                           </button>
                         }
@@ -188,7 +189,8 @@
           }
 
           <!-- Avatar Upload -->
-          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8 shadow-xs">
+            <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Imagen</p>
             <h3 class="text-lg font-semibold text-text-primary mb-4">Foto de Perfil</h3>
             <div class="max-w-md">
               <app-file-upload
@@ -215,7 +217,7 @@
                     type="button"
                     (click)="cancelarAvatar()"
                     [disabled]="isUploadingAvatar()"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover transition-all focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-sunken transition-all focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
                   </button>
@@ -225,18 +227,9 @@
           </div>
 
           <!-- Personal Data -->
-          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-text-primary">Datos Personales</h3>
-              @if (!isEditing()) {
-                <button type="button" (click)="editarPerfil()"
-                  class="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-all hover:border-brand-500 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                  aria-label="Editar perfil">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
-                  Editar
-                </button>
-              }
-            </div>
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8 shadow-xs">
+            <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Identidad</p>
+            <h3 class="text-lg font-semibold text-text-primary mb-4">Datos Personales</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-medium text-text-subtle mb-1.5">Nombre Completo</label>
@@ -268,7 +261,7 @@
                 </div>
                 <div>
                   <label class="block text-xs font-medium text-text-subtle mb-1.5">Edad</label>
-                  <input type="text" [value]="datos.edad + ' años'" readonly
+                  <input type="text" [value]="edadTexto(datos.edad)" readonly
                     class="w-full px-4 py-2.5 text-sm rounded-xl border border-divider bg-surface-sunken text-text-primary font-medium cursor-not-allowed focus:outline-none" />
                 </div>
                 @if (datos.obra_social) {
@@ -280,23 +273,6 @@
                 }
               }
             </div>
-            @if (isEditing()) {
-              <div class="mt-5 flex gap-3">
-                <button type="button" (click)="guardarPerfil()" [disabled]="isSavingProfile()"
-                  class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-700/90 focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  @if (isSavingProfile()) {
-                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Guardando...
-                  } @else {
-                    Guardar cambios
-                  }
-                </button>
-                <button type="button" (click)="cancelarEdicion()" [disabled]="isSavingProfile()"
-                  class="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-surface-sunken transition-all focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  Cancelar
-                </button>
-              </div>
-            }
           </div>
         </div>
       }
@@ -306,11 +282,18 @@
         <div id="panel-horarios" role="tabpanel" aria-labelledby="tab-horarios" class="space-y-6 tab-content-enter">
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
-              <div class="bg-surface rounded-2xl border border-divider p-6">
+              <div class="bg-surface rounded-2xl border border-divider p-6 shadow-xs">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Agenda</p>
                 <h3 class="text-lg font-semibold text-text-primary mb-1">Configurar Horarios</h3>
                 <p class="text-sm text-text-secondary mb-4">
                   Definí los días y horarios en los que atendés.
                 </p>
+                @if (!tieneBloques()) {
+                  <div class="mb-4 rounded-xl border border-divider bg-surface-sunken p-4 flex gap-3" role="status">
+                    <svg lucideIcon="info" class="h-4 w-4 text-brand-700 shrink-0 mt-0.5"></svg>
+                    <p class="text-xs text-text-secondary">Todavía no configuraste horarios. Habilitá al menos un día para que tus turnos queden disponibles.</p>
+                  </div>
+                }
                 <app-availability-form
                   [configuracion]="configuracion()"
                   [especialidades]="especialidades()"
@@ -348,9 +331,10 @@
       <!-- Tab: Historial Clínico (Paciente) -->
       @if (tabActiva() === 'historial' && rol() === 'paciente') {
         <div id="panel-historial" role="tabpanel" aria-labelledby="tab-historial" class="space-y-6 tab-content-enter">
-          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8">
+          <div class="bg-surface rounded-2xl border border-divider p-6 sm:p-8 shadow-xs">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               <div>
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-brand-700 mb-1">Atenciones</p>
                 <h3 class="text-lg font-semibold text-text-primary">Mi Historial Clínico</h3>
                 <p class="text-sm text-text-secondary mt-1">
                   Consulta cronológica de todas tus atenciones médicas.
@@ -376,8 +360,8 @@
 
             @if (isLoadingHistorial()) {
               <div class="space-y-4">
-                @for (i of [1,2,3]; track i) {
-                  <div class="rounded-2xl border border-slate-200/80 bg-surface p-5 space-y-4">
+              @for (i of [1,2,3]; track i) {
+                <div class="rounded-2xl border border-divider bg-surface p-5 space-y-4">
                     <div class="flex items-center gap-3">
                       <div class="h-10 w-10 rounded-xl animate-shimmer"></div>
                       <div class="space-y-2 flex-1">
@@ -394,12 +378,22 @@
                   </div>
                 }
               </div>
+            } @else if (errorHistorial()) {
+              <div class="rounded-2xl border border-danger/20 bg-danger/5 p-6 text-center" role="alert">
+                <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
+                <p class="text-sm font-medium text-text-primary">No se pudo cargar el historial.</p>
+                <p class="text-xs text-text-secondary mt-1">{{ errorHistorial() }}</p>
+                <button type="button" (click)="reintentarHistorial()"
+                  class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
+                  Reintentar
+                </button>
+              </div>
             } @else if (historialClinico().length > 0) {
               <app-medical-history-list [records]="historialClinico()" />
             } @else {
               <div class="flex flex-col items-center justify-center py-16 px-4">
-                <div class="w-16 h-16 mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <svg lucideIcon="file-text" class="h-8 w-8 text-slate-400"></svg>
+                <div class="w-16 h-16 mb-4 rounded-2xl bg-surface-sunken flex items-center justify-center">
+                  <svg lucideIcon="file-text" class="h-8 w-8 text-text-subtle"></svg>
                 </div>
                 <h3 class="text-lg font-semibold text-text-primary mb-1">Sin historial clínico</h3>
                 <p class="text-sm text-text-subtle text-center max-w-sm">
@@ -415,6 +409,12 @@
       @if (tabActiva() === 'seguridad') {
         <div id="panel-seguridad" role="tabpanel" aria-labelledby="tab-seguridad" class="tab-content-enter">
           <app-password-change />
+        </div>
+      }
+      } @else {
+        <div class="bg-surface border border-divider rounded-2xl p-6 sm:p-8 text-center" role="status">
+          <p class="text-sm font-medium text-text-primary">Perfil no disponible.</p>
+          <p class="text-xs text-text-secondary mt-1">No encontramos información para mostrar.</p>
         </div>
       }
     }

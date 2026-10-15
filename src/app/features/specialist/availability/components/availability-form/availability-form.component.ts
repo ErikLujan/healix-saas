@@ -7,6 +7,9 @@ import {
   EspecialidadPerfil,
   DiaInfo,
   RESTRICCIONES_HORARIAS,
+  HORA_INICIO_DEFAULT,
+  HORA_FIN_DEFAULT,
+  EXTENSION_BLOQUE_DEFAULT_HORAS,
 } from '@core/models/disponibilidad.model';
 
 @Component({
@@ -37,7 +40,7 @@ export class AvailabilityFormComponent {
       config: {
         habilitado: nuevoHabilitado,
         bloques: nuevoHabilitado
-          ? [{ especialidad_id: this.especialidades()[0]?.id ?? '', hora_inicio: '08:00', hora_fin: '12:00' }]
+          ? [{ especialidad_id: this.especialidades()[0]?.id ?? '', hora_inicio: HORA_INICIO_DEFAULT, hora_fin: HORA_FIN_DEFAULT }]
           : [],
       },
     });
@@ -63,7 +66,7 @@ export class AvailabilityFormComponent {
   agregarBloque(dia: DiaSemana): void {
     const actual = this.configuracion()[dia];
     const ultimoBloque = actual.bloques[actual.bloques.length - 1];
-    const horaInicioNueva = ultimoBloque ? ultimoBloque.hora_fin : '08:00';
+    const horaInicioNueva = ultimoBloque ? ultimoBloque.hora_fin : HORA_INICIO_DEFAULT;
 
     this.configuracionChange.emit({
       dia,
@@ -74,7 +77,7 @@ export class AvailabilityFormComponent {
           {
             especialidad_id: this.especialidades()[0]?.id ?? '',
             hora_inicio: horaInicioNueva,
-            hora_fin: this.calcularFinDefault(horaInicioNueva),
+            hora_fin: this.calcularFinDefault(horaInicioNueva, dia),
           },
         ],
       },
@@ -115,10 +118,12 @@ export class AvailabilityFormComponent {
     return null;
   }
 
-  private calcularFinDefault(horaInicio: string): string {
+  private calcularFinDefault(horaInicio: string, dia: DiaSemana): string {
+    const limite = RESTRICCIONES_HORARIAS[dia]?.fin ?? HORA_FIN_DEFAULT;
+    const limiteHoras = parseInt(limite.split(':')[0], 10);
     const partes = horaInicio.split(':');
     const horas = parseInt(partes[0], 10);
-    const fin = Math.min(horas + 4, 19);
+    const fin = Math.min(horas + EXTENSION_BLOQUE_DEFAULT_HORAS, limiteHoras);
     return `${String(fin).padStart(2, '0')}:00`;
   }
 }

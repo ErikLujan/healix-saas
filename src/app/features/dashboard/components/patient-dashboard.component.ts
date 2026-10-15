@@ -17,10 +17,10 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
   template: `
     <div @fadeIn class="min-h-full">
       <div @slideUp class="mb-8">
-        <h1 class="text-2xl font-semibold text-fg font-display tracking-tight">
+        <h1 class="text-2xl font-semibold text-text-primary font-display tracking-tight">
           Mi clinica
         </h1>
-        <p class="text-sm text-fg-muted mt-1">
+        <p class="text-sm text-text-secondary mt-1">
           Acceso rapido a tus servicios medicos.
         </p>
       </div>
@@ -55,8 +55,8 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
       } @else if (errorCarga()) {
         <div class="bg-surface border border-danger/20 rounded-xl p-6 text-center" role="alert">
           <svg lucideIcon="alert-triangle" class="w-10 h-10 text-danger/60 mx-auto mb-2"></svg>
-          <p class="text-sm font-medium text-fg">No se pudo cargar tu panel.</p>
-          <p class="text-xs text-fg-muted mt-1">{{ errorCarga() }}</p>
+          <p class="text-sm font-medium text-text-primary">No se pudo cargar tu panel.</p>
+          <p class="text-xs text-text-secondary mt-1">{{ errorCarga() }}</p>
           <button type="button" (click)="recargar()"
             class="mt-4 inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
             Reintentar
@@ -68,19 +68,19 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
             <div class="bg-surface border border-divider rounded-xl p-6 relative overflow-hidden">
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-brand-500 to-brand-700"></div>
               <div class="pl-3">
-                <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">TU PROXIMA CONSULTA</p>
-                <h2 class="text-xl font-bold text-fg mb-4">
+                <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-2">TU PROXIMA CONSULTA</p>
+                <h2 class="text-xl font-bold text-text-primary mb-4">
                   {{ nextAppointment()!.especialidad?.name ?? 'Sin especialidad' }}
-                  <span class="text-fg-muted font-normal">&middot;</span>
+                  <span class="text-text-secondary font-normal">&middot;</span>
                   {{ nextAppointment()!.especialista?.full_name ?? 'Sin especialista' }}
                 </h2>
                 <div class="space-y-2 mb-4">
-                  <div class="flex items-center gap-2 text-sm text-fg-muted">
-                    <svg lucideIcon="calendar" class="w-4 h-4 text-fg-subtle"></svg>
+                  <div class="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg lucideIcon="calendar" class="w-4 h-4 text-text-subtle"></svg>
                     <span>{{ formatDate(nextAppointment()!.fecha_hora) }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-sm text-fg-muted">
-                    <svg lucideIcon="clock" class="w-4 h-4 text-fg-subtle"></svg>
+                  <div class="flex items-center gap-2 text-sm text-text-secondary">
+                    <svg lucideIcon="clock" class="w-4 h-4 text-text-subtle"></svg>
                     <span>{{ formatTime(nextAppointment()!.fecha_hora) }}</span>
                   </div>
                 </div>
@@ -94,15 +94,15 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
           } @else {
             <div class="bg-surface border border-divider rounded-xl p-6 flex items-center justify-center">
               <div class="text-center">
-                <svg lucideIcon="calendar" class="w-12 h-12 text-fg-subtle mx-auto mb-3 opacity-40"></svg>
-                <p class="text-sm font-medium text-fg">No tenes turnos proximos</p>
-                <p class="text-xs text-fg-muted mt-1">Reserva un turno para comenzar.</p>
+                <svg lucideIcon="calendar" class="w-12 h-12 text-text-subtle mx-auto mb-3 opacity-40"></svg>
+                <p class="text-sm font-medium text-text-primary">No tenes turnos proximos</p>
+                <p class="text-xs text-text-secondary mt-1">Reserva un turno para comenzar.</p>
               </div>
             </div>
           }
 
           <div class="bg-surface border border-divider rounded-xl p-6 flex flex-col items-center justify-center text-center">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-3">NUEVO TURNO</p>
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-3">NUEVO TURNO</p>
             <a routerLink="/turnos/solicitar" class="inline-flex items-center gap-1.5 bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-600 transition-colors focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none">
               Reservar turno
             </a>
@@ -117,14 +117,14 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
             >
               <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
               <div class="pl-3">
-                <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-2">
+                <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-2">
                   {{ card.label }}
                 </p>
                 <p class="text-3xl font-extrabold tracking-tight tabular-nums" [class]="card.color">
                   {{ card.value }}
                 </p>
                 @if (card.subtext) {
-                  <p class="text-xs text-fg-muted mt-1">{{ card.subtext }}</p>
+                  <p class="text-xs text-text-secondary mt-1">{{ card.subtext }}</p>
                 }
               </div>
             </a>
@@ -133,13 +133,13 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="lg:col-span-3 bg-surface border border-divider rounded-xl p-6">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">AGENDA</p>
-            <h2 class="text-sm font-semibold text-fg mb-5">Proximos turnos</h2>
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-1">AGENDA</p>
+            <h2 class="text-sm font-semibold text-text-primary mb-5">Proximos turnos</h2>
 
             @if (upcomingTurnos().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
-                <svg lucideIcon="calendar" class="w-10 h-10 text-fg-subtle mx-auto mb-2 opacity-40"></svg>
-                <p class="text-sm text-fg-muted">Sin turnos programados</p>
+                <svg lucideIcon="calendar" class="w-10 h-10 text-text-subtle mx-auto mb-2 opacity-40"></svg>
+                <p class="text-sm text-text-secondary">Sin turnos programados</p>
               </div>
             } @else {
               <div class="space-y-4">
@@ -147,12 +147,12 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
                   <div class="border border-divider rounded-xl p-4 hover:border-brand-100 transition-colors">
                     <div class="flex items-start justify-between mb-2">
                       <div>
-                        <p class="text-sm font-bold text-fg">
+                        <p class="text-sm font-bold text-text-primary">
                           {{ turno.especialista?.full_name ?? 'Sin especialista' }}
-                          <span class="text-fg-muted font-normal">&middot;</span>
+                          <span class="text-text-secondary font-normal">&middot;</span>
                           {{ turno.especialidad?.name ?? '' }}
                         </p>
-                        <p class="text-xs text-fg-muted">{{ formatDate(turno.fecha_hora) }}</p>
+                        <p class="text-xs text-text-secondary">{{ formatDate(turno.fecha_hora) }}</p>
                       </div>
                       <span
                         class="text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -161,7 +161,7 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
                         {{ turno.estado | titlecase }}
                       </span>
                     </div>
-                    <div class="flex items-center gap-4 text-xs text-fg-muted mt-2">
+                    <div class="flex items-center gap-4 text-xs text-text-secondary mt-2">
                       <span class="flex items-center gap-1">
                         <svg lucideIcon="clock" class="w-3 h-3"></svg>
                         {{ formatTime(turno.fecha_hora) }}
@@ -174,13 +174,13 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
           </div>
 
           <div class="lg:col-span-2 bg-surface border border-divider rounded-xl p-6">
-            <p class="text-[11px] font-semibold text-fg-subtle uppercase tracking-widest mb-1">HISTORIA</p>
-            <h2 class="text-sm font-semibold text-fg mb-5">Consultas anteriores</h2>
+            <p class="text-[11px] font-semibold text-text-subtle uppercase tracking-widest mb-1">HISTORIA</p>
+            <h2 class="text-sm font-semibold text-text-primary mb-5">Consultas anteriores</h2>
 
             @if (recentHistory().length === 0) {
               <div class="text-center py-8 bg-surface-sunken rounded-xl">
-                <svg lucideIcon="file-text" class="w-10 h-10 text-fg-subtle mx-auto mb-2 opacity-40"></svg>
-                <p class="text-sm text-fg-muted">Sin historial clinico</p>
+                <svg lucideIcon="file-text" class="w-10 h-10 text-text-subtle mx-auto mb-2 opacity-40"></svg>
+                <p class="text-sm text-text-secondary">Sin historial clinico</p>
               </div>
             } @else {
               <div class="relative pl-5 space-y-5">
@@ -188,9 +188,9 @@ import { anioActual, extraerFechaCorta, extraerHora, fechaHoraLocalActual, forma
                 @for (record of recentHistory(); track record.id) {
                   <div class="relative">
                     <span class="absolute -left-5 top-1.5 w-2.5 h-2.5 rounded-full bg-brand-700 ring-2 ring-surface"></span>
-                    <p class="text-xs text-fg-muted">{{ formatDate(record.created_at) }}</p>
-                    <p class="text-sm font-semibold text-fg">{{ record.especialista?.full_name ?? 'Sin especialista' }}</p>
-                    <p class="text-xs text-fg-muted">{{ record.datos_dinamicos.length }} datos clinicos registrados</p>
+                    <p class="text-xs text-text-secondary">{{ formatDate(record.created_at) }}</p>
+                    <p class="text-sm font-semibold text-text-primary">{{ record.especialista?.full_name ?? 'Sin especialista' }}</p>
+                    <p class="text-xs text-text-secondary">{{ record.datos_dinamicos.length }} datos clinicos registrados</p>
                   </div>
                 }
               </div>
@@ -231,19 +231,19 @@ export class PatientDashboardComponent implements OnInit {
     {
       label: `Consultas ${anioActual()}`,
       value: this.historialPaciente(),
-      color: 'text-emerald-600',
+      color: 'text-brand-700',
       subtext: `${this.historialPaciente()} realizadas`,
     },
     {
       label: 'Turnos este mes',
       value: this.turnosDelMes(),
-      color: 'text-purple-600',
+      color: 'text-brand-700',
       link: '/turnos',
     },
     {
       label: 'Especialidades',
       value: this.especialidadesConsultadas(),
-      color: 'text-slate-600',
+      color: 'text-brand-700',
       subtext: 'Distintas consultadas',
     },
   ]);

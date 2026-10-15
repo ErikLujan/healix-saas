@@ -7,8 +7,8 @@ import {
   BloqueHorario,
   DiaSemana,
   EspecialidadPerfil,
-  NOMBRES_DIAS,
 } from '@core/models/disponibilidad.model';
+import { diasLaboralesEsAR } from '@shared/utils/date-locale.utils';
 import { AvailabilityFormComponent } from '../../components/availability-form/availability-form.component';
 import { SlotsPreviewComponent } from '../../components/slots-preview/slots-preview.component';
 
@@ -33,14 +33,8 @@ export class AvailabilityPageComponent implements OnInit {
     6: { habilitado: false, bloques: [] },
   });
 
-  readonly diasDisponibles: ReadonlyArray<{ readonly id: DiaSemana; readonly nombre: string }> = [
-    { id: 1, nombre: NOMBRES_DIAS[1] },
-    { id: 2, nombre: NOMBRES_DIAS[2] },
-    { id: 3, nombre: NOMBRES_DIAS[3] },
-    { id: 4, nombre: NOMBRES_DIAS[4] },
-    { id: 5, nombre: NOMBRES_DIAS[5] },
-    { id: 6, nombre: NOMBRES_DIAS[6] },
-  ];
+  readonly diasDisponibles: ReadonlyArray<{ readonly id: DiaSemana; readonly nombre: string }> =
+    diasLaboralesEsAR().map(dia => ({ id: dia.id as DiaSemana, nombre: dia.nombre }));
 
   readonly perfil = this.authService.userProfile;
 

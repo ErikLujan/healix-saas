@@ -21,10 +21,12 @@ import {
   ConfiguracionDia,
   DiaSemana,
   DisponibilidadEspecialistaInsert,
-  NOMBRES_DIAS,
 } from '@core/models/disponibilidad.model';
+import { diasLaboralesEsAR } from '@shared/utils/date-locale.utils';
 import {
   TabId,
+  TabPerfil,
+  TABS_PERFIL,
   ConfiguracionDiaExtendida,
   DiaInfo,
 } from '../../models/profile.model';
@@ -66,20 +68,19 @@ export class ProfilePageComponent implements OnInit {
   readonly rol = this.authService.userRole;
 
   /** Days of the week for the availability form. */
-  readonly diasDisponibles: ReadonlyArray<DiaInfo> = [
-    { id: 1, nombre: NOMBRES_DIAS[1] },
-    { id: 2, nombre: NOMBRES_DIAS[2] },
-    { id: 3, nombre: NOMBRES_DIAS[3] },
-    { id: 4, nombre: NOMBRES_DIAS[4] },
-    { id: 5, nombre: NOMBRES_DIAS[5] },
-    { id: 6, nombre: NOMBRES_DIAS[6] },
-  ];
+  readonly diasDisponibles: ReadonlyArray<DiaInfo> = diasLaboralesEsAR().map(dia => ({
+    id: dia.id as DiaSemana,
+    nombre: dia.nombre,
+  }));
 
   /** Role-specific extended data (delegated to ProfileService). */
   readonly datosRol = this.profileService.datosRol;
 
   /** Loading state for the initial profile fetch. */
   readonly isLoading = signal(true);
+
+  /** Load error with retry when the initial fetch fails. */
+  readonly errorCarga = signal<string | null>(null);
 
   /** Loading state for the avatar upload. */
   readonly isUploadingAvatar = signal(false);
@@ -126,6 +127,9 @@ export class ProfilePageComponent implements OnInit {
   /** Loading state for medical history. */
   readonly isLoadingHistorial = signal(false);
 
+  /** Medical history load error with retry. */
+  readonly errorHistorial = signal<string | null>(null);
+
   /** Exporting state for PDF. */
   readonly isExportingPDF = signal(false);
 
@@ -138,23 +142,51 @@ export class ProfilePageComponent implements OnInit {
   /** Editable full name. */
   nombreEdit = '';
 
-  /** Tab title computed from active tab. */
-  readonly tituloTab = computed(() => {
-    switch (this.tabActiva()) {
-      case 'informacion':
-        return 'Información Personal';
-      case 'horarios':
-        return 'Mis Horarios';
-      case 'historial':
-        return 'Mi Historial Clínico';
-      case 'seguridad':
-        return 'Seguridad';
-    }
+  /** Tabs visible for the current role, in canonical order. */
+  readonly tabsVisibles = computed((): readonly TabPerfil[] => {
+    const rol = this.rol();
+    return TABS_PERFIL.filter(tab =>
+      tab.id === 'informacion' ||
+      tab.id === 'seguridad' ||
+      (tab.id === 'horarios' && rol === 'especialista') ||
+      (tab.id === 'historial' && rol === 'paciente'),
+    );
   });
 
+  /** Role pill classes mirroring the sidebar badge mapping. */
+  readonly claseRol = computed(() => {
+    const rol = this.perfil()?.role;
+    if (rol === 'administrador') return 'bg-purple-100 text-purple-700';
+    if (rol === 'especialista') return 'bg-teal-100 text-teal-700';
+    return 'bg-emerald-100 text-emerald-700';
+  });
+
+  /** Whether the specialist has at least one enabled availability block. */
+  readonly tieneBloques = computed(() =>
+    Object.values(this.configuracion()).some(
+      dia => dia.habilitado && dia.bloques.length > 0,
+    ),
+  );
+
   async ngOnInit(): Promise<void> {
+    await this.cargarPerfil();
+  }
+
+  /** Reloads the profile after a load error. */
+  async recargar(): Promise<void> {
+    await this.cargarPerfil();
+  }
+
+  private async cargarPerfil(): Promise<void> {
     const perfil = this.perfil();
-    if (!perfil) return;
+    if (!perfil) {
+      this.errorCarga.set('No se encontró tu sesión. Cerrá sesión e ingresá nuevamente.');
+      this.isLoading.set(false);
+      return;
+    }
+
+    this.isLoading.set(true);
+    this.errorCarga.set(null);
 
     try {
       await this.profileService.cargarDatosRol();
@@ -172,6 +204,7 @@ export class ProfilePageComponent implements OnInit {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al cargar el perfil.';
       toast.error(message);
+      this.errorCarga.set('No se pudo cargar el perfil. Revisá tu conexión.');
     } finally {
       this.isLoading.set(false);
     }
@@ -231,6 +264,7 @@ export class ProfilePageComponent implements OnInit {
     if (!perfil) return;
 
     this.isLoadingHistorial.set(true);
+    this.errorHistorial.set(null);
 
     this.medicalRecordsService.getHistoryByPatientId(perfil.id).subscribe({
       next: (records) => {
@@ -239,9 +273,15 @@ export class ProfilePageComponent implements OnInit {
       },
       error: () => {
         this.isLoadingHistorial.set(false);
+        this.errorHistorial.set('No se pudo cargar el historial clínico.');
         toast.error('No se pudo cargar el historial clínico.');
       },
     });
+  }
+
+  /** Reloads the medical history after a load error. */
+  reintentarHistorial(): void {
+    this.cargarHistorialClinico();
   }
 
   /** Exports the patient's medical history to PDF. */
@@ -267,6 +307,32 @@ export class ProfilePageComponent implements OnInit {
   /** Switches the active tab. */
   seleccionarTab(tab: TabId): void {
     this.tabActiva.set(tab);
+  }
+
+  /**
+   * Moves focus between tabs with arrow, Home and End keys.
+   *
+   * @param event Keyboard event from the tablist.
+   */
+  onTabKeydown(event: KeyboardEvent): void {
+    const validas = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (!validas.includes(event.key)) return;
+
+    const tabs = this.tabsVisibles();
+    const actual = tabs.findIndex(tab => tab.id === this.tabActiva());
+    let siguiente = actual;
+
+    if (event.key === 'ArrowRight') siguiente = (actual + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') siguiente = (actual - 1 + tabs.length) % tabs.length;
+    if (event.key === 'Home') siguiente = 0;
+    if (event.key === 'End') siguiente = tabs.length - 1;
+
+    if (siguiente !== actual && tabs[siguiente]) {
+      event.preventDefault();
+      this.seleccionarTab(tabs[siguiente].id);
+      const contenedor = (event.target as HTMLElement).closest('[role="tablist"]');
+      contenedor?.querySelector<HTMLElement>(`#tab-${tabs[siguiente].id}`)?.focus();
+    }
   }
 
   /** Handles avatar file selection — opens the cropper modal. */
@@ -381,14 +447,21 @@ export class ProfilePageComponent implements OnInit {
     }
   }
 
-  /** Returns initials for the avatar fallback. */
+  /** Returns initials for the avatar fallback, empty when the name is blank. */
   getInitials(name: string): string {
+    if (!name || !name.trim()) return '';
     return name
-      .split(' ')
+      .trim()
+      .split(/\s+/)
       .map(part => part.charAt(0))
       .slice(0, 2)
       .join('')
       .toUpperCase();
+  }
+
+  /** Formats an age value with its unit. */
+  edadTexto(edad: number): string {
+    return `${edad} años`;
   }
 
   /** Strips query string parameters from a URL for cache-busting comparison. */
@@ -407,6 +480,9 @@ export class ProfilePageComponent implements OnInit {
   getAvatarUrl(): string | null {
     return this.avatarPreview() ?? this.perfil()?.avatar_url ?? null;
   }
+
+  /** Initials for the avatar fallback, empty when the name is blank. */
+  readonly inicialesAvatar = computed(() => this.getInitials(this.perfil()?.full_name ?? ''));
 
   /** Whether there is a pending avatar to upload. */
   readonly tieneAvatarPendiente = computed(() => this.avatarPreview() !== null);

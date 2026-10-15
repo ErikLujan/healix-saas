@@ -9,13 +9,13 @@
       }
     </p>
   </div>
-  <nav aria-label="Progreso del wizard" role="tablist" class="flex items-center gap-2">
+  <nav aria-label="Progreso del wizard" class="flex items-center gap-2">
     @for (paso of pasos(); track paso.numero; let i = $index) {
       @if (i > 0) {
         <div class="flex-1 h-0.5 rounded-full transition-colors duration-300" [ngClass]="{'bg-emerald-600': pasoActual() > paso.numero, 'bg-border': pasoActual() <= paso.numero}" aria-hidden="true"></div>
       }
       <button type="button" (click)="irAPaso(paso.numero)" [disabled]="paso.numero >= pasoActual()"
-        role="tab" [attr.aria-selected]="pasoActual() === paso.numero" [attr.aria-current]="pasoActual() === paso.numero ? 'step' : null"
+        [attr.aria-current]="pasoActual() === paso.numero ? 'step' : null"
         class="flex items-center gap-2 text-xs font-medium transition-colors duration-200 disabled:cursor-not-allowed active:scale-[0.97]"
         [ngClass]="{'text-brand-700': pasoActual() === paso.numero, 'text-text-secondary': pasoActual() !== paso.numero && pasoActual() > paso.numero, 'text-text-subtle/50': pasoActual() < paso.numero}">
         <span class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors duration-200"
@@ -42,6 +42,8 @@
       } @else if (pasoActual() === 4) {
         <div class="wizard-step-content animate-step-in"><app-step-date /></div>
       } @else if (pasoActual() === 5) {
+        <div class="wizard-step-content animate-step-in"><app-step-time /></div>
+      } @else if (pasoActual() === 6) {
         <div class="wizard-step-content animate-step-in"><app-step-confirm /></div>
       }
     } @else {
@@ -58,7 +60,7 @@
       }
     }
   </div>
-  @if (pasoActual() < 5) {
+  @if (pasoActual() < totalPasos()) {
     <div class="flex justify-between">
       <button type="button" (click)="retroceder()" [disabled]="!puedeRetroceder()"
         class="inline-flex items-center gap-2 rounded-2xl border-2 border-border px-5 py-2.5 text-sm font-medium text-text-secondary transition-all duration-200 hover:border-text-secondary hover:text-text-primary disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-brand-700 focus:ring-offset-2">

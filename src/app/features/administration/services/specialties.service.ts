@@ -34,12 +34,16 @@ export class SpecialtiesService {
   readonly specialties = signal<readonly SpecialtyWithCount[]>([]);
   readonly isLoading = signal(false);
 
+  /** Último error de carga, expuesto para estados de error con reintento. */
+  readonly lastError = signal<string | null>(null);
+
   /**
    * Carga todas las especialidades con el conteo de especialistas asociados.
    * Actualiza la signal `specialties` con el resultado.
    */
   async loadSpecialties(): Promise<void> {
     this.isLoading.set(true);
+    this.lastError.set(null);
 
     const { data, error } = await this.supabase.supabase
       .from('specialties')
@@ -48,6 +52,7 @@ export class SpecialtiesService {
 
     if (error) {
       toast.error('No fue posible cargar las especialidades. Por favor, verifica los datos e intenta nuevamente.');
+      this.lastError.set('No fue posible cargar las especialidades.');
       this.isLoading.set(false);
       return;
     }

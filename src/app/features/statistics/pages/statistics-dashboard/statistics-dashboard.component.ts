@@ -5,7 +5,8 @@ import { BaseChartDirective } from 'ng2-charts';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { fadeIn, slideUp } from '@core/animations/route-animations';
 import { StatisticsService, DateRangeFilter } from '../../services/statistics.service';
-import { fechaLocalHoy, formatearFechaCorta } from '@shared/utils/date-locale.utils';
+import { fechaLocalHoy, formatearFechaCorta, formatearFechaHoraCortaEsAR } from '@shared/utils/date-locale.utils';
+import { aplicarAlfa, paletaGraficos, paletaTorta } from '@shared/utils/chart.tokens';
 import {
   exportarTurnosPorEspecialidadExcel,
   exportarTurnosPorEspecialidadPDF,
@@ -40,7 +41,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
       @if (stats.isLoading()) {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (i of [1,2,3,4]; track i) {
-            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+            <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs">
               <div class="flex items-start justify-between mb-3">
                 <div class="h-3 w-24 animate-shimmer rounded"></div>
                 <div class="w-10 h-10 rounded-xl animate-shimmer"></div>
@@ -52,7 +53,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           @for (i of [1,2]; track i) {
-            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+            <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs">
               <div class="flex items-center justify-between mb-4">
                 <div class="h-4 w-40 animate-shimmer rounded"></div>
                 <div class="flex gap-2">
@@ -64,7 +65,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             </div>
           }
         </div>
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs mb-8">
+        <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs mb-8">
           <div class="flex items-center justify-between mb-4">
             <div class="h-4 w-48 animate-shimmer rounded"></div>
             <div class="flex gap-2">
@@ -74,7 +75,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </div>
           <div class="h-64 animate-shimmer rounded-xl"></div>
         </div>
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+        <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs">
           <div class="h-4 w-44 animate-shimmer rounded mb-4"></div>
           <div class="space-y-3">
             @for (i of [1,2,3,4,5]; track i) {
@@ -83,7 +84,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </div>
         </div>
       } @else if (stats.lastError()) {
-        <div class="flex flex-col items-center justify-center py-20 bg-white border border-danger/20 rounded-2xl shadow-xs" role="alert">
+        <div class="flex flex-col items-center justify-center py-20 bg-surface border border-danger/20 rounded-2xl shadow-xs" role="alert">
           <div class="w-16 h-16 mb-4 rounded-full bg-danger/5 flex items-center justify-center">
             <svg lucideIcon="alert-triangle" class="w-8 h-8 text-danger/60"></svg>
           </div>
@@ -97,7 +98,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </button>
         </div>
       } @else if (isDataEmpty()) {
-        <div class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+        <div class="flex flex-col items-center justify-center py-20 bg-surface border border-divider rounded-2xl shadow-xs">
           <div class="w-16 h-16 mb-4 rounded-full bg-brand-50 flex items-center justify-center">
             <svg lucideIcon="bar-chart-3" class="w-8 h-8 text-brand-500"></svg>
           </div>
@@ -107,30 +108,30 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </p>
         </div>
       } @else {
-        <div class="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div class="bg-surface/80 backdrop-blur-md border border-divider rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-4 mb-8">
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2">
               <label class="text-xs font-medium text-text-secondary">Desde:</label>
               <input type="date" [ngModel]="filtroFecha().desde" (ngModelChange)="onFechaDesdeChange($event)"
-                class="px-3 py-1.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all" />
+                class="px-3 py-1.5 text-sm border border-border rounded-xl outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all" />
             </div>
             <div class="flex items-center gap-2">
               <label class="text-xs font-medium text-text-secondary">Hasta:</label>
               <input type="date" [ngModel]="filtroFecha().hasta" (ngModelChange)="onFechaHastaChange($event)"
-                class="px-3 py-1.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all" />
+                class="px-3 py-1.5 text-sm border border-border rounded-xl outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all" />
             </div>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" (click)="applyPreset('7d')"
-              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-200 text-text-secondary hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] transition-all">
+              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-border text-text-secondary hover:bg-surface-sunken hover:border-border-strong active:scale-[0.98] transition-all">
               Últimos 7 días
             </button>
             <button type="button" (click)="applyPreset('month')"
-              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-200 text-text-secondary hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] transition-all">
+              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-border text-text-secondary hover:bg-surface-sunken hover:border-border-strong active:scale-[0.98] transition-all">
               Este mes
             </button>
             <button type="button" (click)="applyPreset('all')"
-              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-slate-200 text-text-secondary hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98] transition-all">
+              class="px-3 py-1.5 text-xs font-medium rounded-xl border border-border text-text-secondary hover:bg-surface-sunken hover:border-border-strong active:scale-[0.98] transition-all">
               Todo el historial
             </button>
           </div>
@@ -138,7 +139,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           @for (card of kpiCards(); track card.label) {
-            <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden">
+            <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden">
               <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" [style.background]="card.gradient"></div>
               <div class="flex items-start justify-between pl-3">
                 <div>
@@ -154,7 +155,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
@@ -185,7 +186,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             }
           </div>
 
-          <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs flex flex-col justify-between">
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center">
@@ -217,7 +218,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           </div>
         </div>
 
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs mb-8">
+        <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs mb-8">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
@@ -248,7 +249,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
           }
         </div>
 
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+        <div class="bg-surface border border-divider rounded-2xl p-5 shadow-xs">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
@@ -274,7 +275,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             <table class="w-full min-w-[640px] text-left border-collapse" role="table" aria-label="Log de accesos al sistema">
               <caption class="sr-only">Registro de ingresos recientes al sistema</caption>
               <thead>
-                <tr class="border-b border-slate-200">
+                <tr class="border-b border-border">
                   <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Usuario</th>
                   <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Email</th>
                   <th scope="col" class="py-3 px-3 text-[11px] font-semibold text-text-subtle uppercase tracking-wider whitespace-nowrap">Rol</th>
@@ -283,7 +284,7 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
               </thead>
               <tbody>
                 @for (entry of paginatedAccessLogs(); track entry.userId) {
-                  <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <tr class="border-b border-divider hover:bg-surface-sunken/80 transition-colors">
                     <td class="py-3 px-3 text-text-primary font-medium whitespace-nowrap">{{ entry.fullName }}</td>
                     <td class="py-3 px-3 text-text-secondary max-w-[220px] truncate">{{ entry.email }}</td>
                     <td class="py-3 px-3 whitespace-nowrap">
@@ -303,24 +304,24 @@ import type { ChartConfiguration, ChartData } from 'chart.js';
             </table>
           </div>
           @if (stats.accessLogs().length > logsPageSize()) {
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-divider">
               <p class="text-center text-xs text-text-subtle tabular-nums sm:text-left">{{ logsRangeText() }}</p>
               <div class="flex max-w-full flex-wrap items-center justify-center gap-1 overflow-x-auto">
                 <button type="button" (click)="prevLogsPage()" [disabled]="logsPage() === 1"
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-text-secondary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-text-secondary hover:bg-surface-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                   Anterior
                 </button>
                 @for (page of logsPageNumbers(); track page) {
                   <button type="button" (click)="goToLogsPage(page)"
                     class="w-8 h-8 text-xs font-semibold rounded-lg transition-all"
                     [class]="page === logsPage()
-                      ? 'bg-[#0F4C4A] text-white shadow-sm'
-                      : 'text-text-secondary hover:bg-slate-100'">
+                      ? 'bg-brand-700 text-white shadow-sm'
+                      : 'text-text-secondary hover:bg-surface-sunken'">
                     {{ page }}
                   </button>
                 }
                 <button type="button" (click)="nextLogsPage()" [disabled]="logsPage() === totalLogsPages()"
-                  class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-text-secondary hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                  class="px-3 py-1.5 text-xs font-medium rounded-lg border border-border text-text-secondary hover:bg-surface-sunken disabled:opacity-40 disabled:cursor-not-allowed transition-all">
                   Siguiente
                 </button>
               </div>
@@ -388,51 +389,52 @@ export class StatisticsDashboardComponent implements OnInit {
     {
       label: 'Total Usuarios',
       value: this.stats.totalUsuarios(),
-      color: 'text-violet-700',
-      gradient: 'linear-gradient(to bottom, #8b5cf6, #6366f1)',
-      iconBg: '#f5f3ff',
-      iconColor: '#7c3aed',
+      color: 'text-brand-700',
+      gradient: 'linear-gradient(to bottom, var(--color-brand-500), var(--color-brand-700))',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       icon: 'users',
     },
     {
       label: 'Aprobaciones Pendientes',
       value: this.stats.especialistasPendientes(),
-      color: 'text-amber-700',
-      gradient: 'linear-gradient(to bottom, #f59e0b, #d97706)',
-      iconBg: '#fffbeb',
-      iconColor: '#d97706',
+      color: 'text-brand-700',
+      gradient: 'linear-gradient(to bottom, var(--color-brand-500), var(--color-brand-700))',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       icon: 'clock',
     },
     {
       label: 'Turnos del Mes',
       value: this.stats.turnosDelMes(),
-      color: 'text-teal-700',
-      gradient: 'linear-gradient(to bottom, #0d9488, #0891b2)',
-      iconBg: '#f0fdf4',
-      iconColor: '#0d9488',
+      color: 'text-brand-700',
+      gradient: 'linear-gradient(to bottom, var(--color-brand-500), var(--color-brand-700))',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       icon: 'calendar',
     },
     {
       label: 'Historias Clínicas',
       value: this.stats.totalHistorias(),
-      color: 'text-emerald-700',
-      gradient: 'linear-gradient(to bottom, #10b981, #059669)',
-      iconBg: '#ecfdf5',
-      iconColor: '#059669',
+      color: 'text-brand-700',
+      gradient: 'linear-gradient(to bottom, var(--color-brand-500), var(--color-brand-700))',
+      iconBg: 'var(--color-brand-50)',
+      iconColor: 'var(--color-brand-700)',
       icon: 'file-text',
     },
   ]);
 
   readonly donutChartData = computed<ChartData<'doughnut'>>(() => {
     const data = this.stats.turnosPorEspecialidad();
+    const paleta = paletaGraficos();
     return {
       labels: data.map(d => d.especialidad),
       datasets: [
         {
           data: data.map(d => d.cantidad),
-          backgroundColor: ['#0d9488', '#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#6366f1'],
+          backgroundColor: [...paletaTorta()],
           borderWidth: 2,
-          borderColor: '#ffffff',
+          borderColor: paleta.superficie,
           hoverOffset: 6,
         },
       ],
@@ -449,22 +451,35 @@ export class StatisticsDashboardComponent implements OnInit {
         labels: {
           usePointStyle: true,
           boxWidth: 8,
-          font: { size: 12, family: 'sans-serif' },
+          font: { size: 12, family: "'Inter', system-ui, sans-serif" },
           padding: 14,
+          color: paletaGraficos().texto,
         },
+      },
+      tooltip: {
+        backgroundColor: paletaGraficos().superficie,
+        titleColor: paletaGraficos().texto,
+        bodyColor: paletaGraficos().texto,
+        borderColor: paletaGraficos().borde,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
+        bodyFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
       },
     },
   };
 
   readonly barChartData = computed<ChartData<'bar'>>(() => {
     const data = this.stats.turnosPorDia();
+    const paleta = paletaGraficos();
     return {
       labels: data.map(d => d.dia),
       datasets: [
         {
           data: data.map(d => d.cantidad),
-          backgroundColor: '#0891b2',
-          hoverBackgroundColor: '#0e7490',
+          backgroundColor: paleta.marca500,
+          hoverBackgroundColor: paleta.marca700,
           borderRadius: 8,
           borderSkipped: false,
         },
@@ -477,37 +492,49 @@ export class StatisticsDashboardComponent implements OnInit {
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: paletaGraficos().superficie,
+        titleColor: paletaGraficos().texto,
+        bodyColor: paletaGraficos().texto,
+        borderColor: paletaGraficos().borde,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
+        bodyFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
+      },
     },
     scales: {
       x: {
         grid: { display: false },
-        ticks: { font: { size: 12 } },
+        ticks: { font: { size: 12, family: "'Inter', system-ui, sans-serif" }, color: paletaGraficos().textoSutil },
       },
       y: {
         beginAtZero: true,
-        ticks: { stepSize: 1, font: { size: 12 } },
-        grid: { color: 'rgba(226, 232, 240, 0.6)' },
+        ticks: { stepSize: 1, font: { size: 12, family: "'Inter', system-ui, sans-serif" }, color: paletaGraficos().textoSutil },
+        grid: { color: aplicarAlfa(paletaGraficos().borde, 0.6) },
       },
     },
   };
 
   readonly medicoChartData = computed<ChartData<'bar'>>(() => {
     const data = this.stats.turnosPorMedico();
+    const paleta = paletaGraficos();
     return {
       labels: data.map(d => d.medico),
       datasets: [
         {
           label: 'Solicitados',
           data: data.map(d => d.solicitados),
-          backgroundColor: '#0d9488',
-          hoverBackgroundColor: '#0f766e',
+          backgroundColor: paleta.marca500,
+          hoverBackgroundColor: paleta.marca700,
           borderRadius: 6,
         },
         {
           label: 'Finalizados',
           data: data.map(d => d.finalizados),
-          backgroundColor: '#10b981',
-          hoverBackgroundColor: '#059669',
+          backgroundColor: paleta.exito,
+          hoverBackgroundColor: paleta.marca900,
           borderRadius: 6,
         },
       ],
@@ -522,18 +549,29 @@ export class StatisticsDashboardComponent implements OnInit {
       legend: {
         position: 'top',
         align: 'end',
-        labels: { usePointStyle: true, boxWidth: 8, font: { size: 12 } },
+        labels: { usePointStyle: true, boxWidth: 8, font: { size: 12, family: "'Inter', system-ui, sans-serif" }, color: paletaGraficos().texto },
+      },
+      tooltip: {
+        backgroundColor: paletaGraficos().superficie,
+        titleColor: paletaGraficos().texto,
+        bodyColor: paletaGraficos().texto,
+        borderColor: paletaGraficos().borde,
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
+        bodyFont: { size: 12, family: "'Inter', system-ui, sans-serif" },
       },
     },
     scales: {
       x: {
         beginAtZero: true,
-        ticks: { stepSize: 1, font: { size: 12 } },
-        grid: { color: 'rgba(226, 232, 240, 0.6)' },
+        ticks: { stepSize: 1, font: { size: 12, family: "'Inter', system-ui, sans-serif" }, color: paletaGraficos().textoSutil },
+        grid: { color: aplicarAlfa(paletaGraficos().borde, 0.6) },
       },
       y: {
         grid: { display: false },
-        ticks: { font: { size: 12 } },
+        ticks: { font: { size: 12, family: "'Inter', system-ui, sans-serif" }, color: paletaGraficos().textoSutil },
       },
     },
   };
@@ -579,10 +617,7 @@ export class StatisticsDashboardComponent implements OnInit {
 
   formatDate(iso: string): string {
     if (!iso) return '-';
-    return new Date(iso).toLocaleString('es-AR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
+    return formatearFechaHoraCortaEsAR(iso);
   }
 
   getRoleBadgeClass(role: string): string {

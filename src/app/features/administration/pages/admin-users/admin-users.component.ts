@@ -10,6 +10,7 @@ import { MedicalRecordsService } from '@features/medical-history/services/medica
 import { MedicalHistoryListComponent } from '@features/medical-history/components/medical-history-list/medical-history-list.component';
 import { MedicalRecordConRelaciones } from '@features/medical-history/models/medical-record.model';
 import { FallbackAvatarDirective } from '@shared/directives/fallback-avatar.directive';
+import { formatearFechaCortaCapitalizadaEsAR } from '@shared/utils/date-locale.utils';
 import { toast } from 'ngx-sonner';
 
 /**
@@ -35,6 +36,7 @@ export class AdminUsersComponent implements OnInit {
 
   readonly users = this.adminUsersService.users;
   readonly isLoading = this.adminUsersService.isLoading;
+  readonly usersError = this.adminUsersService.lastError;
   readonly searchQuery = signal('');
   readonly selectedRole = signal<string>('all');
   readonly showModal = signal(false);
@@ -131,6 +133,12 @@ export class AdminUsersComponent implements OnInit {
     this.adminUsersService.loadUsers();
   }
 
+  /** Recarga la grilla tras un error de carga. */
+  recargar(): void {
+    this.currentPage.set(1);
+    this.adminUsersService.loadUsers();
+  }
+
   /**
    * Actualiza el texto de busqueda y resetea la paginacion a la primera pagina.
    *
@@ -212,17 +220,13 @@ export class AdminUsersComponent implements OnInit {
   }
 
   /**
-   * Formatea una cadena ISO de fecha al formato argentino dd/mm/yyyy.
+   * Formatea una cadena ISO de fecha como fecha corta capitalizada.
    *
    * @param dateStr Cadena de fecha en formato ISO.
-   * @returns Fecha formateada en locales es-AR.
+   * @returns Fecha como "12 Oct 2026".
    */
   formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('es-AR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+    return formatearFechaCortaCapitalizadaEsAR(dateStr);
   }
 
   /**

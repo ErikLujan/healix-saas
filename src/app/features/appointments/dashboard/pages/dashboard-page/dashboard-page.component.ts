@@ -13,6 +13,7 @@ import { ResenaModalComponent } from '../../dialogs/resena-modal.component';
 import { CalificarAtencionDialogComponent } from '../../dialogs/calificar-atencion-dialog.component';
 import { EncuestaSatisfaccionDialogComponent } from '../../dialogs/encuesta-satisfaccion-dialog.component';
 import { FinishAppointmentDialogComponent } from '../../../finish/dialogs/finish-appointment.dialog';
+import { TurnoActionsComponent, AccionTurno } from '../../components/turno-actions/turno-actions.component';
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { DEFAULT_PAGE_SIZE } from '@shared/components/pagination/pagination.config';
 import { EstadoTurnoColorPipe } from '@shared/pipes/estado-turno-color.pipe';
@@ -46,6 +47,7 @@ import { RegistrationService, Specialty } from '@core/services/registration.serv
     CalificarAtencionDialogComponent,
     EncuestaSatisfaccionDialogComponent,
     FinishAppointmentDialogComponent,
+    TurnoActionsComponent,
     PaginationComponent,
     EstadoTurnoColorPipe,
     FechaFormatPipe,
@@ -389,6 +391,45 @@ export class DashboardPageComponent implements OnInit {
   /** Maneja el cambio de pagina desde el componente de paginacion. */
   onPageChange(page: number): void {
     this.currentPage.set(page);
+  }
+
+  /**
+   * Despacha la accion elegida desde los botones de turno hacia el
+   * método de dialogo correspondiente.
+   *
+   * @param accion Accion emitida por el componente de acciones.
+   * @param turno Turno sobre el que se ejecuta la accion.
+   */
+  ejecutarAccion(accion: AccionTurno, turno: TurnoConRelaciones): void {
+    switch (accion) {
+      case 'aceptar':
+        this.abrirDialogoConfirmarAceptar(turno);
+        break;
+      case 'rechazar':
+        this.abrirDialogoRechazar(turno);
+        break;
+      case 'finalizar':
+        this.abrirDialogoFinalizar(turno);
+        break;
+      case 'cancelar':
+        this.abrirDialogoCancelar(turno);
+        break;
+      case 'ver-resena':
+        this.abrirModalResena(turno);
+        break;
+      case 'calificar':
+        this.abrirDialogoCalificar(turno);
+        break;
+      case 'ver-calificacion':
+        this.verCalificacion(turno);
+        break;
+      case 'completar-encuesta':
+        this.abrirEncuesta(turno);
+        break;
+      case 'ver-encuesta':
+        this.verEncuesta(turno);
+        break;
+    }
   }
 
   /** Abre el dialogo de cancelacion para un turno. */

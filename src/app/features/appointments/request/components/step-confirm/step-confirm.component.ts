@@ -5,13 +5,14 @@ import { TurnosService } from '@core/services/turnos.service';
 import { AuthService } from '@core/services/auth.service';
 import { Router } from '@angular/router';
 import { CaptchaDirective } from '@shared/directives/captcha.directive';
+import { EmptyValuePipe } from '@shared/pipes/empty-value.pipe';
 import { construirFechaHoraISO, formatearFechaLargaEsAR } from '@shared/utils/date-locale.utils';
 import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-step-confirm',
   standalone: true,
-  imports: [LucideDynamicIcon, CaptchaDirective],
+  imports: [LucideDynamicIcon, CaptchaDirective, EmptyValuePipe],
   templateUrl: './step-confirm.component.html',
 })
 export class StepConfirmComponent {
@@ -61,8 +62,28 @@ export class StepConfirmComponent {
     const perfil = this.authService.userProfile();
     const paciente = this.paciente();
 
-    if (!especialista || !especialidad || !fecha || !hora || !perfil) {
-      toast.warning('Faltan datos para crear el turno. Revisá cada paso del asistente.');
+    if (!especialidad) {
+      toast.warning('Falta la especialidad. Volvé al paso de especialidad para elegirla.');
+      return;
+    }
+
+    if (!especialista) {
+      toast.warning('Falta el especialista. Volvé al paso de especialista para elegirlo.');
+      return;
+    }
+
+    if (!fecha) {
+      toast.warning('Falta la fecha. Volvé al paso de fecha para elegirla.');
+      return;
+    }
+
+    if (!hora) {
+      toast.warning('Falta el horario. Volvé al paso de horario para elegirlo.');
+      return;
+    }
+
+    if (!perfil) {
+      toast.warning('No se pudo identificar tu sesión. Ingresá nuevamente.');
       return;
     }
 

@@ -77,7 +77,7 @@ export class WizardTurnoService {
   /** Paciente seleccionado (solo admin). */
   readonly pacienteSeleccionado = computed(() => this._estado().pacienteSeleccionado);
 
-  /** Paso actual (1-5). */
+  /** Paso actual (1-6; el paso 6 solo existe en el flujo de administrador). */
   readonly pasoActual = computed(() => this._estado().pasoActual);
 
   /** Especialidad seleccionada. */
@@ -92,45 +92,8 @@ export class WizardTurnoService {
   /** Hora seleccionada. */
   readonly horaSeleccionada = computed(() => this._estado().horaSeleccionada);
 
-  /** Indica si se puede avanzar al siguiente paso. */
-  readonly puedeAvanzar = computed(() => {
-    const estado = this._estado();
-    const tienePaciente = estado.pacienteSeleccionado !== null;
-    if (tienePaciente) {
-      switch (estado.pasoActual) {
-        case 1: return estado.pacienteSeleccionado !== null;
-        case 2: return estado.especialidadSeleccionada !== null;
-        case 3: return estado.especialistaSeleccionado !== null;
-        case 4: return estado.fechaSeleccionada !== null;
-        case 5: return false;
-        default: return false;
-      }
-    }
-    switch (estado.pasoActual) {
-      case 1: return estado.especialidadSeleccionada !== null;
-      case 2: return estado.especialistaSeleccionado !== null;
-      case 3: return estado.fechaSeleccionada !== null;
-      case 4: return estado.horaSeleccionada !== null;
-      case 5: return false;
-      default: return false;
-    }
-  });
-
   /** Indica si se puede retroceder. */
   readonly puedeRetroceder = computed(() => this._estado().pasoActual > 1);
-
-  /** Titulo del paso actual. */
-  readonly tituloPasoActual = computed(() => {
-    const tienePaciente = this._estado().pacienteSeleccionado !== null;
-    const titulos: Record<number, string> = {
-      1: tienePaciente ? 'Paciente' : 'Especialidad',
-      2: tienePaciente ? 'Especialidad' : 'Especialista',
-      3: tienePaciente ? 'Especialista' : 'Fecha',
-      4: tienePaciente ? 'Fecha' : 'Horario',
-      5: 'Confirmar',
-    };
-    return titulos[this._estado().pasoActual] ?? '';
-  });
 
   /**
    * Selecciona el paciente y avanza al paso 2 (solo admin).
@@ -194,22 +157,15 @@ export class WizardTurnoService {
   }
 
   /**
-   * Selecciona la hora y avanza al paso 5 (confirmacion).
+   * Selecciona la hora y avanza a la confirmacion.
    */
   seleccionarHora(hora: string): void {
+    const tienePaciente = this._estado().pacienteSeleccionado !== null;
     this._estado.update(prev => ({
       ...prev,
       horaSeleccionada: hora,
-      pasoActual: 5,
+      pasoActual: tienePaciente ? 6 : 5,
     }));
-  }
-
-  /** Avanza al siguiente paso si hay seleccion valida. */
-  avanzarPaso(): void {
-    const estado = this._estado();
-    if (estado.pasoActual < 5 && this.puedeAvanzar()) {
-      this._estado.update(prev => ({ ...prev, pasoActual: prev.pasoActual + 1 }));
-    }
   }
 
   /** Retrocede al paso anterior. */
